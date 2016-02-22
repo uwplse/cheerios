@@ -1,9 +1,11 @@
 RESULT = cheerios
+
 SOURCES = \
-  binary.ml \
   types.ml \
+  binary.ml \
+  basicSerializers.ml \
   combinators.ml \
-  basicSerializers.ml
+  complexSerializers.ml
 
 OCAMLMAKEFILE = OCamlMakefile
 include $(OCAMLMAKEFILE)

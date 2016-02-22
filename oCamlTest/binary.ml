@@ -24,12 +24,12 @@ let add_zeroes bin length =
   if (List.length bin) >= length then
     bin
   else
-    let rec loop l =
-      match l with
+    let rec loop length_left =
+      match length_left with
       | 0 -> bin
-      | _ -> false :: (loop (l - 1))
+      | _ -> false :: (loop (length_left - 1))
     in
-    loop length
+    loop (length - (List.length bin))
 
 let num_to_binary n =
     let rec loop n =
@@ -50,11 +50,11 @@ let binary_to_num bin =
     in
     loop (List.rev bin)
 
-let int32_to_binary i =
-  add_zeroes (num_to_binary i) 63
+let int_to_binary i =
+  add_zeroes (num_to_binary i) 31
 
 let binary_to_int bin =
-  match take 63 bin with
+  match take 31 bin with
   | Some (bin, rest) -> Some (binary_to_num bin, rest)
   | None -> None
 
