@@ -1,13 +1,12 @@
 Require Import List.
 
-Class Serializer {A:Type}(serialize: A -> list bool)(deserialize: list bool -> option (A * list bool)) : Prop :=
-  {
-    serialize_reversible: forall x: A,
-                            deserialize (serialize x) = Some (x, nil);
-    deserialize_reversible: forall (b: list bool) (a: A),
-                              deserialize b = Some (a, nil) ->
-                              serialize a = b
-  }.
+Class Serializer A := {
+    serialize: A -> (list bool);
+    deserialize: list bool -> option (A * list bool);
+    Serialize_reversible: forall x: A,
+                            deserialize (serialize x) = Some (x, nil) }.
+
+Print serialize.
 
 Definition bool_serialize (a: bool) : list bool :=
   a :: nil.
@@ -18,8 +17,15 @@ Definition bool_deserialize (bin : list bool) : option (bool * list bool) :=
     | h :: t => Some (h, t)
   end.
 
-Instance Bool_Serializer: Serializer bool_serialize bool_deserialize.
-split; simpl; intros.
-- reflexivity.
-- destruct b; inversion H; reflexivity.
+Lemma bool_serialize_reversible: forall x: bool,
+                                   bool_deserialize (bool_serialize x) = Some (x, nil).
+  intros; simpl.
+  reflexivity.
 Qed.
+
+Instance Bool_Serializer: Serializer bool :=
+  {
+    serialize := bool_serialize;
+    deserialize := bool_deserialize;
+    Serialize_reversible := bool_serialize_reversible
+  }.

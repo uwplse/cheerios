@@ -2,17 +2,17 @@ Require Import StructTactics.
 Require Import List.
 Require Import Types.
 
+SearchAbout Serializer.
+
+Eval cbv in serialize Bool_Serializer true.
+
 Definition pair_serialize
-         {A:Type}
-         {serialize_a: A -> list bool}
-         {deserialize_a: list bool -> option (A * list bool)}
-         {SA: Serializer serialize_a deserialize_a}
-         {B:Type}
-         {serialize_b: B -> list bool}
-         {deserialize_b: list bool -> option (B * list bool)}
-         {SB: Serializer serialize_b deserialize_b}
-         (p: A*B) :=
-  let (a, b) := p in (serialize_a a) ++ (serialize_b b).
+           (A B: Type)
+           (aSerializer: Serializer A)
+           (bSerializer: Serializer B)
+           (p: A*B) :=
+  let (a, b) := p in
+  (serialize A) aSerializer ++ (serialize bSerializer b).
 
 Definition pair_deserialize
          {A:Type}
