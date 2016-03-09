@@ -61,7 +61,7 @@ Fixpoint nat_to_binary_rec fuel n :=
     | S fuel =>
   match n with
     | O => nil
-    | _ => (eqb (modulo n 2) 1) :: nat_to_binary_rec fuel (div2 n)
+    | _ => (Nat.odd n) :: nat_to_binary_rec fuel (div2 n)
   end
   end.
 
@@ -72,10 +72,7 @@ Fixpoint binary_to_nat_rec bin :=
   match bin with
     | nil => 0
     | hd::bin =>
-      (match hd with
-         | true => 1
-         | false => 0
-       end) + 2 * (binary_to_nat_rec bin)
+      Nat.b2n hd + 2 * (binary_to_nat_rec bin)
   end.
 
 Definition binary_to_nat bin :=
