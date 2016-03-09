@@ -1,4 +1,5 @@
 Require Import List.
+Import ListNotations.
 Require Import Arith.
 Require Import Nat.
 Require Import Ascii.
@@ -27,6 +28,32 @@ Definition add_zeroes bin len :=
     bin
   else
     add_zeroes_rec bin (len - (length bin)).
+
+Fixpoint nat_to_unary n : list bool :=
+  match n with
+  | 0 => [false]
+  | S n' => true :: nat_to_unary n'
+  end.
+
+Fixpoint unary_to_nat (bin : list bool) : option (nat * list bool) :=
+  match bin with
+  | [] => None
+  | b :: bin' => if b
+                then match unary_to_nat bin' with
+                     | None => None
+                     | Some (n, rest) => Some (S n, rest)
+                     end
+                else Some (0, bin')
+  end.
+
+Lemma nat_to_unary_to_nat :
+  forall n bin,
+    unary_to_nat (nat_to_unary n ++ bin) = Some (n, bin).
+Proof.
+  induction n as [|n' IHn']; intros bin.
+  - reflexivity.
+  - simpl. now rewrite IHn'.
+Qed.
 
 Fixpoint nat_to_binary_rec fuel n :=
   match fuel with
