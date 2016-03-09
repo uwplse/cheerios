@@ -25,7 +25,7 @@ Definition pair_deserialize
   end
   end.
 
-Instance Pair_Serializer: forall (A B: Type), Serializer (A * B) :=
+Instance Pair_Serializer : forall (A B : Type), Serializer A -> Serializer B -> Serializer (A * B) :=
   {
     serialize := pair_serialize;
     deserialize := pair_deserialize;
