@@ -3,6 +3,8 @@ Import ListNotations.
 Require Import Arith.
 Require Import Nat.
 Require Import Ascii.
+Require Import Omega.
+Require Import StructTactics.
 
 Fixpoint take_rec (acc: list bool) c xs :=
   match c with
@@ -77,6 +79,31 @@ Fixpoint binary_to_nat_rec bin :=
 
 Definition binary_to_nat bin :=
   binary_to_nat_rec (List.rev bin).
+
+Lemma binary_to_nat_to_binary_rec :
+  forall fuel n,
+    n <= fuel ->
+    binary_to_nat_rec (nat_to_binary_rec fuel n) = n.
+Proof.
+  induction fuel; intros n Hfuel.
+  - simpl. omega.
+  - cbn [nat_to_binary_rec].
+    destruct n; auto.
+    cbn [binary_to_nat_rec].
+    rewrite IHfuel by eauto using le_trans, Nat.le_div2 with *.
+    now rewrite plus_comm, <- Nat.div2_odd.
+Qed.
+
+Lemma binary_to_nat_to_binary :
+  forall n,
+    binary_to_nat (nat_to_binary n) = n.
+Proof.
+  intros n.
+  unfold binary_to_nat, nat_to_binary.
+  rewrite rev_involutive.
+  apply binary_to_nat_to_binary_rec.
+  apply le_refl.
+Qed.
 
 Definition int_to_binary i :=
   add_zeroes (nat_to_binary i) 31.
