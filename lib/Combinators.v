@@ -14,11 +14,11 @@ Definition pair_deserialize
            {A B: Type}
            {aSerializer: Serializer A}
            {bSerializer: Serializer B}
-           (bin: list bool) :=
-  match (@deserialize A aSerializer bin) with
+           (bin: list bool) : option ((A * B) * list bool) :=
+  match deserialize bin with
     | None => None
     | Some (a, rest) =>
-  match (@deserialize B bSerializer rest) with (* Is there a better way to have coq figure this out? *)
+  match deserialize rest with
     | None => None
     | Some (b, remainder) =>
       Some ((a, b), remainder)
