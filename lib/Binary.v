@@ -19,6 +19,26 @@ Fixpoint take_rec (acc: list bool) c xs :=
 Definition take c xs :=
   take_rec nil c xs.
 
+Lemma take_rec_app :
+  forall xs ys acc,
+    take_rec acc (length xs) (xs ++ ys) = Some (rev acc ++ xs, ys).
+Proof.
+  induction xs; simpl; intros ys acc.
+  - now rewrite app_nil_r.
+  - rewrite IHxs.
+    simpl.
+    now rewrite app_assoc_reverse.
+Qed.
+
+Lemma take_app :
+  forall xs ys,
+    take (length xs) (xs ++ ys) = Some (xs, ys).
+Proof.
+  unfold take.
+  intros xs ys.
+  now rewrite take_rec_app.
+Qed.
+
 Fixpoint add_zeroes_rec (bin: list bool) length_left :=
   match length_left with
     | O => bin
