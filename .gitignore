@@ -1,5 +1,9 @@
 *.cmi
 *.cmo
 *.#*
+*.v.d
+*.glob
+*.vo
+*.aux
 oCamlTest/._d/
 oCamlTest/cheerios
