@@ -168,7 +168,7 @@ Definition list_serialize
            {T: Type}
            {tSerializer: Serializer T}
            (ts: list T) :=
-  nat_serialize (length ts) ++ (list_serialize_rec ts).
+  serialize (length ts) ++ (list_serialize_rec ts).
 
 Fixpoint list_deserialize_rec
          {T: Type}
@@ -191,7 +191,7 @@ Definition list_deserialize
            {T: Type}
            {tSerializer: Serializer T}
            (bin: list bool) : option (list T * list bool) :=
-  match nat_deserialize bin with
+  match deserialize bin with
     | None => None
     | Some (count, rest) =>
       list_deserialize_rec count rest
@@ -206,7 +206,7 @@ Proof.
   unfold list_deserialize, list_serialize.
   intros T tSerializer ts bin.
   rewrite app_assoc_reverse.
-  rewrite nat_serialize_reversible.
+  rewrite Serialize_reversible.
   induction ts; auto.
   simpl.
   rewrite app_assoc_reverse.
