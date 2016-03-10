@@ -1,3 +1,4 @@
+Require Import Ascii.
 Require Import List.
 Require Import Binary.
 
@@ -20,6 +21,7 @@ Definition bool_deserialize (bin : list bool) : option (bool * list bool) :=
 
 Lemma bool_serialize_reversible: forall (x: bool) (bin: list bool),
                                    bool_deserialize ((bool_serialize x) ++ bin) = Some (x, bin).
+Proof.
   intros; simpl.
   reflexivity.
 Qed.
@@ -27,11 +29,9 @@ Qed.
 Instance Bool_Serializer: Serializer bool :=
   {
     serialize := bool_serialize;
-    deserialize := bool_deserialize
+    deserialize := bool_deserialize;
+    Serialize_reversible := bool_serialize_reversible
   }.
-intros; simpl.
-reflexivity.
-Qed.
 
 Definition nat_serialize (n : nat) : list bool :=
   let bin := nat_to_binary n
@@ -59,4 +59,28 @@ Instance Nat_Serializer : Serializer nat :=
     serialize := nat_serialize;
     deserialize := nat_deserialize;
     Serialize_reversible := nat_serialize_reversible
+  }.
+
+Definition ascii_serialize (a : ascii) : list bool :=
+  serialize (nat_of_ascii a).
+
+Definition ascii_deserialize (bin : list bool) : option (ascii * list bool) :=
+  match deserialize bin with
+    | None => None
+    | Some (n, rest) => Some (ascii_of_nat n, rest)
+  end.
+
+Lemma ascii_serialize_reversible : forall a bin,
+    ascii_deserialize (ascii_serialize a ++ bin) = Some (a, bin).
+Proof.
+  unfold ascii_deserialize, ascii_serialize.
+  intros a bin.
+  now rewrite Serialize_reversible, ascii_nat_embedding.
+Qed.
+
+Instance Ascii_Serializer : Serializer ascii :=
+  {
+    serialize := ascii_serialize;
+    deserialize := ascii_deserialize;
+    Serialize_reversible := ascii_serialize_reversible
   }.

@@ -1,8 +1,9 @@
+Require Import Ascii.
+Require Import String.
 Require Import List.
 Import ListNotations.
 Require Import Arith.
 Require Import Nat.
-Require Import Ascii.
 Require Import Omega.
 Require Import StructTactics.
 
@@ -38,18 +39,6 @@ Proof.
   intros xs ys.
   now rewrite take_rec_app.
 Qed.
-
-Fixpoint add_zeroes_rec (bin: list bool) length_left :=
-  match length_left with
-    | O => bin
-    | S (n) => false :: (add_zeroes_rec bin n)
-  end.
-
-Definition add_zeroes bin len :=
-  if ge_dec (length bin) len then
-    bin
-  else
-    add_zeroes_rec bin (len - (length bin)).
 
 Fixpoint nat_to_unary n : list bool :=
   match n with
@@ -124,21 +113,3 @@ Proof.
   apply binary_to_nat_to_binary_rec.
   apply le_refl.
 Qed.
-
-Definition int_to_binary i :=
-  add_zeroes (nat_to_binary i) 31.
-
-Definition binary_to_int bin :=
-  match take 31 bin with
-    | Some (bin, rest) => Some (binary_to_nat bin, rest)
-    | None => None
-  end.
-
-Definition ascii_to_binary a :=
-  add_zeroes (nat_to_binary (nat_of_ascii a)) 8.
-
-Definition binary_to_ascii bin :=
-  match take 8 bin with
-    | Some (bin, rest) => Some (ascii_of_nat (binary_to_nat bin), rest)
-    | None => None
-  end.
