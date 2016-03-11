@@ -176,4 +176,39 @@ Section combinators.
       deserialize := list_deserialize;
       Serialize_reversible := list_serialize_reversible
     }.
+
+  Definition sum_serialize (x : A + B) : list bool :=
+    match x with
+    | inl a => serialize true ++ serialize a
+    | inr b => serialize false ++ serialize b
+    end.
+
+  Definition sum_deserialize (bin : list bool) : option ((A + B) * list bool) :=
+    match deserialize(A:=bool) bin with None => None
+    | Some (flag, bin) =>
+      if flag
+      then match deserialize bin with None => None
+           | Some (a, bin) => Some (inl a, bin)
+           end
+      else match deserialize bin with None => None
+           | Some (b, bin) => Some (inr b, bin)
+           end
+    end.
+
+  Lemma sum_serialize_reversible :
+    forall x bin,
+      sum_deserialize (sum_serialize x ++ bin) = Some (x, bin).
+  Proof.
+    unfold sum_serialize, sum_deserialize.
+    intros x bin.
+    destruct x; rewrite app_assoc_reverse;
+      now rewrite !Serialize_reversible.
+  Qed.
+
+  Global Instance Sum_Serializer : Serializer (A + B) :=
+    {
+      serialize := sum_serialize;
+      deserialize := sum_deserialize;
+      Serialize_reversible := sum_serialize_reversible
+    }.
 End combinators.
