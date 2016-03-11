@@ -176,4 +176,32 @@ Section combinators.
       deserialize := list_deserialize;
       Serialize_reversible := list_serialize_reversible
     }.
+
+  Variable to : B -> A.
+  Variable from : A -> B.
+  Hypothesis to_from_inverse : forall b, from (to b) = b.
+
+  Definition to_from_serialize (b : B) : list bool := serialize (to b).
+
+  Definition to_from_deserialize bin : option (B * list bool) :=
+    match deserialize(A:=A) bin with None => None
+    | Some (a, bin) => Some (from a, bin)
+    end.
+
+  Lemma to_from_serialize_reversible : forall b bin,
+      to_from_deserialize (to_from_serialize b ++ bin) = Some (b, bin).
+  Proof.
+    unfold to_from_serialize, to_from_deserialize.
+    intros b bin.
+    now rewrite Serialize_reversible, to_from_inverse.
+  Qed.
+
+  Global Instance To_From_Serializer : Serializer B :=
+    {
+      serialize := to_from_serialize;
+      deserialize := to_from_deserialize;
+      Serialize_reversible := to_from_serialize_reversible
+    }.
 End combinators.
+Implicit Arguments To_From_Serializer.
+
