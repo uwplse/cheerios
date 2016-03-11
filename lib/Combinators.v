@@ -83,48 +83,6 @@ Section combinators.
       Serialize_reversible := pair_serialize_reversible
     }.
 
-  Variable C : Type.
-  Variable sC : Serializer C.
-
-  Definition triple_serialize (t: A*B*C) :=
-    let (p, c) := t in
-    let (a, b) := p in
-    (serialize a) ++ (serialize b) ++ (serialize c).
-
-  Definition triple_deserialize (bin: list bool): option ((A*B*C) * list bool) :=
-    match deserialize bin with
-    | None => None
-    | Some (a, rest) =>
-    match deserialize rest with
-    | None => None
-    | Some (b, rest) =>
-    match deserialize rest with
-    | None => None
-    | Some (c, remainder) =>
-      Some ((a, b, c), remainder)
-    end
-    end
-    end.
-
-  Lemma triple_serialize_reversible :
-    forall (t: A * B * C) (bin: list bool),
-      triple_deserialize (triple_serialize t ++ bin) = Some (t, bin).
-  Proof.
-    intros.
-    unfold triple_serialize.
-    repeat break_match.
-    unfold triple_deserialize.
-    repeat rewrite app_assoc_reverse.
-    now repeat rewrite Serialize_reversible.
-  Qed.
-
-  Global Instance Triple_Serializer : Serializer (A * B * C) :=
-    {
-      serialize := triple_serialize;
-      deserialize := triple_deserialize;
-      Serialize_reversible := triple_serialize_reversible
-    }.
-
   Fixpoint list_serialize_rec (ts: list A) :=
     match ts with
     | nil => nil
