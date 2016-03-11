@@ -1,6 +1,7 @@
 Require Import StructTactics.
 Require Import List.
 Require Import Types.
+Require Import ZArith.
 
 Section combinators.
   Variable A : Type.
@@ -204,4 +205,36 @@ Section combinators.
     }.
 End combinators.
 Implicit Arguments To_From_Serializer.
+
+Definition Z_to_nat (z : Z) : nat := 2 * (Z.abs_nat z) + Nat.b2n (0 <=? z)%Z.
+
+Definition nat_to_Z (n : nat) : Z :=
+  let abs := Z.of_nat (Nat.div2 n)
+  in
+  if Nat.odd n
+  then abs
+  else Z.opp abs.
+
+Lemma odd_b2n :
+  forall b, Nat.odd (Nat.b2n b) = b.
+Proof.
+  destruct b; auto.
+Qed.
+
+Lemma Z_to_nat_inverse :
+  forall z, nat_to_Z (Z_to_nat z) = z.
+Proof.
+  unfold nat_to_Z, Z_to_nat.
+  intros z.
+  rewrite Nat.div2_div, plus_comm, Nat.add_b2n_double_div2, Zabs2Nat.id_abs.
+  rewrite Nat.odd_add_mul_2, odd_b2n.
+  break_if.
+  - apply Z.leb_le in Heqb.
+    now rewrite Z.abs_eq by omega.
+  - apply Z.leb_gt in Heqb.
+    destruct (Z.abs_spec z); intuition.
+Qed.
+
+Instance Z_Serializer : Serializer Z :=
+  To_From_Serializer Nat_Serializer _ _ Z_to_nat_inverse.
 
