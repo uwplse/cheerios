@@ -7,6 +7,13 @@ Section combinators.
   Variable A : Type.
   Variable sA : Serializer A.
 
+  Hint Rewrite app_assoc_reverse : serialize.
+  (* Need @ on Serialize_reversible so that it doesn't bind early *)
+  Hint Rewrite @Serialize_reversible : serialize.
+
+  Ltac simplify :=
+    repeat (autorewrite with serialize; cbn; auto).
+
   Definition option_serialize (o: option A) :=
     match o with
     | None => serialize false
@@ -35,7 +42,7 @@ Section combinators.
     unfold option_deserialize, option_serialize.
     intros o bin.
     destruct o; simpl; auto.
-    now rewrite Serialize_reversible.
+    simplify.
   Qed.
 
   (* Global here means "redeclare this instance outside the section."
@@ -73,8 +80,7 @@ Section combinators.
     unfold pair_serialize.
     break_match.
     unfold pair_deserialize.
-    rewrite app_assoc_reverse.
-    now repeat rewrite Serialize_reversible.
+    simplify.
   Qed.
 
   Global Instance Pair_Serializer : Serializer (A * B) :=
@@ -115,8 +121,7 @@ Section combinators.
     unfold triple_serialize.
     repeat break_match.
     unfold triple_deserialize.
-    repeat rewrite app_assoc_reverse.
-    now repeat rewrite Serialize_reversible.
+    simplify.
   Qed.
 
   Global Instance Triple_Serializer : Serializer (A * B * C) :=
@@ -162,12 +167,8 @@ Section combinators.
   Proof.
     unfold list_deserialize, list_serialize.
     intros ts bin.
-    rewrite app_assoc_reverse.
-    rewrite Serialize_reversible.
-    induction ts; auto.
-    simpl.
-    rewrite app_assoc_reverse.
-    rewrite Serialize_reversible.
+    simplify.
+    induction ts; simplify.
     now rewrite IHts.
   Qed.
 
@@ -194,7 +195,8 @@ Section combinators.
   Proof.
     unfold to_from_serialize, to_from_deserialize.
     intros b bin.
-    now rewrite Serialize_reversible, to_from_inverse.
+    simplify.
+    now rewrite to_from_inverse.
   Qed.
 
   Global Instance To_From_Serializer : Serializer B :=
