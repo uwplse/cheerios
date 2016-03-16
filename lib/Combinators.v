@@ -1,4 +1,4 @@
-Require Import StructTactics.
+Require Import StructTact.StructTactics.
 Require Import List.
 Require Import Types.
 Require Import ZArith.

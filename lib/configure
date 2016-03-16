@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
+DEPS=(StructTact)
+CANARIES=("StructTact.StructTactics" "Build StructTact before building Cheerios")
+StructTact_PATH="${StructTact_PATH:-../../StructTact}"
+
 source coqproject.sh

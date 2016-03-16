@@ -5,7 +5,7 @@ Import ListNotations.
 Require Import Arith.
 Require Import Nat.
 Require Import Omega.
-Require Import StructTactics.
+Require Import StructTact.StructTactics.
 
 Fixpoint take_rec (acc: list bool) c xs :=
   match c with
