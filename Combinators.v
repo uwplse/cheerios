@@ -239,4 +239,3 @@ Qed.
 
 Instance Z_Serializer : Serializer Z :=
   To_From_Serializer Nat_Serializer _ _ Z_to_nat_inverse.
-

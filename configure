@@ -2,6 +2,6 @@
 
 DEPS=(StructTact)
 CANARIES=("StructTact.StructTactics" "Build StructTact before building Cheerios")
-StructTact_PATH="${StructTact_PATH:-../../StructTact}"
+NAMESPACE__="Cheerios"
 
 source coqproject.sh

@@ -5,5 +5,5 @@
 *.glob
 *.vo
 *.aux
-oCamlTest/._d/
-oCamlTest/cheerios
+_CoqProject
+Makefile.coq
