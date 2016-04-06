@@ -1,6 +1,6 @@
 Require Import StructTact.StructTactics.
 Require Import List.
-Require Import Types.
+Require Import Cheerios.Types.
 Require Import ZArith.
 
 Section combinators.

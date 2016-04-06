@@ -1,6 +1,6 @@
 Require Import Ascii.
 Require Import List.
-Require Import Binary.
+Require Import Cheerios.Binary.
 
 Class Serializer A :=
   {

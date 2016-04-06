@@ -1,8 +1,8 @@
 Require Import Ascii.
 Require Import String.
 Require Import List.
-Require Import Types.
-Require Import Combinators.
+Require Import Cheerios.Types.
+Require Import Cheerios.Combinators.
 
 Fixpoint string_to_list s :=
   match s with
