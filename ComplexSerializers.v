@@ -40,3 +40,10 @@ Proof.
   rewrite Serialize_reversible.
   now rewrite string_to_list_to_string.
 Qed.
+
+Instance string_Serializer : Serializer string :=
+  {|
+    serialize := string_serialize;
+    deserialize := string_deserialize;
+    Serialize_reversible := string_serialize_reversible
+  |}.
