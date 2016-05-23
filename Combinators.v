@@ -1,7 +1,6 @@
 Require Import StructTact.StructTactics.
 Require Import List.
-Require Import Cheerios.Types.
-Require Import ZArith.
+Require Import Cheerios.Core.
 
 Section combinators.
   Variable A : Type.
@@ -12,7 +11,7 @@ Section combinators.
   Hint Rewrite @Serialize_reversible : serialize.
 
   Ltac simplify :=
-    repeat (autorewrite with serialize; cbn; auto).
+    repeat (autorewrite with serialize; try (rewrite deserialize_preserves_input); cbn; auto).
 
   Definition option_serialize (o: option A) :=
     match o with
@@ -35,7 +34,7 @@ Section combinators.
     end
     end.
 
-  Lemma option_serialize_reversible :
+  Lemma option_deserialize_preserves_input :
     forall (o: option A) (bin: list bool),
       option_deserialize (option_serialize o ++ bin) = Some (o, bin).
   Proof.
@@ -51,7 +50,7 @@ Section combinators.
     {
       serialize := option_serialize;
       deserialize := option_deserialize;
-      Serialize_reversible := option_serialize_reversible
+      deserialize_preserves_input := option_deserialize_preserves_input
     }.
 
   Variable B : Type.
@@ -72,7 +71,7 @@ Section combinators.
     end
     end.
 
-  Lemma pair_serialize_reversible :
+  Lemma pair_deserialize_preserves_input :
     forall (p: A * B) (bin: list bool),
       pair_deserialize (pair_serialize p ++ bin) = Some (p, bin).
   Proof.
@@ -87,7 +86,7 @@ Section combinators.
     {
       serialize := pair_serialize;
       deserialize := pair_deserialize;
-      Serialize_reversible := pair_serialize_reversible
+      deserialize_preserves_input := pair_deserialize_preserves_input
     }.
 
   Variable C : Type.
@@ -113,7 +112,7 @@ Section combinators.
     end
     end.
 
-  Lemma triple_serialize_reversible :
+  Lemma triple_deserialize_preserves_input :
     forall (t: A * B * C) (bin: list bool),
       triple_deserialize (triple_serialize t ++ bin) = Some (t, bin).
   Proof.
@@ -128,7 +127,7 @@ Section combinators.
     {
       serialize := triple_serialize;
       deserialize := triple_deserialize;
-      Serialize_reversible := triple_serialize_reversible
+      deserialize_preserves_input := triple_deserialize_preserves_input 
     }.
 
   Fixpoint list_serialize_rec (ts: list A) :=
@@ -161,7 +160,7 @@ Section combinators.
       list_deserialize_rec count rest
     end.
 
-  Lemma list_serialize_reversible :
+  Lemma list_deserialize_preserves_input :
     forall (ts: list A) (bin: list bool),
       list_deserialize (list_serialize ts ++ bin) = Some (ts, bin).
   Proof.
@@ -176,7 +175,7 @@ Section combinators.
     {
       serialize := list_serialize;
       deserialize := list_deserialize;
-      Serialize_reversible := list_serialize_reversible
+      deserialize_preserves_input := list_deserialize_preserves_input
     }.
 
   Variable to : B -> A.
@@ -190,7 +189,7 @@ Section combinators.
     | Some (a, bin) => Some (from a, bin)
     end.
 
-  Lemma to_from_serialize_reversible : forall b bin,
+  Lemma to_from_deserialize_preserves_input : forall b bin,
       to_from_deserialize (to_from_serialize b ++ bin) = Some (b, bin).
   Proof.
     unfold to_from_serialize, to_from_deserialize.
@@ -203,39 +202,6 @@ Section combinators.
     {
       serialize := to_from_serialize;
       deserialize := to_from_deserialize;
-      Serialize_reversible := to_from_serialize_reversible
+      deserialize_preserves_input := to_from_deserialize_preserves_input
     }.
 End combinators.
-Implicit Arguments To_From_Serializer.
-
-Definition Z_to_nat (z : Z) : nat := 2 * (Z.abs_nat z) + Nat.b2n (0 <=? z)%Z.
-
-Definition nat_to_Z (n : nat) : Z :=
-  let abs := Z.of_nat (Nat.div2 n)
-  in
-  if Nat.odd n
-  then abs
-  else Z.opp abs.
-
-Lemma odd_b2n :
-  forall b, Nat.odd (Nat.b2n b) = b.
-Proof.
-  destruct b; auto.
-Qed.
-
-Lemma Z_to_nat_inverse :
-  forall z, nat_to_Z (Z_to_nat z) = z.
-Proof.
-  unfold nat_to_Z, Z_to_nat.
-  intros z.
-  rewrite Nat.div2_div, plus_comm, Nat.add_b2n_double_div2, Zabs2Nat.id_abs.
-  rewrite Nat.odd_add_mul_2, odd_b2n.
-  break_if.
-  - apply Z.leb_le in Heqb.
-    now rewrite Z.abs_eq by omega.
-  - apply Z.leb_gt in Heqb.
-    destruct (Z.abs_spec z); intuition.
-Qed.
-
-Instance Z_Serializer : Serializer Z :=
-  To_From_Serializer Nat_Serializer _ _ Z_to_nat_inverse.

@@ -7,39 +7,6 @@ Require Import Nat.
 Require Import Omega.
 Require Import StructTact.StructTactics.
 
-Fixpoint take_rec (acc: list bool) c xs :=
-  match c with
-    | O => Some (rev acc, xs)
-    | S n =>
-      match xs with
-        | nil => None
-        | x::xs => take_rec (x :: acc) n xs
-      end
-  end.
-
-Definition take c xs :=
-  take_rec nil c xs.
-
-Lemma take_rec_app :
-  forall xs ys acc,
-    take_rec acc (length xs) (xs ++ ys) = Some (rev acc ++ xs, ys).
-Proof.
-  induction xs; simpl; intros ys acc.
-  - now rewrite app_nil_r.
-  - rewrite IHxs.
-    simpl.
-    now rewrite app_assoc_reverse.
-Qed.
-
-Lemma take_app :
-  forall xs ys,
-    take (length xs) (xs ++ ys) = Some (xs, ys).
-Proof.
-  unfold take.
-  intros xs ys.
-  now rewrite take_rec_app.
-Qed.
-
 Fixpoint nat_to_unary n : list bool :=
   match n with
   | 0 => [false]
