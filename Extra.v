@@ -43,6 +43,13 @@ Proof.
   now rewrite string_to_list_to_string.
 Qed.
 
+Instance string_Serializer : Serializer string :=
+  {|
+    serialize := string_serialize;
+    deserialize := string_deserialize;
+    deserialize_preserves_input := string_deserialize_preserves_input
+  |}.
+
 Definition Z_to_nat (z : Z) : nat := 2 * (Z.abs_nat z) + Nat.b2n (0 <=? z)%Z.
 
 Definition nat_to_Z (n : nat) : Z :=
@@ -72,5 +79,6 @@ Proof.
     destruct (Z.abs_spec z); intuition.
 Qed.
 
+Implicit Arguments To_From_Serializer.
 Instance Z_Serializer : Serializer Z :=
   To_From_Serializer Nat_Serializer _ _ Z_to_nat_inverse.
