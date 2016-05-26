@@ -4,6 +4,7 @@ Require Import Vectors.Vector.
 Import VectorNotations.
 
 Require Import Cheerios.Cheerios.
+Require Import Cheerios.Morphism.
 
 (* As a simple example, we can prove that a serialized pair of two As can be
   deserialized as a vector of As of length 2. *)
