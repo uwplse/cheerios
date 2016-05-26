@@ -18,6 +18,8 @@ Arguments Vector.nil {_}.
 Arguments Vector.cons {_} _ {_} _.
 
 
+Section combinators.
+
 (* This section gives instances for various type constructors, including pairs
    and lists. *)
 Variables A B : Type.
@@ -165,3 +167,6 @@ Global Instance vector_Serializer n : Serializer (Vector.t A n) :=
       deserialize := vector_deserialize;
       serialize_deserialize_id := vector_serialize_deserialize_id n
   |}.
+
+End combinators.
+
