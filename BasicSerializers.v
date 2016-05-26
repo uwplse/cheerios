@@ -2,11 +2,11 @@ Require Import List ZArith.
 Import ListNotations.
 
 From StructTact Require Import StructTactics Fin.
-
 Require Vector Fin.
-Require Import Core.
-Require Import Tactics.
-Require Import DeserializerMonad.
+
+Require Import Cheerios.Core.
+Require Import Cheerios.Tactics.
+Require Import Cheerios.DeserializerMonad.
 Import DeserializerNotations.
 
 Definition bool_serialize (b : bool) : list bool := [b].
@@ -54,7 +54,6 @@ Fixpoint positive_deserialize (l : list bool) : option (positive * list bool) :=
                        end
          end
     else Some (xH, l')
-
   end.
 
 Lemma positive_serialize_deserialize_id :

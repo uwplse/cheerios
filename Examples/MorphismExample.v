@@ -1,4 +1,9 @@
-Require Import Cheerios.
+Require Import List.
+Import ListNotations.
+Require Import Vectors.Vector.
+Import VectorNotations.
+
+Require Import Cheerios.Cheerios.
 
 (* As a simple example, we can prove that a serialized pair of two As can be
   deserialized as a vector of As of length 2. *)

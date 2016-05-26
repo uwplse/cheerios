@@ -1,5 +1,7 @@
-Require Export Core.
-Require Export DeserializerMonad.
-Require Export Tactics.
-Require Export BasicSerializers.
+Require Export Cheerios.Core.
+Require Export Cheerios.DeserializerMonad.
+Export DeserializerNotations.
+Require Export Cheerios.Tactics.
+Require Export Cheerios.BasicSerializers.
+Require Export Cheerios.Combinators.
 
