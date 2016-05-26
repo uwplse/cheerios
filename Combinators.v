@@ -31,7 +31,7 @@ Definition option_serialize (x : option A) : list bool :=
   | None => serialize false
   end.
 
-Definition option_deserialize : t (option A) :=
+Definition option_deserialize : deserializer (option A) :=
   b <- deserialize ;;
   match b with
   | true => Some <$> deserialize
@@ -54,7 +54,7 @@ Global Instance option_Serializer : Serializer (option A) :=
 Definition pair_serialize (x : A * B) : list bool :=
   let (a, b) := x in serialize a ++ serialize b.
 
-Definition pair_deserialize : t (A * B) :=
+Definition pair_deserialize : deserializer (A * B) :=
   pair <$> deserialize <*> deserialize.
 
 Lemma pair_serialize_deserialize_id :
@@ -77,7 +77,7 @@ Definition sum_serialize (x : A + B) : list bool :=
   | inr b => serialize false ++ serialize b
   end.
 
-Definition sum_deserialize : t (A + B) :=
+Definition sum_deserialize : deserializer (A + B) :=
   b <- deserialize ;;
   match b with
   | true => inl <$> deserialize
@@ -107,13 +107,13 @@ Fixpoint list_serialize_rec (l : list A) : list bool :=
 Definition list_serialize (l : list A) : list bool :=
   serialize (length l) ++ list_serialize_rec l.
 
-Fixpoint list_deserialize_rec (n : nat) : t (list A) :=
+Fixpoint list_deserialize_rec (n : nat) : deserializer (list A) :=
   match n with
   | 0 => ret []
   | S n' => cons <$> deserialize <*> list_deserialize_rec n'
   end.
 
-Definition list_deserialize : t (list A) :=
+Definition list_deserialize : deserializer (list A) :=
   deserialize >>= list_deserialize_rec.
 
 Lemma list_serialize_deserialize_id_rec :
@@ -143,8 +143,8 @@ Fixpoint vector_serialize {n} (v : Vector.t A n) : list bool :=
   | Vector.cons a v' => serialize a ++ vector_serialize v'
   end.
 
-Fixpoint vector_deserialize {n} : t (Vector.t A n) :=
-  match n as n0 return t (Vector.t A n0) with
+Fixpoint vector_deserialize {n} : deserializer (Vector.t A n) :=
+  match n as n0 return deserializer (Vector.t A n0) with
   | 0 => ret Vector.nil
   | S n' => a <- deserialize ;; v <- vector_deserialize ;; ret (Vector.cons a v)
   end.

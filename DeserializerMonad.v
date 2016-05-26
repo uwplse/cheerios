@@ -1,25 +1,25 @@
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
-Definition t (A : Type) : Type := list bool -> option (A * list bool).
+Definition deserializer (A : Type) : Type := list bool -> option (A * list bool).
 
-Definition ret {A} (a : A) : t A := fun s => Some (a, s).
+Definition ret {A} (a : A) : deserializer A := fun s => Some (a, s).
 
-Definition bind {A B} (m : t A) (f : A -> t B) : t B :=
+Definition bind {A B} (m : deserializer A) (f : A -> deserializer B) : deserializer B :=
   fun s => match m s with None => None
                   | Some (a, s') => f a s'
         end.
 
-Definition get : t (list bool) := fun s => Some (s, s).
+Definition get : deserializer (list bool) := fun s => Some (s, s).
 
-Definition put (s : list bool) : t unit := fun _ => Some (tt, s).
+Definition put (s : list bool) : deserializer unit := fun _ => Some (tt, s).
 
-Definition fail {A} : t A := fun _ => None.
+Definition fail {A} : deserializer A := fun _ => None.
 
 
-Definition fmap {A B} (f : A -> B) (x : t A) : t B :=
+Definition fmap {A B} (f : A -> B) (x : deserializer A) : deserializer B :=
   bind x (fun a => ret (f a)).
 
-Definition sequence {A B} (df : t (A -> B)) (da : t A) : t B :=
+Definition sequence {A B} (df : deserializer (A -> B)) (da : deserializer A) : deserializer B :=
   bind df (fun f => (bind da (fun a => ret (f a)))).
 
 Module DeserializerNotations.

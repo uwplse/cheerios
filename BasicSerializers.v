@@ -11,7 +11,7 @@ Import DeserializerNotations.
 
 Definition bool_serialize (b : bool) : list bool := [b].
 
-Definition bool_deserialize : t bool :=
+Definition bool_deserialize : deserializer bool :=
   l <- get ;;
   match l with
   | [] => fail
@@ -78,7 +78,7 @@ Definition Z_serialize (z : Z) : list bool :=
   | Zneg p => serialize true ++ serialize false ++ serialize p
   end.
 
-Definition Z_deserialize : t Z :=
+Definition Z_deserialize : deserializer Z :=
   tag <- deserialize ;;
   match tag with
   | true => sign <- deserialize ;;
@@ -109,7 +109,7 @@ Definition N_serialize (n : N) : list bool :=
   | Npos p => serialize true ++ serialize p
   end.
 
-Definition N_deserialize : t N :=
+Definition N_deserialize : deserializer N :=
   tag <- deserialize ;;
   match tag with
   | false => ret N0
@@ -134,7 +134,7 @@ Instance N_Serializer : Serializer N :=
    type that is already serializable. *)
 Definition nat_serialize (n : nat) : list bool := serialize (N.of_nat n).
 
-Definition nat_deserialize : t nat := N.to_nat <$> deserialize.
+Definition nat_deserialize : deserializer nat := N.to_nat <$> deserialize.
 
 (* This proof is typical for serializers defined by converting to and from a
    type that is already serializable. Unfold the serializer and deserializer,
@@ -159,7 +159,7 @@ Instance nat_Serializer : Serializer nat :=
 Definition Fin_serialize {n} (x : Fin.t n) : list bool :=
   serialize (proj1_sig (Fin.to_nat x)).
 
-Definition Fin_deserialize {n} : t (Fin.t n) :=
+Definition Fin_deserialize {n} : deserializer (Fin.t n) :=
   m <- deserialize ;;
     match Fin.of_nat m n with
     | inleft x => ret x
@@ -193,7 +193,7 @@ Instance Fin_Serializer n : Serializer (Fin.t n) :=
 Definition fin_serialize {n} (x : fin n) : list bool :=
   serialize (fin_to_nat x).
 
-Definition fin_deserialize {n} : t (fin n) :=
+Definition fin_deserialize {n} : deserializer (fin n) :=
   m <- deserialize ;;
     match fin_of_nat m n with
     | inleft x => ret x
