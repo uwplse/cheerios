@@ -24,17 +24,3 @@ Proof.
   pose proof serialize_deserialize_id a [].
   now rewrite app_nil_r in *.
 Qed.
-
-(* A morphism between two serializable types A and B is a map A -> B that
-   describes what happens if you serialize an A and then deserialize it *as a B*.
-   This captures a binary-level compatibility between the serialization formats
-   for A and B. *)
-
-Notation triangle_spec f :=
-  (forall a bin, deserialize (serialize a ++ bin) = Some (f a, bin)).
-
-Class SerializerMorphism {A B : Type} (sA : Serializer A) (sB : Serializer B) : Type :=
-{
-  map : A -> B;
-  triangle : triangle_spec map
-}.
