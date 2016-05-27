@@ -2,7 +2,7 @@ Require Import List ZArith.
 Import ListNotations.
 
 From StructTact Require Import StructTactics Fin.
-Require Vector Fin.
+Require Fin Ascii.
 
 Require Import Cheerios.Core.
 Require Import Cheerios.Tactics.
@@ -211,4 +211,25 @@ Instance fin_Serializer n : Serializer (fin n) :=
   {| serialize := fin_serialize;
      deserialize := fin_deserialize;
      serialize_deserialize_id := fin_serialize_deserialize_id n
+  |}.
+
+
+Definition ascii_serialize (a : Ascii.ascii) : list bool :=
+  serialize (Ascii.nat_of_ascii a).
+
+Definition ascii_deserialize : deserializer Ascii.ascii :=
+  Ascii.ascii_of_nat <$> deserialize.
+
+Lemma ascii_serialize_deserialize_id :
+  serialize_deserialize_id_spec ascii_serialize ascii_deserialize.
+Proof.
+  unfold ascii_deserialize, ascii_serialize.
+  serialize_deserialize_id_crush.
+  now rewrite Ascii.ascii_nat_embedding.
+Qed.
+
+Instance ascii_Serializer : Serializer Ascii.ascii :=
+  {| serialize := ascii_serialize;
+     deserialize := ascii_deserialize;
+     serialize_deserialize_id := ascii_serialize_deserialize_id
   |}.

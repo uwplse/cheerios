@@ -1,6 +1,6 @@
 Require Import List.
 Import ListNotations.
-Require Vector Fin.
+Require Vector String.
 
 Require Import Cheerios.Core.
 Require Import Cheerios.BasicSerializers.
@@ -167,4 +167,48 @@ Section combinators.
     |}.
 
 End combinators.
+
+
+(* This has to go here because it depends on having a serializer for
+   lists available. *)
+
+Fixpoint string_to_list s :=
+  match s with
+  | String.EmptyString => nil
+  | String.String c s' => c :: (string_to_list s')
+  end.
+
+Fixpoint list_to_string l :=
+  match l with
+  | nil => String.EmptyString
+  | h::l' => String.String h (list_to_string l')
+  end.
+
+Lemma string_to_list_to_string :
+  forall s, list_to_string (string_to_list s) = s.
+Proof.
+  induction s; auto; simpl.
+  now rewrite IHs.
+Qed.
+
+Definition string_serialize (s : String.string) :=
+  serialize (string_to_list s).
+
+Definition string_deserialize : deserializer String.string :=
+  list_to_string <$> deserialize.
+
+Lemma string_serialize_deserialize_id :
+  serialize_deserialize_id_spec string_serialize string_deserialize.
+Proof.
+  unfold string_deserialize, string_serialize.
+  serialize_deserialize_id_crush.
+  now rewrite string_to_list_to_string.
+Qed.
+
+Instance string_Serializer : Serializer String.string :=
+  {| serialize := string_serialize;
+     deserialize := string_deserialize;
+     serialize_deserialize_id := string_serialize_deserialize_id
+  |}.
+
 
