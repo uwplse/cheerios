@@ -1,4 +1,5 @@
 Require Import List.
+Import ListNotations.
 Require Import Cheerios.Core.
 Require Import Cheerios.Combinators.
 Require Import Cheerios.Tactics.
@@ -16,6 +17,14 @@ Class SerializerMorphism {A B : Type} (sA : Serializer A) (sB : Serializer B) : 
   morphism : A -> B;
   triangle : triangle_spec morphism
 }.
+
+Lemma triangle_nil {A B sA sB} {m : @SerializerMorphism A B sA sB}  :
+  forall a, deserialize (serialize a) = Some (morphism a, []).
+Proof.
+  intros.
+  pose proof triangle a [].
+  now rewrite app_nil_r in *.
+Qed.
 
 (* Like Candy Crush if the candy was triangular. *)
 Ltac triangle_crush :=
