@@ -55,7 +55,7 @@ Section combinators.
     let (a, b) := x in serialize a ++ serialize b.
 
   Definition pair_deserialize : deserializer (A * B) :=
-    pair <$> deserialize <*> deserialize.
+    liftD2 pair.
 
   Lemma pair_serialize_deserialize_id :
     serialize_deserialize_id_spec pair_serialize pair_deserialize.

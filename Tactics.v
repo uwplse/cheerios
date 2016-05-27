@@ -5,6 +5,10 @@ Require Import Cheerios.DeserializerMonad.
 
 Ltac deserializer_unfold :=
   unfold (* list in reverse order so that dependencies get unfolded *)
+    liftD4,
+    liftD3,
+    liftD2,
+    liftD1,
     sequence,
     fmap,
     fail,

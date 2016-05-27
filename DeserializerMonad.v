@@ -1,3 +1,5 @@
+Require Import Cheerios.Core.
+
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
 Definition deserializer (A : Type) : Type := list bool -> option (A * list bool).
@@ -34,3 +36,25 @@ Module DeserializerNotations.
 
   Notation "f <*> x" := (@sequence _ _ f x) (at level 42, left associativity).
 End DeserializerNotations.
+
+Import DeserializerNotations.
+
+Section lift.
+  Context {A B C D : Type}.
+  Context {sA : Serializer A}.
+  Context {sB : Serializer B}.
+  Context {sC : Serializer C}.
+  Context {sD : Serializer D}.
+
+  Definition liftD1 {X} (f : D -> X) : deserializer X :=
+    f <$> deserialize.
+
+  Definition liftD2 {X} (f : C -> D -> X) : deserializer X :=
+    (f <$> deserialize) >>= liftD1.
+
+  Definition liftD3 {X} (f : B -> C -> D -> X) : deserializer X :=
+    (f <$> deserialize) >>= liftD2.
+
+  Definition liftD4 {X} (f : A -> B -> C -> D -> X) : deserializer X :=
+    (f <$> deserialize) >>= liftD3.
+End lift.
