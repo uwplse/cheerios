@@ -1,4 +1,5 @@
 Require Import Cheerios.Core.
+Require Import List.
 
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
@@ -17,6 +18,8 @@ Definition put (s : list bool) : deserializer unit := fun _ => Some (tt, s).
 
 Definition fail {A} : deserializer A := fun _ => None.
 
+(* useful for "undoing" a deserialize step *)
+Definition push (l : list bool) : deserializer unit := fun s => Some (tt, l ++ s).
 
 Definition fmap {A B} (f : A -> B) (x : deserializer A) : deserializer B :=
   bind x (fun a => ret (f a)).

@@ -11,6 +11,7 @@ Ltac deserializer_unfold :=
     liftD1,
     sequence,
     fmap,
+    push,
     fail,
     put,
     get,
