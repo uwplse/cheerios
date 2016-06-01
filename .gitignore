@@ -6,4 +6,4 @@
 *.vo
 *.aux
 _CoqProject
-Makefile.coq
+Makefile.coq*
