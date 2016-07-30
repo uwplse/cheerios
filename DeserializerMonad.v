@@ -28,16 +28,19 @@ Definition sequence {A B} (df : deserializer (A -> B)) (da : deserializer A) : d
   bind df (fun f => (bind da (fun a => ret (f a)))).
 
 Module DeserializerNotations.
-  Notation "m >>= f" := (@bind _ _ m f) (at level 42, left associativity).
+  Delimit Scope deserializer with deserializer.
+  Open Scope deserializer.
+
+  Notation "m >>= f" := (@bind _ _ m f) (at level 42, left associativity) : deserializer.
 
   Notation "x <- c1 ;; c2" := (c1 >>= (fun x => c2))
-                                (at level 100, c1 at next level, right associativity).
+                                (at level 100, c1 at next level, right associativity) : deserializer.
   Notation "e1 ;; e2" := (_ <- e1 ;; e2)
-                            (at level 100, right associativity).
+                            (at level 100, right associativity) : deserializer.
 
-  Notation "f <$> x" := (@fmap _ _ f x) (at level 42, left associativity).
+  Notation "f <$> x" := (@fmap _ _ f x) (at level 42, left associativity) : deserializer.
 
-  Notation "f <*> x" := (@sequence _ _ f x) (at level 42, left associativity).
+  Notation "f <*> x" := (@sequence _ _ f x) (at level 42, left associativity) : deserializer.
 End DeserializerNotations.
 
 Import DeserializerNotations.
