@@ -540,10 +540,7 @@ Module extended_example.
   Import DeserializerNotations.
   Definition expr_deserialize : deserializer expr.t :=
     t <- deserialize ;;
-    match expr_untreeify t with
-    | Some e => ret e
-    | None => fail
-    end.
+    unwrap (expr_untreeify t).
 
   Lemma expr_serialize_deserialize_id :
     serialize_deserialize_id_spec expr_serialize expr_deserialize.

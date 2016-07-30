@@ -64,3 +64,10 @@ Section lift.
   Definition liftD4 {X} (f : A -> B -> C -> D -> X) : deserializer X :=
     (f <$> deserialize) >>= liftD3.
 End lift.
+
+Definition unwrap {A} (a : option A) : deserializer A :=
+  match a with
+  | Some a => ret a
+  | None => fail
+  end.
+
