@@ -415,10 +415,6 @@ Section serializer.
     |}.
 End serializer.
 
-Eval compute in deserialize (serialize examples.two) = Some (_ : tree nat, _).
-
-Eval compute in deserialize (serialize (node [examples.two; examples.one])) = Some (_ : tree nat, _).
-
 Module sexp.
   Import String.
 
