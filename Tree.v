@@ -172,11 +172,16 @@ Module naive_serializer.
 End naive_serializer.
 
 (* The shape of a tree can be expressed by mapping (fun _ => tt) over it. *)
-Fixpoint map {A B} (f : A -> B) (t : tree A) : tree B :=
-  match t with
-  | atom a => atom (f a)
-  | node l => node (List.map (map f) l)
-  end.
+Section map.
+  Variable A B : Type.
+  Variable f : A -> B.
+
+  Fixpoint map (t : tree A) : tree B :=
+    match t with
+    | atom a => atom (f a)
+    | node l => node (List.map map l)
+    end.
+End map.
 
 (* Fill out a tree using a list of elements given in preorder traversal order. *)
 Fixpoint fill' {A B} (x : tree A) (bs : list B) : option (tree B * list B) :=
@@ -223,23 +228,10 @@ Definition fill {A B} (x : tree A) (bs : list B) : option (tree B) :=
 
 (* Produce a preorder traversal list of elements *)
 Fixpoint preorder {A} (x : tree A) : list A :=
-  let fix preorder_list (l : list (tree A)) : list A :=
-      match l with
-      | [] => []
-      | x :: l => preorder x ++ preorder_list l
-      end
-  in
   match x with
   | atom a => [a]
-  | node l => preorder_list l
+  | node l => flat_map preorder l
   end.
-
-Definition preorder_list {A} :=
-  fix preorder_list (l : list (tree A)) : list A :=
-      match l with
-      | [] => []
-      | x :: l => preorder x ++ preorder_list l
-      end.
 
 (* Since the shape is expressed as mapping, we will need the fact that filling
    out the a mapped tree with the elements of the original tree gives the
@@ -253,13 +245,12 @@ Proof.
   induction t using tree_rect
   with (P_list := fun l =>
      forall bs,
-       fill'_list (List.map (map f) l) (preorder_list l ++ bs) = Some (l, bs)); intros.
+       fill'_list (List.map (map f) l) (flat_map preorder l ++ bs) = Some (l, bs)); intros.
   - auto.
   - simpl.
     now rewrite app_ass, IHt, IHt0.
   - auto.
   - simpl.
-    fold (@preorder_list B).
     fold (@fill'_list A B).
     now rewrite IHt.
 Qed.
@@ -281,23 +272,10 @@ Section serializer.
   (* Now we're ready to serialize trees. First, we serialize their shape. *)
 
   Fixpoint serialize_tree_shape (t : tree A) : list bool :=
-    let fix serialize_list_tree_shape (l : list (tree A)) : list bool :=
-        match l with
-        | [] => []
-        | x :: xs => serialize_tree_shape x ++ serialize_list_tree_shape xs
-        end
-    in
     match t with
     | atom _ => [true] (* ignore the data, since we're just focused on the shape *)
-    | node l => [false; true] ++ serialize_list_tree_shape l ++ [false; false]
+    | node l => [false; true] ++ flat_map serialize_tree_shape l ++ [false; false]
     end.
-
-  Definition serialize_list_tree_shape :=
-    fix serialize_list_tree_shape (l : list (tree A)) : list bool :=
-        match l with
-        | [] => []
-        | x :: xs => serialize_tree_shape x ++ serialize_list_tree_shape xs
-        end.
 
   Fixpoint deserialize_tree_shape' (acc : list (list (tree unit))) (l : list bool) :
     option (tree unit * list bool) :=
@@ -349,7 +327,7 @@ Section serializer.
           accumulator, so there's no need for a match like there was above.
         *)
        forall ts acc bin,
-         deserialize_tree_shape' (ts :: acc) (serialize_list_tree_shape l ++ bin) =
+         deserialize_tree_shape' (ts :: acc) (flat_map serialize_tree_shape l ++ bin) =
          deserialize_tree_shape' ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc) bin);
     intros.
     - auto.
@@ -358,7 +336,7 @@ Section serializer.
       rewrite IHt0.
       rewrite app_ass. auto.
     - auto.
-    - simpl. fold serialize_list_tree_shape.
+    - simpl.
       rewrite app_ass.
       rewrite IHt.
       simpl.
