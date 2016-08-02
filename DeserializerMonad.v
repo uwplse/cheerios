@@ -1,71 +1,82 @@
-Require Import Cheerios.Core.
 Require Import List.
+From Cheerios Require Import Monoid Core.
 
-(* This is the monad used to write deserializers. It is a state monad with
-    failure, where the state is the serialized bits. *)
-Definition deserializer (A : Type) : Type := list bool -> option (A * list bool).
+Set Implicit Arguments.
+Set Maximal Implicit Insertion.
 
-Definition ret {A} (a : A) : deserializer A := fun s => Some (a, s).
+Section deserializer.
+  Variable bin: Type.
+  Context {mbin : Monoid bin}.
 
-Definition bind {A B} (m : deserializer A) (f : A -> deserializer B) : deserializer B :=
-  fun s => match m s with None => None
-                  | Some (a, s') => f a s'
-        end.
+  (* This is the monad used to write deserializers. It is a state monad with
+      failure, where the state is the serialized bits. *)
+  Definition deserializer A : Type := bin -> option (A * bin).
 
-Definition get : deserializer (list bool) := fun s => Some (s, s).
+  Definition ret {A} (a : A) : deserializer A := fun s => Some (a, s).
 
-Definition put (s : list bool) : deserializer unit := fun _ => Some (tt, s).
+  Definition bind {X Y} (m : deserializer X) (f : X -> deserializer Y) : deserializer Y :=
+    fun s => match m s with None => None
+                    | Some (a, s') => f a s'
+          end.
 
-Definition fail {A} : deserializer A := fun _ => None.
+  Definition get : deserializer bin := fun s => Some (s, s).
 
-(* useful for "undoing" a deserialize step *)
-Definition push (l : list bool) : deserializer unit := fun s => Some (tt, l ++ s).
+  Definition put (s : bin) : deserializer unit := fun _ => Some (tt, s).
 
-Definition fmap {A B} (f : A -> B) (x : deserializer A) : deserializer B :=
-  bind x (fun a => ret (f a)).
+  Definition fail {A} : deserializer A := fun _ => None.
 
-Definition sequence {A B} (df : deserializer (A -> B)) (da : deserializer A) : deserializer B :=
-  bind df (fun f => (bind da (fun a => ret (f a)))).
+  (* useful for "undoing" a deserialize step *)
+  Definition push (l : bin) : deserializer unit := fun s => Some (tt, l +++ s).
+
+  Definition fmap {X Y} (f : X -> Y) (x : deserializer X) : deserializer Y :=
+    bind x (fun x => ret (f x)).
+
+  Definition sequence {X Y} (df : deserializer (X -> Y)) (dx : deserializer X) : deserializer Y :=
+    bind df (fun f => (bind dx (fun x => ret (f x)))).
+End deserializer.
 
 Module DeserializerNotations.
   Delimit Scope deserializer with deserializer.
   Open Scope deserializer.
 
-  Notation "m >>= f" := (@bind _ _ m f) (at level 42, left associativity) : deserializer.
+  Notation "m >>= f" := (@bind _ _ _ m f) (at level 42, left associativity) : deserializer.
 
   Notation "x <- c1 ;; c2" := (c1 >>= (fun x => c2))
                                 (at level 100, c1 at next level, right associativity) : deserializer.
   Notation "e1 ;; e2" := (_ <- e1 ;; e2)
                             (at level 100, right associativity) : deserializer.
 
-  Notation "f <$> x" := (@fmap _ _ f x) (at level 42, left associativity) : deserializer.
+  Notation "f <$> x" := (@fmap _ _ _ f x) (at level 42, left associativity) : deserializer.
 
-  Notation "f <*> x" := (@sequence _ _ f x) (at level 42, left associativity) : deserializer.
+  Notation "f <*> x" := (@sequence _ _ _ f x) (at level 42, left associativity) : deserializer.
 End DeserializerNotations.
 
 Import DeserializerNotations.
 
 Section lift.
-  Context {A B C D : Type}.
-  Context {sA : Serializer A}.
-  Context {sB : Serializer B}.
-  Context {sC : Serializer C}.
-  Context {sD : Serializer D}.
+  Context {bin : Type}.
+  Context {mbin : Monoid bin}.
 
-  Definition liftD1 {X} (f : D -> X) : deserializer X :=
+  Context {A B C D : Type}.
+  Context {sA : Serializer bin A}.
+  Context {sB : Serializer bin B}.
+  Context {sC : Serializer bin C}.
+  Context {sD : Serializer bin D}.
+
+  Definition liftD1 {X} (f : D -> X) : deserializer bin X :=
     f <$> deserialize.
 
-  Definition liftD2 {X} (f : C -> D -> X) : deserializer X :=
+  Definition liftD2 {X} (f : C -> D -> X) : deserializer bin X :=
     (f <$> deserialize) >>= liftD1.
 
-  Definition liftD3 {X} (f : B -> C -> D -> X) : deserializer X :=
+  Definition liftD3 {X} (f : B -> C -> D -> X) : deserializer bin X :=
     (f <$> deserialize) >>= liftD2.
 
-  Definition liftD4 {X} (f : A -> B -> C -> D -> X) : deserializer X :=
+  Definition liftD4 {X} (f : A -> B -> C -> D -> X) : deserializer bin X :=
     (f <$> deserialize) >>= liftD3.
 End lift.
 
-Definition unwrap {A} (a : option A) : deserializer A :=
+Definition unwrap {bin} {A} (a : option A) : deserializer bin A :=
   match a with
   | Some a => ret a
   | None => fail

@@ -5,10 +5,10 @@
    types can be serialized by first converting to a tree and then serializing.
 *)
 
-Require Import List.
+Require Import List ZArith.
 Import ListNotations.
 
-Require Import Cheerios.Cheerios.
+From Cheerios Require Import Cheerios ListBoolSerializers.
 Import DeserializerNotations.
 
 Set Implicit Arguments.
@@ -70,8 +70,10 @@ End tree.
    Converting a tree to a bitstream could be done naively as follows:
 *)
 Module naive_serializer.
+  Section naive_serializer.
+
   Variable A : Type.
-  Context {sA : Serializer A}.
+  Context {sA : Serializer (list bool) A}.
 
   Fixpoint tree_serialize (t : tree A) : list bool :=
     let fix list_tree_serialize (l : list (tree A)) : list bool :=
@@ -169,6 +171,7 @@ Module naive_serializer.
      deserialize, deserialize the shape (no problem with structural recursion!)
      and then fill it out with the list of elements.
    *)
+  End naive_serializer.
 End naive_serializer.
 
 (* The shape of a tree can be expressed by mapping (fun _ => tt) over it. *)
@@ -182,6 +185,17 @@ Section map.
     | node l => node (List.map map l)
     end.
 End map.
+
+Section flat_map.
+  Variable A B : Type.
+  Variable f : A -> tree B.
+
+  Fixpoint flat_map (t : tree A) : tree B :=
+    match t with
+    | atom a => f a
+    | node l => node (List.map flat_map l)
+    end.
+End flat_map.
 
 (* Fill out a tree using a list of elements given in preorder traversal order. *)
 Fixpoint fill' {A B} (x : tree A) (bs : list B) : option (tree B * list B) :=
@@ -230,7 +244,7 @@ Definition fill {A B} (x : tree A) (bs : list B) : option (tree B) :=
 Fixpoint preorder {A} (x : tree A) : list A :=
   match x with
   | atom a => [a]
-  | node l => flat_map preorder l
+  | node l => List.flat_map preorder l
   end.
 
 (* Since the shape is expressed as mapping, we will need the fact that filling
@@ -245,7 +259,7 @@ Proof.
   induction t using tree_rect
   with (P_list := fun l =>
      forall bs,
-       fill'_list (List.map (map f) l) (flat_map preorder l ++ bs) = Some (l, bs)); intros.
+       fill'_list (List.map (map f) l) (List.flat_map preorder l ++ bs) = Some (l, bs)); intros.
   - auto.
   - simpl.
     now rewrite app_ass, IHt, IHt0.
@@ -267,14 +281,14 @@ Qed.
 
 Section serializer.
   Variables A : Type.
-  Variable sA : Serializer A.
+  Variable sA : Serializer (list bool) A.
 
   (* Now we're ready to serialize trees. First, we serialize their shape. *)
 
   Fixpoint serialize_tree_shape (t : tree A) : list bool :=
     match t with
     | atom _ => [true] (* ignore the data, since we're just focused on the shape *)
-    | node l => [false; true] ++ flat_map serialize_tree_shape l ++ [false; false]
+    | node l => [false; true] ++ List.flat_map serialize_tree_shape l ++ [false; false]
     end.
 
   Fixpoint deserialize_tree_shape' (acc : list (list (tree unit))) (l : list bool) :
@@ -327,7 +341,7 @@ Section serializer.
           accumulator, so there's no need for a match like there was above.
         *)
        forall ts acc bin,
-         deserialize_tree_shape' (ts :: acc) (flat_map serialize_tree_shape l ++ bin) =
+         deserialize_tree_shape' (ts :: acc) (List.flat_map serialize_tree_shape l ++ bin) =
          deserialize_tree_shape' ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc) bin);
     intros.
     - auto.
@@ -363,7 +377,7 @@ Section serializer.
 
   (* To deserialize, we deserialize the shape and the elements, and then fill out
      the shape with the elements. *)
-  Definition tree_deserialize : deserializer (tree A) :=
+  Definition tree_deserialize : deserializer (list bool) (tree A) :=
     shape <- deserialize_tree_shape ;;
     elems <- deserialize ;;
     match fill shape elems with
@@ -380,13 +394,14 @@ Section serializer.
     serialize_deserialize_id_spec tree_serialize tree_deserialize.
   Proof.
     unfold tree_serialize, tree_deserialize.
-    serialize_deserialize_id_crush.
+    cheerios_crush.
+    rewrite <- !fold_list_mappend.
     rewrite serialize_deserialize_shape_id.
-    serialize_deserialize_id_crush.
+    cheerios_crush.
     now rewrite fill_preorder.
   Qed.
 
-  Global Instance tree_Serializer : Serializer (tree A) :=
+  Global Instance tree_Serializer : Serializer (list bool) (tree A) :=
     {| serialize := tree_serialize;
         deserialize := tree_deserialize;
         serialize_deserialize_id := tree_serialize_deserialize_id
@@ -431,6 +446,14 @@ Module extended_example.
     | Lam : t -> t
     | App : t -> t -> t
     .
+
+    Module examples.
+      Definition id : t := Lam (Var 0).
+
+      Definition omega : t := App (Lam (App (Var 0) (Var 0)))
+                                  (Lam (App (Var 0) (Var 0))).
+    End examples.
+
   End expr.
 
   (* Generally, the atoms of the tree will contain the constructor names and
@@ -453,7 +476,7 @@ Module extended_example.
 
     Import DeserializerNotations.
 
-    Definition tag_deserialize : deserializer t :=
+    Definition tag_deserialize : deserializer (list bool) t :=
       n <- deserialize ;;
       match n with
       | 0 => Var <$> deserialize
@@ -466,10 +489,10 @@ Module extended_example.
       serialize_deserialize_id_spec tag_serialize tag_deserialize.
     Proof.
       unfold tag_serialize, tag_deserialize.
-      destruct a; serialize_deserialize_id_crush.
+      destruct a; cheerios_crush.
     Qed.
 
-    Instance tag_Serializer : Serializer t :=
+    Instance tag_Serializer : Serializer (list bool) t :=
       {| serialize := tag_serialize;
          deserialize := tag_deserialize;
          serialize_deserialize_id := tag_serialize_deserialize_id
@@ -516,7 +539,7 @@ Module extended_example.
     serialize (expr_treeify e).
 
   Import DeserializerNotations.
-  Definition expr_deserialize : deserializer expr.t :=
+  Definition expr_deserialize : deserializer (list bool) expr.t :=
     t <- deserialize ;;
     unwrap (expr_untreeify t).
 
@@ -524,11 +547,11 @@ Module extended_example.
     serialize_deserialize_id_spec expr_serialize expr_deserialize.
   Proof.
     unfold expr_serialize, expr_deserialize.
-    serialize_deserialize_id_crush.
+    cheerios_crush.
     now rewrite expr_treeify_untreeify_id.
   Qed.
 
-  Instance expr_Serializer : Serializer expr.t :=
+  Instance expr_Serializer : Serializer (list bool) expr.t :=
     {| serialize := expr_serialize;
        deserialize := expr_deserialize;
        serialize_deserialize_id := expr_serialize_deserialize_id
