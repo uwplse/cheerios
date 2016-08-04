@@ -279,8 +279,18 @@ Proof.
   now rewrite fill'_preorder.
 Qed.
 
+Section Forall.
+  Variable A : Type.
+  Variable P : A -> Prop.
+
+  Inductive Forall : tree A -> Prop :=
+  | Forall_atom : forall a, P a -> Forall (atom a)
+  | Forall_node : forall l, List.Forall Forall l -> Forall (node l)
+  .
+End Forall.
+
 Section serializer.
-  Variables A : Type.
+  Variable A : Type.
   Variable sA : Serializer (list bool) A.
 
   (* Now we're ready to serialize trees. First, we serialize their shape. *)
