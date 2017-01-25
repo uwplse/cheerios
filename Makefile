@@ -1,3 +1,8 @@
+COQPROJECT_EXISTS=$(wildcard _CoqProject)
+ifeq "$(COQPROJECT_EXISTS)" ""
+$(error "Run ./configure before running make")
+endif
+
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
