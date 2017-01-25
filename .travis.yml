@@ -1,0 +1,16 @@
+language: c
+addons:
+  apt:
+    sources:
+      - avsm
+    packages:
+      - ocaml
+      - opam
+      - aspcud
+env:
+  global:
+    - COQ_VERSION=8.5.3
+script: bash -ex .travis-ci.sh
+sudo: false
+notifications:
+  email: false
