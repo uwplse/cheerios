@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 ./configure
-make
+time make -k -j 3 "$@"

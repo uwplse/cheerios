@@ -8,7 +8,8 @@ addons:
       - opam
       - aspcud
 env:
-  global:
+  matrix:
+    - COQ_VERSION=8.6
     - COQ_VERSION=8.5.3
 script: bash -ex .travis-ci.sh
 sudo: false

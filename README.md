@@ -11,7 +11,7 @@ that serializing followed by deserializing is the identity.
 Requirements
 ------------
 
-- [`Coq 8.5`](https://coq.inria.fr/download)
+- [`Coq 8.5`](https://coq.inria.fr/coq-85) or [`Coq 8.6`](https://coq.inria.fr/coq-86)
 - [`StructTact`](https://github.com/uwplse/StructTact)
 
 Usage
