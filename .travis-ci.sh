@@ -8,6 +8,4 @@ opam repo add distributedcomponents-dev http://opam-dev.distributedcomponents.ne
 
 opam pin add coq $COQ_VERSION --yes --verbose
 
-opam install StructTact --yes --verbose
-
-./build.sh
+opam pin add cheerios . --yes --verbose
