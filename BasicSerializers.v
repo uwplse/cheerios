@@ -2,7 +2,7 @@ Require Import List ZArith.
 Import ListNotations.
 
 From StructTact Require Import StructTactics Fin.
-Require Fin Ascii.
+Require Fin Ascii String.
 
 Require Import Cheerios.Core.
 Require Import Cheerios.Tactics.
@@ -215,21 +215,170 @@ Instance fin_Serializer n : Serializer (fin n) :=
 
 
 Definition ascii_serialize (a : Ascii.ascii) : list bool :=
-  serialize (Ascii.nat_of_ascii a).
+  serialize (Ascii.N_of_ascii a).
 
 Definition ascii_deserialize : deserializer Ascii.ascii :=
-  Ascii.ascii_of_nat <$> deserialize.
+  Ascii.ascii_of_N <$> deserialize.
 
 Lemma ascii_serialize_deserialize_id :
   serialize_deserialize_id_spec ascii_serialize ascii_deserialize.
 Proof.
   unfold ascii_deserialize, ascii_serialize.
   serialize_deserialize_id_crush.
-  now rewrite Ascii.ascii_nat_embedding.
+  now rewrite Ascii.ascii_N_embedding.
 Qed.
 
 Instance ascii_Serializer : Serializer Ascii.ascii :=
   {| serialize := ascii_serialize;
      deserialize := ascii_deserialize;
      serialize_deserialize_id := ascii_serialize_deserialize_id
+  |}.
+
+Require Import mathcomp.ssreflect.ssreflect.
+
+Theorem list_ind_cons2 :
+ forall (B:Set) (P:list B -> Prop),
+   P nil ->
+   (forall x:B, P (x :: nil)) ->
+   (forall (x1 x2:B) (l:list B), P l -> P (x1 :: x2 :: l)) ->
+   forall l:list B, P l.
+Proof.
+move => B P P0 P1 Pr l; cut (P l /\ (forall x:B, P (x :: l))); first by intuition.
+by elim: l; intuition.
+Qed.
+
+Lemma positive_deserialize_lt_length :
+  forall l l' p,
+    positive_deserialize l = Some (p, l') ->
+    length l' < length l.
+Proof.
+elim/list_ind_cons2 => //=.
+- case => //=.
+  move => l' p H_eq.
+  injection H_eq => H_eq_l H_eq_p.
+  by rewrite -H_eq_l.
+- case; case => l IH l' p H_eq.
+  * destruct (positive_deserialize l) => //.
+    break_let.
+    find_injection.
+    have IH' := IH l' p1 (eq_refl _).
+    by auto with arith.
+  * destruct (positive_deserialize l) => //.
+    break_let.
+    find_injection.
+    have IH' := IH l' p1 (eq_refl _).
+    by auto with arith.
+  * find_injection.
+    rewrite /=.
+    by auto with arith.
+  * find_injection.
+    rewrite /=.
+    by auto with arith.
+Qed.
+
+Lemma N_deserialize_lt_length :
+  forall l l' n,
+    N_deserialize l = Some (n, l') ->
+    length l' < length l.
+Proof.
+move => l l' n.
+rewrite /N_deserialize /bind /deserialize /= /bool_deserialize /bind /get /fmap /get /ret /= /bind.
+case: l => //=.
+case => l.
+- case H_eq: (positive_deserialize l) => [p|] H_eq'; last by congruence.
+  break_let.
+  find_injection.
+  have H_lt := positive_deserialize_lt_length _ _ _ H_eq.
+  by auto with arith.
+- move => H_eq.
+  find_injection.
+  by auto with arith.
+Qed.
+
+Lemma ascii_deserialize_lt_length :
+  forall l l' c,
+    ascii_deserialize l = Some (c, l') ->
+    length l' < length l.
+Proof.
+move => l l' c.
+rewrite /ascii_deserialize /bind /deserialize /= /fmap /get /bind /ret.
+case H_eq: (N_deserialize l) => [n|] H_eq'; last by congruence.
+break_let.
+find_injection.
+exact: N_deserialize_lt_length _ _ _ H_eq.
+Qed.
+
+Fixpoint string_serialize (s : String.string) : list bool :=
+match s with
+| String.EmptyString => serialize false
+| String.String c s' => serialize true ++ ascii_serialize c ++ string_serialize s'
+end.
+
+Definition len_lt (l1 l2 : list bool) :=
+  length l1 < length l2.
+
+Theorem len_lt_well_founded : well_founded len_lt.
+Proof.
+ apply well_founded_lt_compat with (f := fun l => length l); auto.
+Defined.
+
+Definition string_deserialize_t (l : list bool) := option (String.string * list bool).
+
+Definition string_deserialize_F l (string_deserialize_rec : forall l', len_lt l' l -> string_deserialize_t l') : string_deserialize_t l.
+refine
+(match l as l_eq return (l = l_eq -> _) with
+| [] => fun _ => None
+| false :: l' => fun _ => Some (String.EmptyString, l')
+| true :: l' =>
+  fun H_l_eq =>
+  match ascii_deserialize l' as l_ad return (_ = l_ad -> _) with
+  | None => fun _ => None
+  | Some (c, l0) =>
+    fun H_ad_eq =>
+    match string_deserialize_rec l0 _ with
+    | None => None
+    | Some (s, l1) =>
+      Some (String.String c s, l1)
+    end
+  end (refl_equal _)
+end (refl_equal _)).
+rewrite H_l_eq /= /len_lt /=.
+apply ascii_deserialize_lt_length in H_ad_eq.
+auto with arith.
+Defined.
+
+Definition string_deserialize : forall l, string_deserialize_t l :=
+ Fix len_lt_well_founded string_deserialize_t string_deserialize_F.
+
+Lemma string_deserialize_F_aux :
+forall (x : list bool) (f g : forall y : list bool, len_lt y x -> string_deserialize_t y),
+  (forall (y : list bool) (p : len_lt y x), f y p = g y p) -> string_deserialize_F x f = string_deserialize_F x g.
+Proof.
+case => //=.
+rewrite /len_lt /=.
+move => a l f g H_eq.
+break_if => //.
+rewrite /eq_ind_r /=.
+Admitted.
+
+Lemma string_serialize_deserialize_id :
+  serialize_deserialize_id_spec string_serialize string_deserialize.
+Proof.
+unfold string_serialize, string_deserialize.
+move => a bin.
+rewrite Fix_eq /=; last exact: string_deserialize_F_aux.
+rewrite -/(string_serialize _).
+move: a bin.
+elim => //= a s IH l.
+rewrite -app_assoc.
+rewrite ascii_serialize_deserialize_id.
+have IH' := IH l.
+rewrite -Fix_eq in IH'; last exact: string_deserialize_F_aux.
+by rewrite IH'.
+Qed.
+
+Instance string_Serializer : Serializer String.string :=
+  {| serialize := string_serialize;
+     deserialize := string_deserialize;
+     serialize_deserialize_id := string_serialize_deserialize_id
   |}.
