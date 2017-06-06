@@ -359,7 +359,11 @@ rewrite /len_lt /=.
 move => a l f g H_eq.
 break_if => //.
 rewrite /eq_ind_r /=.
-Admitted.
+generalize (ascii_deserialize_lt_length l). intro Had.
+destruct (ascii_deserialize l); auto.
+destruct p.
+rewrite H_eq. auto.
+Qed.
 
 Lemma string_serialize_deserialize_id :
   serialize_deserialize_id_spec string_serialize string_deserialize.
