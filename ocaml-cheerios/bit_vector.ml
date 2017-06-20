@@ -56,7 +56,8 @@ let pushBack v bit =
         let bytes' = Bytes.init length' (fun _ -> Char.chr 0) in
         let rec copy i =
           if i = length then ()
-          else Bytes.set bytes' i (Bytes.get v.bytes i)
+          else (Bytes.set bytes' i (Bytes.get v.bytes i);
+                copy (i + 1))
         in (copy 0; v.bytes <- bytes')
    else ());  
                let c = setMsb (Bytes.get v.bytes j) o bit in
