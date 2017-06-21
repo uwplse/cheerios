@@ -271,11 +271,13 @@ Proof.
   apply positive_step.
 Qed.
 
-Instance positive_Serializer : Serializer positive :=
-  {| serialize := serialize_positive;
+Instance positive_Serializer : Serializer positive.
+Proof.
+  exact ({| serialize := serialize_positive;
      deserialize := deserialize_positive;
      serialize_deserialize_id := serialize_deserialize_positive_id
-  |}.
+         |}).
+Qed.
 
 (* nat *)
 
@@ -297,12 +299,8 @@ Proof.
   intros.
   unfold serialize_N, deserialize_N.
   destruct a.
-  - cheerios_crush. simpl. 
-    cheerios_crush.
-  - rewrite Deserializer.bind_unwrap.
-    rewrite Serializer.append_unwrap.
-    rewrite app_ass.
-    cheerios_crush.
+  - repeat (cheerios_crush; simpl).
+  - repeat (cheerios_crush; simpl). 
 Qed.
 
 Instance N_Serializer : Serializer N :=
