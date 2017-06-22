@@ -1,6 +1,11 @@
 type __ = Obj.t
 let __ = let rec f _ = Obj.repr f in Obj.repr f
 
+type positive =
+| XI of positive
+| XO of positive
+| XH
+
 module type SERIALIZER =
  sig
   type t
@@ -130,39 +135,55 @@ type 'a serializer = { serialize : ('a -> Serializer.t); deserialize : 'a Deseri
 
 let serialize x = x.serialize
 
-(** val deserialize : 'a1 serializer -> 'a1 Deserializer.t **)
-
-let deserialize x = x.deserialize
-
 (** val bool_Serializer : bool serializer **)
 
 let bool_Serializer =
   { serialize = Serializer.putBit; deserialize = Deserializer.getBit }
 
-(** val pair_serialize :
-    'a1 serializer -> 'a2 serializer -> ('a1 * 'a2) -> Serializer.t **)
+(** val serialize_positive : positive -> Serializer.t **)
 
-let pair_serialize sA sB = function
-| (a, b) -> Serializer.append (sA.serialize a) (sB.serialize b)
+let rec serialize_positive = function
+| XI p0 ->
+  Serializer.append (bool_Serializer.serialize true)
+    (Serializer.append (bool_Serializer.serialize true) (serialize_positive p0))
+| XO p0 ->
+  Serializer.append (bool_Serializer.serialize true)
+    (Serializer.append (bool_Serializer.serialize false) (serialize_positive p0))
+| XH -> bool_Serializer.serialize false
 
-(** val pair_deserialize :
-    'a1 serializer -> 'a2 serializer -> ('a1 * 'a2) Deserializer.t **)
+(** val deserialize_positive_step :
+    bool -> (bool * (positive -> positive)) -> (bool * (positive -> positive), positive)
+    Serializer_primitives.fold_state **)
 
-let pair_deserialize sA sB =
-  Deserializer.bind sA.deserialize (fun a ->
-    Deserializer.bind sB.deserialize (fun b -> Deserializer.ret (a, b)))
+let deserialize_positive_step b = function
+| (is_digit, k) ->
+  if is_digit
+  then Serializer_primitives.More (false, (fun p -> k (if b then XI p else XO p)))
+  else if b
+       then Serializer_primitives.More (true, k)
+       else Serializer_primitives.Done (k XH)
 
-(** val pair_Serializer : 'a1 serializer -> 'a2 serializer -> ('a1 * 'a2) serializer **)
+(** val deserialize_positive : positive Deserializer.t **)
 
-let pair_Serializer sA sB =
-  { serialize = (pair_serialize sA sB); deserialize = (pair_deserialize sA sB) }
+let deserialize_positive =
+  Deserializer.fold deserialize_positive_step (false, (fun p -> p))
+let rec print_positive p =
+  match p with
+  | XI p -> Printf.printf "XI "; print_positive p
+  | XO p -> Printf.printf "XO "; print_positive p
+  | XH -> Printf.printf "XH\n"
+;;
 
-(** val serialize_bool_pair : (bool * bool) -> Serializer.t **)
+let test_positive p = 
+  let w = Bit_vector.makeWriter () in
+  let _ = serialize_positive p w in
+  let r = Bit_vector.writerToReader w in
+  let p' = deserialize_positive r in
+  let true = p = p' in
+  ()
+;;
 
-let serialize_bool_pair =
-  (pair_Serializer bool_Serializer bool_Serializer).serialize
-
-(** val deserialize_bool_pair : (bool * bool) Deserializer.t **)
-
-let deserialize_bool_pair =
-  (pair_Serializer bool_Serializer bool_Serializer).deserialize
+let _ = test_positive XH;
+        test_positive (XI XH);
+        test_positive (XO XH);
+        test_positive (XI (XO (XI (XI XH))));
