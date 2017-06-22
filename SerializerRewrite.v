@@ -1,3 +1,4 @@
+
 Require Import List ZArith.
 Import ListNotations.
 Set Implicit Arguments.
@@ -119,7 +120,6 @@ Module Deserializer : DESERIALIZER.
   Definition map {A B} (f : A -> B) (d : t A) : t B :=
     bind d (fun a => ret (f a)).
 
-
   Lemma getBit_unwrap : forall l,
       unwrap getBit l = match l with
                         | [] => None
@@ -189,12 +189,6 @@ Hint Rewrite app_ass
      Deserializer.bind_unwrap Deserializer.ret_unwrap
      Deserializer.map_unwrap @Deserializer.fold_unwrap : cheerios.
 
-Lemma id: serialize_deserialize_id_spec Serializer.putBit Deserializer.getBit.
-Proof.
-  intros.
-  cheerios_crush.
-Qed.
-
 Class Serializer (A : Type) : Type :=
   {
     serialize : A -> Serializer.t;
@@ -228,14 +222,54 @@ Instance bool_Serializer : Serializer bool :=
      serialize_deserialize_id := bool_serialize_deserialize_id
   |}.
 
+(* this needs to go here because we need the bool_Serializer instance *)
+
+Lemma fold_append_unwrap :
+  forall {S A : Type}
+         (f : bool -> S -> fold_state S A) (s : S)
+         (b : bool) (tail : Serializer.t) (bin : list bool),
+    Deserializer.unwrap (Deserializer.fold f s)
+                        (Serializer.unwrap (Serializer.append
+                                              (serialize b)
+                                              tail) ++ bin) =
+    match f b s with
+    | Done a => Some(a, Serializer.unwrap tail ++ bin)
+    | More s => Deserializer.unwrap (Deserializer.fold f s)
+                                    (Serializer.unwrap tail ++ bin)
+    | Error => None
+    end.
+Proof.
+  cheerios_crush.
+Qed.
+
+Lemma fold_append_unwrap' :
+  forall {S A : Type}
+         (f : bool -> S -> fold_state S A) (s : S)
+         (b : bool) (tail : Serializer.t) (bin : list bool),
+    Deserializer.unwrap (Deserializer.fold f s)
+                        (Serializer.unwrap (Serializer.append
+                                              (Serializer.putBit b)
+                                              tail) ++ bin) =
+    match f b s with
+    | Done a => Some(a, Serializer.unwrap tail ++ bin)
+    | More s => Deserializer.unwrap (Deserializer.fold f s)
+                                    (Serializer.unwrap tail ++ bin)
+    | Error => None
+    end.
+Proof.
+  cheerios_crush.
+Qed.
+
 (* positive *)
 
 Fixpoint serialize_positive (p : positive) : Serializer.t :=
   match p with
-  | xI p => Serializer.append (Serializer.append (serialize true) (serialize true))
-                   (serialize_positive p)
-  | xO p => Serializer.append (Serializer.append (serialize true) (serialize false))
-                   (serialize_positive p)
+  | xI p => Serializer.append (serialize true)
+                              (Serializer.append (serialize true)
+                                                 (serialize_positive p))
+  | xO p => Serializer.append  (serialize true)
+                               (Serializer.append (serialize false)
+                                                  (serialize_positive p))
   | xH => serialize false
   end.
 
@@ -249,6 +283,8 @@ Definition deserialize_positive_step :=
                             else Done(k xH)
     end.
 
+Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
+
 Definition deserialize_positive : Deserializer.t positive :=
   Deserializer.fold deserialize_positive_step (false, (fun p => p)).
 
@@ -258,8 +294,9 @@ Lemma positive_step : forall (p : positive) (k : positive -> positive) (bin : li
 Proof.
   induction p;
     intros;
-    repeat (cheerios_crush; simpl;
-            try rewrite IHp).
+    unfold serialize_positive;
+    fold serialize_positive;
+    repeat (cheerios_crush; simpl; try (now rewrite IHp)).
 Qed.
 
 Theorem serialize_deserialize_positive_id :
@@ -298,9 +335,8 @@ Theorem serialize_deserialize_N_id :
 Proof.
   intros.
   unfold serialize_N, deserialize_N.
-  destruct a.
-  - repeat (cheerios_crush; simpl).
-  - repeat (cheerios_crush; simpl). 
+  destruct a;
+    repeat (cheerios_crush; simpl).
 Qed.
 
 Instance N_Serializer : Serializer N :=
@@ -340,15 +376,15 @@ Section combinators.
   Definition pair_serialize (x : A * B) : Serializer.t :=
     let (a, b) := x in Serializer.append (serialize a) (serialize b).
   
-  Definition pair_deserialize
-             (dA: Deserializer.t A) (dB : Deserializer.t B) : Deserializer.t (A * B) :=
-    Deserializer.bind dA (fun a =>
-                            Deserializer.bind dB (fun b =>
-                                                    Deserializer.ret (a, b))).
+  Definition pair_deserialize : Deserializer.t (A * B) :=
+    Deserializer.bind deserialize
+                      (fun (a : A) =>
+                         Deserializer.bind deserialize
+                                           (fun b =>
+                                              Deserializer.ret (a, b))).
 
-  Lemma serialize_deserialize_pair :
-    serialize_deserialize_id_spec pair_serialize
-                                        (pair_deserialize deserialize deserialize).
+  Lemma serialize_deserialize_pair_id :
+    serialize_deserialize_id_spec pair_serialize pair_deserialize.
   Proof.
     intros.
     unfold pair_serialize, pair_deserialize.
@@ -356,6 +392,11 @@ Section combinators.
     cheerios_crush.
   Qed.
 
+  Global Instance pair_Serializer : Serializer (A * B) :=
+    {| serialize := pair_serialize;
+     deserialize := pair_deserialize;
+     serialize_deserialize_id := serialize_deserialize_pair_id |}.
+  
 (* option *)
   
   Definition option_serialize (x : option A) : Serializer.t :=
@@ -452,3 +493,26 @@ Definition deserialize_tree_shape :=
 
 Eval cbv in (serialize_tree_shape
                (Branch tt Leaf Leaf)).
+
+Extract Constant Serializer.t => "Serializer_primitives.serializer".
+Extract Constant Deserializer.t "'a"  => "'a Serializer_primitives.deserializer".
+Extract Inductive fold_state => "Serializer_primitives.fold_state"
+                                  ["Serializer_primitives.Done"
+                                     "Serializer_primitives.More"
+                                     "Serializer_primitives.Error"].
+Extract Constant Serializer.putBit => "Serializer_primitives.putBit".
+Extract Constant Serializer.empty => "Serializer_primitives.empty".
+Extract Constant Serializer.append => "Serializer_primitives.append".
+Extract Constant Deserializer.bind => "Serializer_primitives.bind".
+Extract Constant Deserializer.getBit => "Serializer_primitives.getBit".
+Extract Constant Deserializer.ret => "Serializer_primitives.ret".
+Extract Constant Deserializer.fold => "Serializer_primitives.fold".
+
+Extract Constant Serializer.unwrap => "Obj.magic".
+Extract Constant Deserializer.unwrap => "Obj.magic".
+
+Require Import ExtrOcamlBasic.
+
+Definition bool_pair_serialize (b1 b2 : bool) := serialize (b1, b2).
+
+Extraction "ocaml-cheerios/BoolPair.ml" bool_pair_serialize.
