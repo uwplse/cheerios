@@ -513,6 +513,10 @@ Extract Constant Deserializer.unwrap => "Obj.magic".
 
 Require Import ExtrOcamlBasic.
 
-Definition bool_pair_serialize (b1 b2 : bool) := serialize (b1, b2).
+Definition bool_pair_serialize : (bool * bool) -> Serializer.t :=
+  serialize.
 
-Extraction "ocaml-cheerios/BoolPair.ml" bool_pair_serialize.
+Definition bool_pair_deserialize : Deserializer.t (bool * bool) :=
+  deserialize.
+
+Extraction "ocaml-cheerios/bool_pair.ml" bool_pair_serialize bool_pair_serialize.
