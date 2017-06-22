@@ -47,12 +47,12 @@ type ('s, 'a) fold_state =
   | Error
 ;;
 
-let rec fold_deserializer (f : bool -> 's -> ('s, 'a) fold_state)
+let rec fold (f : bool -> 's -> ('s, 'a) fold_state)
                           (s : 's) : 'a deserializer =
   fun r -> let b = getBit r
            in match f b s with
               | Done a -> a
-              | More s -> fold_deserializer f s r
+              | More s -> fold f s r
               | Error -> failwith "Fold deserializer error"
 ;;    
   
@@ -74,10 +74,3 @@ let rec putBytes n w =
   else (putByte (Char.chr n) w;
         putBytes (n - 1) w)
 ;;
-         
-        
-    
-let testWriter : Bit_vector.writer = Bit_vector.makeWriter ();;
-let () = putBytes 0xff testWriter;;
-let testReader = Bit_vector.writerToReader testWriter;;
-let _ = Bit_vector.dumpReader testReader;;
