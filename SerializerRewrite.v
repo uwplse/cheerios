@@ -1,4 +1,3 @@
-
 Require Import List ZArith.
 Import ListNotations.
 Set Implicit Arguments.
@@ -160,6 +159,7 @@ Module Deserializer : DESERIALIZER.
       | Some (v, bin) => Some (f v, bin)
       end.
   Proof. reflexivity. Qed.
+
   Lemma fold_unwrap : forall {S A : Type}
                              (f : bool -> S -> fold_state S A) (s : S) l,
       unwrap (fold f s) l =
@@ -494,29 +494,47 @@ Definition deserialize_tree_shape :=
 Eval cbv in (serialize_tree_shape
                (Branch tt Leaf Leaf)).
 
-Extract Constant Serializer.t => "Serializer_primitives.serializer".
-Extract Constant Deserializer.t "'a"  => "'a Serializer_primitives.deserializer".
+Extract Inlined Constant
+        Serializer.t => "Serializer_primitives.serializer".
+Extract Constant
+        Deserializer.t "'a"  => "Serializer_primitives.deserializer".
+Extraction Inline Deserializer.t.
 Extract Inductive fold_state => "Serializer_primitives.fold_state"
                                   ["Serializer_primitives.Done"
                                      "Serializer_primitives.More"
                                      "Serializer_primitives.Error"].
-Extract Constant Serializer.putBit => "Serializer_primitives.putBit".
-Extract Constant Serializer.empty => "Serializer_primitives.empty".
-Extract Constant Serializer.append => "Serializer_primitives.append".
-Extract Constant Deserializer.bind => "Serializer_primitives.bind".
-Extract Constant Deserializer.getBit => "Serializer_primitives.getBit".
-Extract Constant Deserializer.ret => "Serializer_primitives.ret".
-Extract Constant Deserializer.fold => "Serializer_primitives.fold".
+Extract Inlined Constant Serializer.putBit => "Serializer_primitives.putBit".
+Extract Inlined Constant Serializer.empty => "Serializer_primitives.empty".
+Extract Inlined Constant Serializer.append => "Serializer_primitives.append".
+Extract Inlined Constant Deserializer.bind => "Serializer_primitives.bind".
+Extract Inlined Constant Deserializer.getBit => "Serializer_primitives.getBit".
+Extract Inlined Constant Deserializer.map => "Serializer_primitives.map".
+Extract Inlined Constant Deserializer.ret => "Serializer_primitives.ret".
+Extract Inlined Constant Deserializer.fold => "Serializer_primitives.fold".
 
-Extract Constant Serializer.unwrap => "Obj.magic".
-Extract Constant Deserializer.unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.empty_unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.putBit_unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.append_unwrap => "Obj.magic".
+
+Extract Inlined Constant Deserializer.getBit_unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.bind_unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.ret_unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.map_unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.fold_unwrap => "Obj.magic".
+
+Extract Inlined Constant Serializer.unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.unwrap => "Obj.magic".
 
 Require Import ExtrOcamlBasic.
 
-Definition bool_pair_serialize : (bool * bool) -> Serializer.t :=
+Definition serialize_bool_pair : (bool * bool) -> Serializer.t :=
   serialize.
 
-Definition bool_pair_deserialize : Deserializer.t (bool * bool) :=
+Definition deserialize_bool_pair : Deserializer.t (bool * bool) :=
   deserialize.
 
-Extraction "ocaml-cheerios/bool_pair.ml" bool_pair_serialize bool_pair_serialize.
+Extraction "ocaml-cheerios/bool_pair_extracted.ml"
+           serialize_bool_pair deserialize_bool_pair.
+
+Extraction "ocaml-cheerios/positive_extracted.ml"
+           serialize_positive deserialize_positive.
