@@ -1,8 +1,8 @@
 let test_pair (x, y) = 
   let w = Bit_vector.makeWriter () in
-  let _ = serialize_bool_pair (x, y) w in
+  let _ = Bool_pair_extracted.serialize_bool_pair (x, y) w in
   let r = Bit_vector.writerToReader w in
-  let (x', y') = deserialize_bool_pair r in
+  let (x', y') = Bool_pair_extracted.deserialize_bool_pair r in
   let true = x = x' && y = y' in
   ()
 ;;

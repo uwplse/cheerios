@@ -47,6 +47,10 @@ type ('s, 'a) fold_state =
   | Error
 ;;
 
+let map (f : 'a -> 'b) (d : 'a deserializer) : 'b deserializer =
+  bind d (fun a -> ret (f a))
+;;
+
 let rec fold (f : bool -> 's -> ('s, 'a) fold_state)
                           (s : 's) : 'a deserializer =
   fun r -> let b = getBit r
