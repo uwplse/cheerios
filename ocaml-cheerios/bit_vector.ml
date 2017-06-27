@@ -58,16 +58,4 @@ let dumpReader (r : reader) =
     else (Printf.printf "%x " (Char.code (Bytes.get r.bytes n));
           aux (n + 1))
   in aux 0
-;;
-
-let rec pushBytes w n =
-  if not (n = 0)
-  then (pushBack w (Char.chr n);
-        pushBytes w (n - 1))
-;;
-  
-let w = makeWriter ();;
-let _ = pushBytes w 100;
-        dumpReader (writerToReader w);;
-  
-        
+;;        

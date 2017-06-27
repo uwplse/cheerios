@@ -16,6 +16,9 @@ Definition leastBit (a : ascii) :=
   | Ascii b _ _ _ _ _ _ _ => b
   end.          
 
+Definition ascii_eq a b :=
+  if ascii_dec a b then true else false.
+           
 Module Type SERIALIZER.
   Parameter t : Type.
   Parameter empty : t.
@@ -24,7 +27,6 @@ Module Type SERIALIZER.
 
   (* For proof only! Do not call from serializers. *)
   Parameter unwrap : t -> list ascii.
-  (* Now we have one unwrap lemma per primitive operation from above. *)
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
       forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
@@ -260,35 +262,31 @@ Qed.
 Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
 
 (* positive *)
-
+Local Open Scope char_scope.
 Fixpoint serialize_positive (p : positive) : Serializer.t :=
   match p with
-  | xI p => Serializer.append (serialize one)
-                              (Serializer.append (serialize one)
-                                                 (serialize_positive p))
-  | xO p => Serializer.append  (serialize one)
-                               (Serializer.append (serialize zero)
-                                                  (serialize_positive p))
-  | xH => serialize zero
+  | xI p => Serializer.append (serialize "i")
+                              (serialize_positive p)
+  | xO p => Serializer.append  (serialize "o")
+                               (serialize_positive p)
+  | xH => serialize "h"
   end.
 
-Definition deserialize_positive_step :=
-  fun (b : ascii) (s : bool * (positive -> positive)) =>
-    match s with
-    | (is_digit, k) =>
-      if is_digit
-      then More(false, fun p => k ((if leastBit b then xI else xO) p))
-      else if leastBit b
-           then More(true, k)
-           else Done(k xH)
-    end.
+Definition deserialize_positive_step (b : ascii) (s : positive -> positive) := 
+  if ascii_eq b "i"
+  then More (fun p => s (xI p))
+  else if ascii_eq b "o" 
+       then More (fun p => s (xO p))
+       else if ascii_eq b "h"
+            then Done (s xH)
+            else Error.
 
 Definition deserialize_positive : Deserializer.t positive :=
-  Deserializer.fold deserialize_positive_step (false, (fun p => p)).
+  Deserializer.fold deserialize_positive_step (fun p => p).
 
 Lemma positive_step : forall (p : positive) (k : positive -> positive)
                              (bytes : list ascii),
-    Deserializer.unwrap (Deserializer.fold deserialize_positive_step (false, k))
+    Deserializer.unwrap (Deserializer.fold deserialize_positive_step k)
          (Serializer.unwrap (serialize_positive p) ++ bytes)  = Some(k p, bytes).
 Proof.
   induction p;
@@ -473,7 +471,7 @@ Arguments Branch {_} _ _ _.
 
 
 (* less generalized version of James' n-ary tree serializer *)
-Local Open Scope char_scope.
+
 Fixpoint serialize_tree_shape (t : binary_tree unit) :=
   match t with
   | Leaf => Serializer.empty
@@ -525,15 +523,7 @@ Extract Inlined Constant Serializer.unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.unwrap => "Obj.magic".
 
 Require Import ExtrOcamlBasic.
-
-Definition serialize_bool_pair : (bool * bool) -> Serializer.t :=
-  serialize.
-
-Definition deserialize_bool_pair : Deserializer.t (bool * bool) :=
-  deserialize.
-
-Extraction "ocaml-cheerios/bool_pair_extracted.ml"
-           serialize_bool_pair deserialize_bool_pair.
+Require Import ExtrOcamlString.
 
 Extraction "ocaml-cheerios/positive_extracted.ml"
            serialize_positive deserialize_positive.
