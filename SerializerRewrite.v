@@ -484,7 +484,7 @@ Fixpoint serialize_tree_shape (t : binary_tree unit) :=
                                                         (serialize ")")))
   end.
 
-Definition serialize_tree_shape_step (b : bool) (s : bool) :=
+Definition serialize_tree_shape_step (b : ascii) (s : bool) :=
   @Error bool (binary_tree unit).
 
 Definition deserialize_tree_shape :=
@@ -502,20 +502,20 @@ Extract Inductive fold_state => "Serializer_primitives.fold_state"
                                   ["Serializer_primitives.Done"
                                      "Serializer_primitives.More"
                                      "Serializer_primitives.Error"].
-Extract Inlined Constant Serializer.putBit => "Serializer_primitives.putBit".
+Extract Inlined Constant Serializer.putByte => "Serializer_primitives.putByte".
 Extract Inlined Constant Serializer.empty => "Serializer_primitives.empty".
 Extract Inlined Constant Serializer.append => "Serializer_primitives.append".
 Extract Inlined Constant Deserializer.bind => "Serializer_primitives.bind".
-Extract Inlined Constant Deserializer.getBit => "Serializer_primitives.getBit".
+Extract Inlined Constant Deserializer.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant Deserializer.map => "Serializer_primitives.map".
 Extract Inlined Constant Deserializer.ret => "Serializer_primitives.ret".
 Extract Inlined Constant Deserializer.fold => "Serializer_primitives.fold".
 
 Extract Inlined Constant Serializer.empty_unwrap => "Obj.magic".
-Extract Inlined Constant Serializer.putBit_unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.putByte_unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.append_unwrap => "Obj.magic".
 
-Extract Inlined Constant Deserializer.getBit_unwrap => "Obj.magic".
+Extract Inlined Constant Deserializer.getByte_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.bind_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.ret_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.map_unwrap => "Obj.magic".
