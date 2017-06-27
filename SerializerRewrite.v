@@ -1,4 +1,4 @@
-Require Import List ZArith.
+Require Import Ascii List ZArith.
 Import ListNotations.
 Set Implicit Arguments.
 
@@ -11,40 +11,39 @@ Arguments Done {_} {_} _.
 Arguments More {_} {_} _.
 Arguments Error {_} {_}.
 
+Definition leastBit (a : ascii) :=
+  match a with
+  | Ascii b _ _ _ _ _ _ _ => b
+  end.          
+
 Module Type SERIALIZER.
   Parameter t : Type.
   Parameter empty : t.
   Parameter append : t -> t -> t.
-  Parameter putBit : bool -> t.
+  Parameter putByte : ascii -> t.
 
   (* For proof only! Do not call from serializers. *)
-  Parameter unwrap : t -> list bool.
+  Parameter unwrap : t -> list ascii.
   (* Now we have one unwrap lemma per primitive operation from above. *)
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
       forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
-  Parameter putBit_unwrap : forall (b : bool), unwrap (putBit b) = [b].
+  Parameter putByte_unwrap : forall (a : ascii), unwrap (putByte a) = [a].
 End SERIALIZER.
 
-(* Now we can rejigger our current implementation to implement this signature.
-  By explicitly ascribing the signature with `:`, we "seal" the module, so no
-  implementation details are accessible elsewhere. *)
-
 Module Serializer : SERIALIZER.
-  (* We could also use a "wrapper" inductive type here,
-     but there's no real point to doing so. *)
-  Definition t := list bool.
+  Definition t := list ascii.
   Definition empty : t := [].
-  Definition putBit (b : bool) : t := [b].
+  Definition putByte (a : ascii) : t := [a].
 
   Definition append (x y : t) : t := x ++ y.
 
-  Definition unwrap (x : t) : list bool := x.
+  Definition unwrap (x : t) : list ascii := x.
 
   Lemma empty_unwrap : unwrap empty = [].
   Proof. reflexivity. Qed.
 
-  Lemma putBit_unwrap : forall (b : bool), unwrap (putBit b) = [b].
+  Lemma putByte_unwrap : forall (a : ascii), unwrap (putByte a) = [a].
   Proof. reflexivity. Qed.
 
   Lemma append_unwrap :
@@ -55,36 +54,38 @@ End Serializer.
 Module Type DESERIALIZER.
   Parameter t : Type -> Type.
 
-  Parameter getBit : t bool.
-  Parameter unwrap : forall A, t A -> list bool -> option (A * list bool).
+  Parameter getByte : t ascii.
+  Parameter unwrap : forall A, t A -> list ascii -> option (A * list ascii).
 
-  Parameter getBit_unwrap : forall l,
-      unwrap getBit l = match l with
-                               | [] => None
-                               | b :: l => Some (b, l)
-                        end.
+  Parameter getByte_unwrap : forall l,
+      unwrap getByte l = match l with
+                         | [] => None
+                         | a :: l => Some (a, l)
+                         end.
+
   Parameter bind : forall A B, t A -> (A -> t B) -> t B.
   Parameter ret : forall A, A -> t A.
   Parameter map : forall A B, (A -> B) -> t A -> t B.
+
   Parameter fold : forall S A,
-      (bool -> S -> fold_state S A) -> S -> t A.
+      (ascii -> S -> fold_state S A) -> S -> t A.
 
   Parameter bind_unwrap : forall A B (m : t A)
-                             (f : A -> t B) bin,
-      unwrap (bind m f) bin = match unwrap m bin with
+                             (f : A -> t B) bytes,
+      unwrap (bind m f) bytes = match unwrap m bytes with
                                 | None => None
-                                | Some (v, bin) => unwrap (f v) bin
+                                | Some (v, bytes) => unwrap (f v) bytes
                               end.
-  Parameter ret_unwrap : forall A (x: A) bin, unwrap (ret x) bin = Some (x, bin).
-  Parameter map_unwrap: forall A B (f: A -> B) (d: t A) bin,
-      unwrap (map f d) bin =
-      match (unwrap d bin) with
+  Parameter ret_unwrap : forall A (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
+  Parameter map_unwrap: forall A B (f: A -> B) (d: t A) bytes,
+      unwrap (map f d) bytes =
+      match (unwrap d bytes) with
       | None => None
-      | Some (v, bin) => Some (f v, bin)
+      | Some (v, bytes) => Some (f v, bytes)
       end.
 
   Parameter fold_unwrap : forall {S A : Type}
-                             (f : bool -> S -> fold_state S A) (s : S) l,
+                             (f : ascii -> S -> fold_state S A) (s : S) l,
       unwrap (fold f s) l =
       match l with
       | [] => None
@@ -97,10 +98,10 @@ Module Type DESERIALIZER.
 End DESERIALIZER.
 
 Module Deserializer : DESERIALIZER.
-  Definition t (A : Type) := list bool -> option (A * list bool).
+  Definition t (A : Type) := list ascii -> option (A * list ascii).
   Definition unwrap {A} (x : t A) := x.
 
-  Definition getBit (l : list bool) :=
+  Definition getByte (l : list ascii) :=
     match l with
     | [] => None
     | b :: l => Some (b, l)
@@ -119,10 +120,10 @@ Module Deserializer : DESERIALIZER.
   Definition map {A B} (f : A -> B) (d : t A) : t B :=
     bind d (fun a => ret (f a)).
 
-  Lemma getBit_unwrap : forall l,
-      unwrap getBit l = match l with
-                        | [] => None
-                        | b :: l => Some (b, l)
+  Lemma getByte_unwrap : forall l,
+      unwrap getByte l = match l with
+                         | [] => None
+                         | b :: l => Some (b, l)
                         end.
   Proof. reflexivity. Qed.
 
@@ -139,7 +140,7 @@ Module Deserializer : DESERIALIZER.
   Qed.
 
   Fixpoint fold {S A}
-           (f : bool -> S -> fold_state S A) (s : S) (l : list bool) :=
+           (f : ascii -> S -> fold_state S A) (s : S) (l : list ascii) :=
     match l with
     | [] => None
     | b :: l => match f b s with
@@ -161,7 +162,7 @@ Module Deserializer : DESERIALIZER.
   Proof. reflexivity. Qed.
 
   Lemma fold_unwrap : forall {S A : Type}
-                             (f : bool -> S -> fold_state S A) (s : S) l,
+                             (f : ascii -> S -> fold_state S A) (s : S) l,
       unwrap (fold f s) l =
       match l with
       | [] => None
@@ -176,7 +177,7 @@ Module Deserializer : DESERIALIZER.
     simpl. destruct l; reflexivity.
   Qed.
 End Deserializer.
-    
+
 Notation serialize_deserialize_id_spec s d :=
   (forall a bin,
       Deserializer.unwrap d (Serializer.unwrap (s a) ++ bin) = Some(a, bin)).
@@ -184,8 +185,8 @@ Notation serialize_deserialize_id_spec s d :=
 Ltac cheerios_crush := intros; autorewrite with cheerios; auto.
 
 Hint Rewrite app_ass 
-     Serializer.empty_unwrap Serializer.putBit_unwrap
-     Serializer.append_unwrap Deserializer.getBit_unwrap
+     Serializer.empty_unwrap Serializer.putByte_unwrap
+     Serializer.append_unwrap Deserializer.getByte_unwrap
      Deserializer.bind_unwrap Deserializer.ret_unwrap
      Deserializer.map_unwrap @Deserializer.fold_unwrap : cheerios.
 
@@ -209,25 +210,21 @@ Qed.
 
 (* basic serializers *)
 
-Lemma bool_serialize_deserialize_id :
-  serialize_deserialize_id_spec Serializer.putBit Deserializer.getBit.
-Proof.
-  destruct a;
-    cheerios_crush.
-Qed.
+Lemma serialize_deserialize_ascii_id :
+  serialize_deserialize_id_spec Serializer.putByte Deserializer.getByte.
+Proof. cheerios_crush. Qed.
 
-Instance bool_Serializer : Serializer bool :=
-  {| serialize := Serializer.putBit;
-     deserialize := Deserializer.getBit;
-     serialize_deserialize_id := bool_serialize_deserialize_id
-  |}.
+Instance ascii_Serializer : Serializer ascii :=
+  {| serialize := Serializer.putByte;
+     deserialize := Deserializer.getByte;
+     serialize_deserialize_id := serialize_deserialize_ascii_id |}.
 
 (* this needs to go here because we need the bool_Serializer instance *)
 
 Lemma fold_append_unwrap :
   forall {S A : Type}
-         (f : bool -> S -> fold_state S A) (s : S)
-         (b : bool) (tail : Serializer.t) (bin : list bool),
+         (f : ascii -> S -> fold_state S A) (s : S)
+         (b : ascii) (tail : Serializer.t) (bin : list ascii),
     Deserializer.unwrap (Deserializer.fold f s)
                         (Serializer.unwrap (Serializer.append
                                               (serialize b)
@@ -244,13 +241,13 @@ Qed.
 
 Lemma fold_append_unwrap' :
   forall {S A : Type}
-         (f : bool -> S -> fold_state S A) (s : S)
-         (b : bool) (tail : Serializer.t) (bin : list bool),
+         (f : ascii -> S -> fold_state S A) (s : S)
+         (b : ascii) (tail : Serializer.t) (bin : list ascii),
     Deserializer.unwrap (Deserializer.fold f s)
                         (Serializer.unwrap (Serializer.append
-                                              (Serializer.putBit b)
+                                              (Serializer.putByte b)
                                               tail) ++ bin) =
-    match f b s with
+  match f b s with
     | Done a => Some(a, Serializer.unwrap tail ++ bin)
     | More s => Deserializer.unwrap (Deserializer.fold f s)
                                     (Serializer.unwrap tail ++ bin)
@@ -260,37 +257,39 @@ Proof.
   cheerios_crush.
 Qed.
 
+Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
+
 (* positive *)
 
 Fixpoint serialize_positive (p : positive) : Serializer.t :=
   match p with
-  | xI p => Serializer.append (serialize true)
-                              (Serializer.append (serialize true)
+  | xI p => Serializer.append (serialize one)
+                              (Serializer.append (serialize one)
                                                  (serialize_positive p))
-  | xO p => Serializer.append  (serialize true)
-                               (Serializer.append (serialize false)
+  | xO p => Serializer.append  (serialize one)
+                               (Serializer.append (serialize zero)
                                                   (serialize_positive p))
-  | xH => serialize false
+  | xH => serialize zero
   end.
 
 Definition deserialize_positive_step :=
-  fun (b : bool) (s : bool * (positive -> positive)) =>
+  fun (b : ascii) (s : bool * (positive -> positive)) =>
     match s with
-    | (is_digit, k) => if is_digit
-                       then More(false, fun p => k ((if b then xI else xO) p))
-                       else if b
-                            then More(true, k)
-                            else Done(k xH)
+    | (is_digit, k) =>
+      if is_digit
+      then More(false, fun p => k ((if leastBit b then xI else xO) p))
+      else if leastBit b
+           then More(true, k)
+           else Done(k xH)
     end.
-
-Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
 
 Definition deserialize_positive : Deserializer.t positive :=
   Deserializer.fold deserialize_positive_step (false, (fun p => p)).
 
-Lemma positive_step : forall (p : positive) (k : positive -> positive) (bin : list bool),
+Lemma positive_step : forall (p : positive) (k : positive -> positive)
+                             (bytes : list ascii),
     Deserializer.unwrap (Deserializer.fold deserialize_positive_step (false, k))
-         (Serializer.unwrap (serialize_positive p) ++ bin)  = Some(k p, bin).
+         (Serializer.unwrap (serialize_positive p) ++ bytes)  = Some(k p, bytes).
 Proof.
   induction p;
     intros;
@@ -320,13 +319,13 @@ Qed.
 
 Definition serialize_N n :=
   match n with
-  | N0 => serialize false
-  | Npos p => Serializer.append (serialize true) (serialize p)
+  | N0 => serialize zero
+  | Npos p => Serializer.append (serialize one) (serialize p)
   end.
 
 Definition deserialize_N :=
   Deserializer.bind deserialize
-                    (fun (b : bool) => if b
+                    (fun (b : ascii) => if leastBit b
                                        then Deserializer.map Npos deserialize
                                        else Deserializer.ret N0).
 
@@ -401,14 +400,14 @@ Section combinators.
   
   Definition option_serialize (x : option A) : Serializer.t :=
     match x with
-    | Some a => Serializer.append (serialize true) (serialize a)
-    | None => serialize false
+    | Some a => Serializer.append (serialize one) (serialize a)
+    | None => serialize zero
     end.
 
   Definition option_deserialize : Deserializer.t (option A) :=
     Deserializer.bind deserialize
-                      (fun (b : bool) =>
-                         if b
+                      (fun (b : ascii) =>
+                         if leastBit b
                          then Deserializer.map (@Some A) deserialize
                          else Deserializer.ret None).
 
@@ -474,15 +473,15 @@ Arguments Branch {_} _ _ _.
 
 
 (* less generalized version of James' n-ary tree serializer *)
+Local Open Scope char_scope.
 Fixpoint serialize_tree_shape (t : binary_tree unit) :=
-  let lparen := Serializer.append (serialize false) (serialize true) in
-  let rparen := Serializer.append (serialize false) (serialize false) in
   match t with
-  | Leaf => serialize true
-  | Branch _ b1 b2 => Serializer.append lparen
-                             (Serializer.append (serialize_tree_shape b1)
-                                     (Serializer.append (serialize_tree_shape b2)
-                                                        rparen))
+  | Leaf => Serializer.empty
+  | Branch _ b1 b2 =>
+    Serializer.append (serialize "(")
+                      (Serializer.append (serialize_tree_shape b1)
+                                         (Serializer.append (serialize_tree_shape b2)
+                                                        (serialize ")")))
   end.
 
 Definition serialize_tree_shape_step (b : bool) (s : bool) :=
