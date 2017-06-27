@@ -1,61 +1,77 @@
 (* serialize -> truncate unused bytes, add one byte to indicate how many bitse of the last byte are padding *)
-type writer = {mutable bytes : bytes;
-               mutable back : int}
-type reader = {bytes : bytes;
-               mutable front: int;
-               capacity: int}
-type bit = bool
+type node = {bytes : bytes;
+             mutable next : node option}
+              
+type iterator = {head : node;
+                 mutable node : node;
+                 mutable i : int}
 
+type writer = iterator
+type reader = iterator
+
+exception Out_of_bounds
+            
 let byte_length = 8
 ;;
              
-let makeLength n = {bytes = Bytes.init n (fun _ -> Char.chr 0);
-                    back = 0}
+let makeNode n =
+  {bytes = Bytes.make n (Char.chr 0);
+   next = None}
+;;
+  
+let makeIter node =
+  {head = node;
+   node = node;
+   i = 0}
 ;;
 
 let makeWriter () =
-  let initialLength = 10
-  in makeLength initialLength
+  let initialLength = 100
+  in makeIter (makeNode initialLength)
 ;;
 
-let pushBack (w : writer) c =
-  let length = Bytes.length w.bytes in
-  (if w.back >= length
-   then let length' = (length * 2) in
-        let bytes' = Bytes.init length' (fun _ -> Char.chr 0) in
-        let rec copy i =
-          if i = length then ()
-          else (Bytes.set bytes' i (Bytes.get w.bytes i);
-                copy (i + 1))
-        in (copy 0; w.bytes <- bytes')
-   else ());  
-  Bytes.set w.bytes w.back c;
-  w.back <- w.back + 1
+let insert iter c =
+  let length = Bytes.length iter.node.bytes in
+  (if iter.i = length
+   then (let node' = (makeNode (length * 2))
+         in iter.node.next <- Some (node');
+            iter.node <- node';
+            iter.i <- 0));
+   Bytes.set iter.node.bytes iter.i c;
+   iter.i <- iter.i + 1
 ;;
 
-let makeReader bytes capacity =
-  { bytes = bytes;
-    front = 0;
-    capacity = capacity
-  }
+let read iter =
+  let length = Bytes.length iter.node.bytes
+  in (if iter.i = length
+      then match iter.node.next with
+           | Some node' -> (iter.node <- node';
+                            iter.i <- 0)
+           | None -> raise Out_of_bounds);
+     let c = Bytes.get iter.node.bytes iter.i
+     in (iter.i <- iter.i + 1;
+         c)  
 ;;
 
-let writerToReader (w : writer) =
-  makeReader w.bytes w.back;;
-  
-let pop (r : reader) : char =
-  if r.front >= r.capacity
-  then failwith "Bit_vector.pop hit capacity"
-  else let byte = Bytes.get r.bytes r.front in
-       r.front <- r.front + 1;
-       byte
+let pushBack = insert
 ;;
-  
+
+let writerToReader (iter : iterator) : reader =
+  { head = iter.head;
+    node = iter.head;
+    i = 0 }
+
+let pop : reader -> char =
+  read
+
+
+(* dumps bytes from current iterator position until end *)
 let dumpReader (r : reader) =
-  let rec aux n =
-    if n = Bytes.length r.bytes
-    then print_string "\n"
-    else (Printf.printf "%x " (Char.code (Bytes.get r.bytes n));
-          aux (n + 1))
-  in aux 0
+  let rec loop () =
+    (try (let c = read r
+         in Printf.printf "%x " (Char.code c))
+     with
+     | Out_of_bounds -> ());
+    loop () in
+  loop ()
 ;;        
