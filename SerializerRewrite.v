@@ -309,39 +309,71 @@ Local Open Scope char_scope.
 
 Fixpoint serialize_positive p :=
   match p with
-  | xI (xI p) => Serializer.append (serialize "000")
+  | xI (xI (xI p)) => Serializer.append (serialize "014")
+                                        (serialize_positive p)
+  | xI (xI (xO p)) => Serializer.append (serialize "013")
+                                        (serialize_positive p)
+  | xI (xO (xI p)) => Serializer.append (serialize "012")
+                                        (serialize_positive p)
+  | xI (xO (xO p)) => Serializer.append (serialize "011")
+                                        (serialize_positive p)
+  | xO (xI (xI p)) => Serializer.append (serialize "010")
+                                        (serialize_positive p)
+  | xO (xI (xO p)) => Serializer.append (serialize "009")
+                                        (serialize_positive p)
+  | xO (xO (xI p)) => Serializer.append (serialize "008")
+                                        (serialize_positive p)
+  | xO (xO (xO p)) => Serializer.append (serialize "007")
+                                        (serialize_positive p)
+  | xI (xI p) => Serializer.append (serialize "006")
                                    (serialize_positive p)
-  | xI (xO p) => Serializer.append (serialize "001")
+  | xI (xO p) => Serializer.append (serialize "005")
                                    (serialize_positive p)
-  | xO (xI p) => Serializer.append (serialize "002")
+  | xO (xI p) => Serializer.append (serialize "004")
                                    (serialize_positive p)
   | xO (xO p) => Serializer.append (serialize "003")
                                    (serialize_positive p)
-  | xI p => Serializer.append (serialize "004")
+  | xI p => Serializer.append (serialize "002")
                               (serialize_positive p)
-  | xO p => Serializer.append (serialize "005")
+  | xO p => Serializer.append (serialize "001")
                               (serialize_positive p)
-  | XH => serialize "006"
+  | XH => serialize "000"
   end.
 
 Definition deserialize_positive_step
            (b : ascii)
            (s : positive -> positive) := 
-  if ascii_eq b "000"
-  then More (fun p => s (xI (xI p)))
-  else if ascii_eq b "001"
-  then More (fun p => s (xI (xO p)))
-       else if ascii_eq b "002"
-            then More (fun p => s (xO (xI p)))
-            else if ascii_eq b "003"
-                 then More (fun p => s (xO (xO p)))
-                 else if ascii_eq b "004"
-                      then More (fun p => s (xI p))
-                      else if ascii_eq b "005"
-                           then More (fun p => s (xO p))
-                           else if ascii_eq b "006"
-                                then Done (s xH)
-                                else Error.
+  if ascii_eq b "014"
+  then More (fun p => s (xI (xI (xI p))))
+  else if ascii_eq b "013"
+       then More (fun p => s (xI (xI (xO p))))
+       else if ascii_eq b "012"
+            then More (fun p => s (xI (xO (xI p))))
+            else if ascii_eq b "011"
+                 then More (fun p => s (xI (xO (xO p))))
+                 else if ascii_eq b "010"
+                      then More (fun p => s (xO (xI (xI p))))
+                      else if ascii_eq b "009"
+                           then More (fun p => s (xO (xI (xO p))))
+                           else if ascii_eq b "008"
+                                then More (fun p => s (xO (xO (xI p))))
+                                else if ascii_eq b "007"
+                                     then More (fun p => s (xO (xO (xO p))))
+                                     else if ascii_eq b "006"
+                                          then More (fun p => s (xI (xI p)))
+                                          else if ascii_eq b "005"
+                                               then More (fun p => s (xI (xO p)))
+                                               else if ascii_eq b "004"
+                                                    then More (fun p => s (xO (xI p)))
+                                                    else if ascii_eq b "003"
+                                                         then More (fun p => s (xO (xO p)))
+                                                         else if ascii_eq b "002"
+                                                              then More (fun p => s (xI p))
+                                                              else if ascii_eq b "001"
+                                                                   then More (fun p => s (xO p))
+                                                                   else if ascii_eq b "000"
+                                                                        then Done (s xH)
+                                                                        else Error.
 
 Definition positive_step_aux p :=
   forall (k : positive -> positive) (bytes : list ascii),
@@ -353,18 +385,15 @@ Lemma positive_step :
   forall (p : positive), positive_step_aux p.
 Proof.
   apply strongind_pos; unfold positive_step_aux.
-  -  unfold serialize_positive.
+  - unfold serialize_positive.
     cheerios_crush.
   - split;
       intros;
-      destruct q;
-      simpl;
-      cheerios_crush;
-      simpl;
-      try rewrite H;
-      try reflexivity;
-      repeat constructor;
-      cheerios_crush.
+      try destruct q;
+      try destruct q;
+      simpl; cheerios_crush; simpl; rewrite H || cheerios_crush;
+        try reflexivity;
+        repeat constructor.
 Qed.
 
 Definition deserialize_positive :=
