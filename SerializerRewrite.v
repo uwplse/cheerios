@@ -268,24 +268,6 @@ Inductive le_pos (p : positive) : positive -> Prop :=
 | le_xI : forall p2, le_pos p p2 -> le_pos p (xI p2)
 | le_xO : forall p2, le_pos p p2 -> le_pos p (xO p2).
 
-Lemma le_pos_discriminate_xI : forall p1 p2,
-    le_pos p1 (xI p2) -> le_pos p1 p2 \/ p1 = xI p2.
-Proof.
-  intros.
-  inversion H.
-  - now right.
-  - now left.
-Qed.
-
-Lemma le_pos_discriminate_xO : forall p1 p2,
-    le_pos p1 (xO p2) -> le_pos p1 p2 \/ p1 = xO p2.
-Proof.
-  intros.
-  inversion H.
-  - now right.
-  - now left.
-Qed.
-
 Section PositiveInductionPrinciple.
   Variable P : positive -> Prop.
 
@@ -358,6 +340,30 @@ Fixpoint compress_positive p :=
   | xH => xH'
   end.
 
+Definition compress_positive' p :=
+  compress_positive_rec p (fun c => c).
+
+Definition compress_spec (p : positive) :=
+  forall k, compress_positive_rec p k = k (compress_positive p).
+  
+Lemma compress_positive_rec_spec :
+  forall p, compress_spec p.
+Proof.
+  apply strongind_pos;
+    unfold compress_spec in *;
+    intros.
+  - reflexivity.
+  - split;
+      intros;
+      destruct q;
+      intros;
+      simpl;
+      try reflexivity;
+      rewrite H;
+      try reflexivity;
+      repeat constructor.
+Qed.
+
 Fixpoint decompress_positive_rec (c : positive_compressed) (k : positive -> positive) :=
   match c with
   | xIxI c => decompress_positive_rec c (fun p => k (xI (xI p)))
@@ -380,11 +386,21 @@ Fixpoint decompress_positive c :=
   | xH' => xH
   end.
 
-Definition compress_decompress_aux (p : positive) :=
-  forall k, decompress_positive_rec (compress_positive_rec p (fun c => c))
-                                    k = k p.
+Definition decompress_positive' c :=
+  decompress_positive_rec c (fun p => p).
 
-Theorem compress_decompress_id : forall p,
+Lemma decompress_positive_rec_spec : forall c k,
+    decompress_positive_rec c k = k (decompress_positive c).
+Proof.
+  induction c;
+    try reflexivity;
+    intros;
+    unfold decompress_positive_rec; fold decompress_positive_rec;
+      unfold decompress_positive; fold decompress_positive;
+        apply IHc.
+Qed.
+
+Lemma compress_decompress_id : forall p,
     decompress_positive (compress_positive p) = p.
 Proof.
   apply strongind_pos.
@@ -400,6 +416,16 @@ Proof.
       ((apply H; 
         repeat constructor) || now rewrite H0).
 Qed.
+
+Lemma compress'_decompress'_id : forall p,
+    decompress_positive' (compress_positive' p) = p.
+Proof.
+  intros.
+  unfold decompress_positive', compress_positive'.
+  rewrite decompress_positive_rec_spec, compress_positive_rec_spec.
+  apply compress_decompress_id.
+Qed.
+  
 
 Fixpoint serialize_positive_compressed (p : positive_compressed) : Serializer.t :=
   match p with
@@ -452,7 +478,9 @@ Proof.
     intros;
     unfold serialize_positive_compressed;
     fold serialize_positive_compressed;
-    try (cheerios_crush; simpl; now rewrite IHc).
+    cheerios_crush;
+    simpl;
+    now rewrite IHc.
 Qed.
 
 Theorem serialize_deserialize_positive_compressed_id :
@@ -471,10 +499,10 @@ Instance positive_compressed_Serializer : Serializer positive_compressed :=
        serialize_deserialize_positive_compressed_id |}.
 
 Definition serialize_positive p :=
-  serialize (compress_positive p).
+  serialize (compress_positive' p).
 
 Definition deserialize_positive :=
-  Deserializer.map decompress_positive deserialize.
+  Deserializer.map decompress_positive' deserialize.
 
 Theorem serialize_deserialize_positive_id :
   serialize_deserialize_id_spec serialize_positive deserialize_positive.
@@ -482,7 +510,7 @@ Proof.
   intros.
   unfold serialize_positive, deserialize_positive.
   cheerios_crush.
-  now rewrite compress_decompress_id.
+  now rewrite compress'_decompress'_id.
 Qed.
 
 Instance positive_Serializer : Serializer positive.
