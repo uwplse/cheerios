@@ -191,7 +191,7 @@ let test_positive p print =
   let _ = serialize_positive p w in
   let r = Bit_vector.writerToReader w in
   let p' = deserialize_positive r in
-  let true = p = p' in
+  (assert (p = p'));
   Printf.printf "success\n"
 ;;
 
@@ -209,65 +209,73 @@ let _ = test_main 1000;;
  *)
 (* benchmarking *)
   
-let time_serialize (p : positive) (serialize : positive -> unit) : float =
-  let start = Sys.time () in
-  let _ = serialize p in
-  let stop = Sys.time () in
-  stop -. start
+let time_serialize_deserialize (p : positive)
+                               (serialize : positive -> 'a)
+                               (deserialize: 'a -> positive) : float * float =
+  let serialize_start = Sys.time () in
+  let serialized = serialize p in
+  let serialize_stop = Sys.time () in
+  let _ = deserialize serialized in
+  let deserialize_stop = Sys.time () in
+  (serialize_stop -. serialize_start, deserialize_stop -. serialize_stop)
 ;;
 
-let rec time_serialize_loop size n serialize =
+let rec time_serialize_deserialize_loop size n serialize deserialize =
   let rec loop i acc = 
     if i = n
     then acc
     else loop (i + 1)
-              (time_serialize (make_positive size) serialize :: acc)
+              (time_serialize_deserialize (make_positive size)
+                                          serialize
+                                          deserialize :: acc)
   in loop 0 []
 ;;
 
 let avg l =
   (List.fold_left (+.) 0.0 l) /. (float_of_int (List.length l))
 ;;
-
+  
 let compare_cheerios_marshall size n =
-  let cheerios_avg =
-    avg (time_serialize_loop size n
-                             (fun p ->
-                               let w = Bit_vector.makeWriter ()
-                               in (serialize_positive p w); ())) in
-  let two_avg =
-    avg (time_serialize_loop size n
-                             (fun p ->
-                               let w = Bit_vector.makeWriter ()
-                               in (serialize_positive_two p w); ())) in
-
-  let three_avg =
-    avg (time_serialize_loop size n
-                             (fun p ->
-                               let w = Bit_vector.makeWriter ()
-                               in (serialize_positive_three p w); ())) in
-(*
-  let four_avg =
-    avg (time_serialize_loop size n
-                             (fun p ->
-                               let w = Bit_vector.makeWriter ()
-                               in (serialize_positive_four p w); ())) in
- *)
-  let marshal_avg =
-    avg (time_serialize_loop size n
-                             (fun p -> ignore (Marshal.to_bytes p [])))
-  in Printf.printf
-       "size: %d, cheerios: %f, two: %f, three: %f, marshal: %f\n"
-                   size cheerios_avg two_avg three_avg marshal_avg
+  let cheerios_results : (float * float) list =
+    time_serialize_deserialize_loop
+      size n
+      (fun p -> let w = Bit_vector.makeWriter ()
+                in (serialize_positive p w);
+                   w)
+      (fun w -> deserialize_positive (Bit_vector.writerToReader w)) in
+  let marshal_results : (float * float) list =
+    time_serialize_deserialize_loop
+      size n
+      (fun p -> Marshal.to_bytes p [])
+      (fun b -> (Marshal.from_bytes b 0)) in
+  let cheerios_serialize_avg = avg (List.map fst cheerios_results) in
+  let marshal_serialize_avg =  avg (List.map fst marshal_results) in
+  let cheerios_deserialize_avg = avg (List.map snd cheerios_results) in
+  let marshal_deserialize_avg =  avg (List.map snd marshal_results) in
+  Printf.printf "size %d - serialize: cheerios %f, marshal %f"
+                size cheerios_serialize_avg marshal_serialize_avg;
+  Printf.printf " || deserialize: cheerios %f, marshal %f\n"
+                cheerios_deserialize_avg marshal_deserialize_avg
 ;;
 
+let marshal_test n =
+  let rec loop i =
+    if i < n
+    then let bytes = Marshal.to_bytes (make_positive i) [] in
+         let p = Marshal.from_bytes bytes 0 in
+         (Printf.printf "testing marshal on make_positive %d...\n" i;
+          assert (p = make_positive i);
+          loop (i + 1)) in
+  loop 0
+;;
+  
 let compare_main max interval =
   let rec loop n =
     if n < max
-    then let num_tries = 500 in
+    then let num_tries = 100 in
          (compare_cheerios_marshall n num_tries;
           loop (n + interval)) in
   loop 0
 ;;
 
-let _ = compare_main 150000 20000
+let _ = compare_main 100000 10000

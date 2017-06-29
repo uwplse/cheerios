@@ -459,7 +459,6 @@ Proof.
   cheerios_crush.
   now rewrite Nnat.Nat2N.id.
 Qed.
-Check Nnat.Nat2N.id.
 
 Instance nat_Serializer : Serializer nat :=
   {| serialize := serialize_nat;
