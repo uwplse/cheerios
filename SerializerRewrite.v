@@ -261,55 +261,235 @@ Qed.
 
 Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
 
-(* positive *)
+(* positive strong induction *)
+
+Inductive le_pos (p : positive) : positive -> Prop :=
+| le_p : le_pos p p
+| le_xI : forall p2, le_pos p p2 -> le_pos p (xI p2)
+| le_xO : forall p2, le_pos p p2 -> le_pos p (xO p2).
+
+Lemma le_pos_discriminate_xI : forall p1 p2,
+    le_pos p1 (xI p2) -> le_pos p1 p2 \/ p1 = xI p2.
+Proof.
+  intros.
+  inversion H.
+  - now right.
+  - now left.
+Qed.
+
+Lemma le_pos_discriminate_xO : forall p1 p2,
+    le_pos p1 (xO p2) -> le_pos p1 p2 \/ p1 = xO p2.
+Proof.
+  intros.
+  inversion H.
+  - now right.
+  - now left.
+Qed.
+
+Section PositiveInductionPrinciple.
+  Variable P : positive -> Prop.
+
+  Lemma strongind_pos_aux :
+    P xH ->
+    (forall q, ((forall p, le_pos p q -> P p) -> P (xI q)) /\
+               ((forall p, le_pos p q -> P p) -> P (xO q))) ->
+    (forall q, (forall p, le_pos p q -> P p)).
+  Proof.
+    induction q;
+      intros;
+      inversion H1;
+      auto;
+      apply H0;
+      apply IHq.
+  Qed.
+
+  Lemma weaken_pos :
+    (forall q, (forall p, le_pos p q -> P p)) -> forall p, P p.
+  Proof.
+    intros.
+    apply (H p p).
+    constructor.
+  Qed.
+
+  Theorem strongind_pos :
+    P xH ->
+    (forall q, ((forall p, le_pos p q -> P p) -> P (xI q)) /\
+               ((forall p, le_pos p q -> P p) -> P (xO q))) ->
+    forall p, P p.
+  Proof.
+    intros.
+    apply weaken_pos.
+    now apply strongind_pos_aux.
+  Qed.
+End PositiveInductionPrinciple.
+  (* positive serializer *)
+
 Local Open Scope char_scope.
-Fixpoint serialize_positive (p : positive) : Serializer.t :=
+
+Inductive positive_compressed :=
+| xH'
+| xO' : positive_compressed -> positive_compressed
+| xI' : positive_compressed -> positive_compressed
+| xOxO : positive_compressed -> positive_compressed
+| xOxI : positive_compressed -> positive_compressed
+| xIxO : positive_compressed -> positive_compressed
+| xIxI : positive_compressed -> positive_compressed.
+
+Fixpoint compress_positive_rec (p : positive)
+         (k : positive_compressed -> positive_compressed) :=
   match p with
-  | xI p => Serializer.append (serialize "i")
-                              (serialize_positive p)
-  | xO p => Serializer.append  (serialize "o")
-                               (serialize_positive p)
-  | xH => serialize "h"
+  | xI (xI p) => compress_positive_rec p (fun c => k (xIxI c))
+  | xI (xO p) => compress_positive_rec p (fun c => k (xIxO c))
+  | xO (xI p) => compress_positive_rec p (fun c => k (xOxI c))
+  | xO (xO p) => compress_positive_rec p (fun c => k (xOxO c))
+  | xI p => compress_positive_rec p (fun c => k (xI' c))
+  | xO p => compress_positive_rec p (fun c => k (xO' c))
+  | xH => k xH'
   end.
 
-Definition deserialize_positive_step (b : ascii) (s : positive -> positive) := 
-  if ascii_eq b "i"
-  then More (fun p => s (xI p))
-  else if ascii_eq b "o" 
-       then More (fun p => s (xO p))
-       else if ascii_eq b "h"
-            then Done (s xH)
-            else Error.
+Fixpoint compress_positive p :=
+  match p with
+  | xI (xI p) => xIxI (compress_positive p)
+  | xI (xO p) => xIxO (compress_positive p)
+  | xO (xI p) => xOxI (compress_positive p)
+  | xO (xO p) => xOxO (compress_positive p)
+  | xI p => xI' (compress_positive p)
+  | xO p => xO' (compress_positive p)
+  | xH => xH'
+  end.
 
-Definition deserialize_positive : Deserializer.t positive :=
-  Deserializer.fold deserialize_positive_step (fun p => p).
+Fixpoint decompress_positive_rec (c : positive_compressed) (k : positive -> positive) :=
+  match c with
+  | xIxI c => decompress_positive_rec c (fun p => k (xI (xI p)))
+  | xIxO c => decompress_positive_rec c (fun p => k (xI (xO p)))
+  | xOxI c => decompress_positive_rec c (fun p => k (xO (xI p)))
+  | xOxO c => decompress_positive_rec c (fun p => k (xO (xO p)))
+  | xI' c => decompress_positive_rec c (fun p => k (xI p))
+  | xO' c => decompress_positive_rec c (fun p => k (xO p))
+  | xH' => k xH
+  end.
 
-Lemma positive_step : forall (p : positive) (k : positive -> positive)
-                             (bytes : list ascii),
-    Deserializer.unwrap (Deserializer.fold deserialize_positive_step k)
-         (Serializer.unwrap (serialize_positive p) ++ bytes)  = Some(k p, bytes).
+Fixpoint decompress_positive c :=
+  match c with
+  | xIxI c => xI (xI (decompress_positive c))
+  | xIxO c => xI (xO (decompress_positive c))
+  | xOxI c => xO (xI (decompress_positive c))
+  | xOxO c => xO (xO (decompress_positive c))
+  | xI' c => xI (decompress_positive c)
+  | xO' c => xO (decompress_positive c)
+  | xH' => xH
+  end.
+
+Definition compress_decompress_aux (p : positive) :=
+  forall k, decompress_positive_rec (compress_positive_rec p (fun c => c))
+                                    k = k p.
+
+Theorem compress_decompress_id : forall p,
+    decompress_positive (compress_positive p) = p.
 Proof.
-  induction p;
-    intros;
-    unfold serialize_positive;
-    fold serialize_positive;
-    repeat (cheerios_crush; simpl; try (now rewrite IHp)).
+  apply strongind_pos.
+  - reflexivity.
+  - split;
+      destruct q;
+      intros;
+      simpl;
+      try reflexivity;
+      intros;
+      simpl;
+      assert ((decompress_positive (compress_positive q)) = q);
+      ((apply H; 
+        repeat constructor) || now rewrite H0).
 Qed.
+
+Fixpoint serialize_positive_compressed (p : positive_compressed) : Serializer.t :=
+  match p with
+  | xIxI p => Serializer.append (serialize "000")
+                                   (serialize_positive_compressed p)
+  | xIxO p => Serializer.append (serialize "001")
+                                   (serialize_positive_compressed p)
+  | xOxI p => Serializer.append (serialize "002")
+                                   (serialize_positive_compressed p)
+  | xOxO p => Serializer.append (serialize "003")
+                                   (serialize_positive_compressed p)
+  | xI' p => Serializer.append (serialize "004")
+                              (serialize_positive_compressed p)
+  | xO' p => Serializer.append  (serialize "005")
+                               (serialize_positive_compressed p)
+  | xH' => serialize "006"
+  end.
+
+Definition deserialize_positive_compressed_step
+           (b : ascii)
+           (s : positive_compressed -> positive_compressed) := 
+  if ascii_eq b "000"
+  then More (fun p => s (xIxI p))
+  else if ascii_eq b "001"
+  then More (fun p => s (xIxO p))
+       else if ascii_eq b "002"
+            then More (fun p => s (xOxI p))
+            else if ascii_eq b "003"
+                 then More (fun p => s (xOxO p))
+                 else if ascii_eq b "004"
+                      then More (fun p => s (xI' p))
+                      else if ascii_eq b "005"
+                           then More (fun p => s (xO' p))
+                           else if ascii_eq b "006"
+                                then Done (s xH')
+                                else Error.
+
+Definition deserialize_positive_compressed : Deserializer.t positive_compressed :=
+  Deserializer.fold deserialize_positive_compressed_step (fun p => p).
+
+Lemma positive_compressed_step :
+  forall (c : positive_compressed)
+         (k : positive_compressed -> positive_compressed)
+         (bytes : list ascii),
+    Deserializer.unwrap (Deserializer.fold deserialize_positive_compressed_step k)
+                        (Serializer.unwrap (serialize_positive_compressed c) ++ bytes)
+    = Some(k c, bytes).
+Proof.
+  induction c;
+    intros;
+    unfold serialize_positive_compressed;
+    fold serialize_positive_compressed;
+    try (cheerios_crush; simpl; now rewrite IHc).
+Qed.
+
+Theorem serialize_deserialize_positive_compressed_id :
+  serialize_deserialize_id_spec serialize_positive_compressed
+                                deserialize_positive_compressed.
+Proof.
+  intros.
+  unfold deserialize_positive_compressed.
+  apply positive_compressed_step.
+Qed.
+
+Instance positive_compressed_Serializer : Serializer positive_compressed :=
+  {| serialize := serialize_positive_compressed;
+     deserialize := deserialize_positive_compressed;
+     serialize_deserialize_id :=
+       serialize_deserialize_positive_compressed_id |}.
+
+Definition serialize_positive p :=
+  serialize (compress_positive p).
+
+Definition deserialize_positive :=
+  Deserializer.map decompress_positive deserialize.
 
 Theorem serialize_deserialize_positive_id :
   serialize_deserialize_id_spec serialize_positive deserialize_positive.
 Proof.
   intros.
-  unfold deserialize_positive.
-  simpl.
-  apply positive_step.
+  unfold serialize_positive, deserialize_positive.
+  cheerios_crush.
+  now rewrite compress_decompress_id.
 Qed.
 
 Instance positive_Serializer : Serializer positive.
 Proof.
   exact ({| serialize := serialize_positive;
-     deserialize := deserialize_positive;
-     serialize_deserialize_id := serialize_deserialize_positive_id
+            deserialize := deserialize_positive;
+            serialize_deserialize_id := serialize_deserialize_positive_id
          |}).
 Qed.
 
