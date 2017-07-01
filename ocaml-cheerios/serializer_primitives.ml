@@ -41,6 +41,10 @@ let ret (v : 'a) : 'a deserializer =
   fun r -> v
 ;;
 
+let fail : 'a deserializer =
+  fun r -> failwith "Deserialization failed"
+;;
+  
 type ('s, 'a) fold_state =
   | Done of 'a
   | More of 's

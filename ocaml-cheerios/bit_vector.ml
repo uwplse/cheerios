@@ -4,7 +4,8 @@ type node = {bytes : bytes;
               
 type iterator = {head : node;
                  mutable node : node;
-                 mutable i : int}
+                 mutable i : int;
+                 mutable count : int}
 
 type writer = iterator
 type reader = iterator
@@ -22,12 +23,15 @@ let makeNode n =
 let makeIter node =
   {head = node;
    node = node;
-   i = 0}
+   i = 0;
+   count = 0}
 ;;
 
+let initialLength = 100
+;;
+  
 let makeWriter () =
-  let initialLength = 100
-  in makeIter (makeNode initialLength)
+  makeIter (makeNode initialLength)
 ;;
 
 let insert iter c =
@@ -38,7 +42,8 @@ let insert iter c =
             iter.node <- node';
             iter.i <- 0));
    Bytes.set iter.node.bytes iter.i c;
-   iter.i <- iter.i + 1
+   iter.i <- iter.i + 1;
+   iter.count <- iter.count + 1
 ;;
 
 let read iter =
@@ -57,14 +62,17 @@ let pushBack = insert
 ;;
 
 let writerToReader (iter : iterator) : reader =
-  { head = iter.head;
-    node = iter.head;
-    i = 0 }
+  makeIter (iter.head)
+;;
 
 let pop : reader -> char =
   read
+;;
 
-
+let numBytes (w : writer) : int =
+  w.count
+;;
+    
 (* dumps bytes from current iterator position until end *)
 let dumpReader (r : reader) =
   let rec loop () =
