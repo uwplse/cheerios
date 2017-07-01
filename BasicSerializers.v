@@ -7,6 +7,7 @@ Require Fin Ascii.
 Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
+Require Import Cheerios.Types.
 Import DeserializerNotations.
 
 Lemma byte_serialize_deserialize_id :

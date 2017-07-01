@@ -1,3 +1,5 @@
+(*
+
 Require Import Ascii List ZArith.
 Import ListNotations.
 Set Implicit Arguments.
@@ -119,90 +121,6 @@ Module Type DESERIALIZER.
       end.
 End DESERIALIZER.
 
-Module Deserializer : DESERIALIZER.
-  Definition t (A : Type) := list byte -> option (A * list byte).
-  Definition unwrap {A} (x : t A) := x.
-
-  Definition getByte (l : list byte) :=
-    match l with
-    | [] => None
-    | b :: l => Some (b, l)
-    end.
-
-  Definition bind {A B} (d: t A) (f : A -> t B) : t B :=
-    fun l =>
-      match unwrap d l with
-      | None => None
-      | Some (v, l) => unwrap (f v) l 
-      end.
-
-  Definition ret {A} (a : A) : t A :=
-    fun l => Some (a, l).
-
-  Definition fail {A} : t A :=
-    fun l => None.
-  
-  Definition map {A B} (f : A -> B) (d : t A) : t B :=
-    bind d (fun a => ret (f a)).
-
-  Lemma getByte_unwrap : forall l,
-      unwrap getByte l = match l with
-                         | [] => None
-                         | b :: l => Some (b, l)
-                        end.
-  Proof. reflexivity. Qed.
-
-  Lemma bind_unwrap : forall A B (m : t A)
-                             (f : A -> t B) bin,
-      unwrap (bind m f) bin = match unwrap m bin with
-                                | None => None
-                                | Some (v, bin) => unwrap (f v) bin
-                                end.
-  Proof.
-    unfold bind. 
-    intros.
-    reflexivity.
-  Qed.
-
-  Fixpoint fold {S A}
-           (f : byte -> S -> fold_state S A) (s : S) (l : list byte) :=
-    match l with
-    | [] => None
-    | b :: l => match f b s with
-                | Done a => Some (a, l)
-                | More s => fold f s l
-                | Error => None
-                end
-    end.
-
-  Lemma ret_unwrap : forall A (x: A) bin, unwrap (ret x) bin = Some (x, bin).
-  Proof. reflexivity. Qed.
-
-  Lemma map_unwrap: forall A B (f: A -> B) (d: t A) bin,
-      unwrap (map f d) bin =
-      match (unwrap d bin) with
-      | None => None
-      | Some (v, bin) => Some (f v, bin)
-      end.
-  Proof. reflexivity. Qed.
-
-  Lemma fold_unwrap : forall {S A : Type}
-                             (f : byte -> S -> fold_state S A) (s : S) l,
-      unwrap (fold f s) l =
-      match l with
-      | [] => None
-      | b :: l => match f b s with
-                  | Done a => Some (a, l)
-                  | More s => unwrap (fold f s) l
-                  | Error => None
-                  end
-      end.
-  Proof.
-    intros.
-    simpl. destruct l; reflexivity.
-  Qed.
-End Deserializer.
-Arguments Deserializer.fail {_}.
           
 Notation serialize_deserialize_id_spec s d :=
   (forall a bin,
@@ -440,7 +358,7 @@ Definition deserialize_N :=
                     (fun (b : byte) => match b with
                                        | x00 => Deserializer.ret N0
                                        | x01 => Deserializer.map Npos deserialize
-                                       | _ => Deserializer.fail
+                                       | _ => Deserializer.error
                                        end).
 
 Theorem serialize_deserialize_N_id :
@@ -524,7 +442,7 @@ Section combinators.
                          match b with
                          | x01 => Deserializer.map (@Some A) deserialize
                          | x00 => Deserializer.ret None
-                         | _ => Deserializer.fail
+                         | _ => Deserializer.error
                          end).
 
   Lemma serialize_deserialize_option :
@@ -629,7 +547,7 @@ Extract Inlined Constant Serializer.append => "Serializer_primitives.append".
 
 Extract Inlined Constant Deserializer.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant Deserializer.bind => "Serializer_primitives.bind".
-Extract Inlined Constant Deserializer.fail => "Serializer_primitives.fail".
+Extract Inlined Constant Deserializer.error => "Serializer_primitives.fail".
 Extract Inlined Constant Deserializer.map => "Serializer_primitives.map".
 Extract Inlined Constant Deserializer.ret => "Serializer_primitives.ret".
 Extract Inlined Constant Deserializer.fold => "Serializer_primitives.fold".
@@ -652,3 +570,5 @@ Require Import ExtrOcamlString.
 
 Extraction "ocaml-cheerios/positive_extracted.ml"
            serialize_positive deserialize_positive.
+
+*)

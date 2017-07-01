@@ -5,6 +5,7 @@ Require Import Cheerios.Combinators.
 Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
+Require Import Cheerios.Types.
 
 (* A morphism between two serializable types A and B is a map A -> B that
    describes what happens if you serialize an A and then deserialize it *as a B*.
