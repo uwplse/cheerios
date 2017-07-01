@@ -1,7 +1,9 @@
 Require Import List.
 Import ListNotations.
-Require Import Cheerios.Core.
+Require Import Cheerios.BasicSerializers.
 Require Import Cheerios.Combinators.
+Require Import Cheerios.Core.
+Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
 
 (* A morphism between two serializable types A and B is a map A -> B that
@@ -10,7 +12,8 @@ Require Import Cheerios.Tactics.
    for A and B. *)
 
 Notation triangle_spec f :=
-  (forall a bin, deserialize (serialize a ++ bin) = Some (f a, bin)).
+  (forall a bin,
+      Deserializer.unwrap deserialize (Serializer.unwrap (serialize a) ++ bin) = Some (f a, bin)).
 
 Class SerializerMorphism {A B : Type} (sA : Serializer A) (sB : Serializer B) : Type :=
 {
@@ -19,7 +22,9 @@ Class SerializerMorphism {A B : Type} (sA : Serializer A) (sB : Serializer B) : 
 }.
 
 Lemma triangle_nil {A B sA sB} {m : @SerializerMorphism A B sA sB}  :
-  forall a, deserialize (serialize a) = Some (morphism a, []).
+  forall a,
+    Deserializer.unwrap deserialize (Serializer.unwrap (serialize a)) =
+    Some (morphism a, []).
 Proof.
   intros.
   pose proof triangle a [].
@@ -28,10 +33,10 @@ Qed.
 
 (* Like Candy Crush if the candy was triangular. *)
 Ltac triangle_crush :=
-intros;
-deserializer_unfold;
-repeat rewrite ?app_assoc_reverse, ?serialize_deserialize_id, ?triangle;
-auto.
+  intros;
+  cheerios_crush;
+  repeat rewrite ?app_assoc_reverse, ?serialize_deserialize_id, ?triangle;
+  cheerios_crush.
 
 Section morphism_combinators.
 
@@ -64,7 +69,8 @@ Section morphism_combinators.
   Proof.
     simpl.
     unfold pair_deserialize, pair_serialize.
-    destruct a; triangle_crush.
+    destruct a;
+      triangle_crush.
   Qed.
 
   Global Instance pair_l_Morphism : @SerializerMorphism (A * C) (B * C) _ _ :=
@@ -128,19 +134,25 @@ Section morphism_combinators.
 
 
   Lemma list_triangle_rec:
-    forall (a : list A) (bin : list bool),
-      list_deserialize_rec B sB (length a) (list_serialize_rec A sA a ++ bin) =
-      Some (List.map morphism a, bin).
+    forall (a : list A) (bytes : list byte),
+      Deserializer.unwrap (list_deserialize_rec B sB (length a))
+                          (Serializer.unwrap (list_serialize_rec A sA a) ++ bytes) =
+      Some (List.map morphism a, bytes).
   Proof.
-    induction a; simpl; triangle_crush.
-    now rewrite IHa.
+    induction a;
+      intros;
+      unfold list_serialize_rec, list_deserialize_rec;
+      simpl;
+      triangle_crush;
+      rewrite IHa;
+      cheerios_crush.
   Qed.
 
   Lemma list_triangle : triangle_spec (@List.map A B morphism).
   Proof.
     simpl.
     unfold list_deserialize, list_serialize.
-    serialize_deserialize_id_crush.
+    cheerios_crush.
     apply list_triangle_rec.
   Qed.
 
@@ -153,7 +165,8 @@ Section morphism_combinators.
   Lemma vector_triangle : forall n, triangle_spec (@Vector.map A B morphism n).
   Proof.
     induction a; simpl in *; triangle_crush.
-    now rewrite IHa.
+    rewrite IHa.
+    cheerios_crush.
   Qed.
 
   Global Instance vector_morphism n : @SerializerMorphism (Vector.t A n) (Vector.t B n) _ _ :=

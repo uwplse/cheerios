@@ -17,6 +17,7 @@ Arguments option_map {_ _} _ _.
 Arguments Vector.nil {_}.
 Arguments Vector.cons {_} _ {_} _.
 
+
 Section combinators.
 
   (* This section gives instances for various type constructors, including pairs
@@ -25,59 +26,66 @@ Section combinators.
   Variable sA : Serializer A.
   Variable sB : Serializer B.
 
-  Definition option_serialize (x : option A) : list bool :=
+  Definition option_serialize (x : option A) : Serializer.t :=
     match x with
-    | Some a => serialize true ++ serialize a
+    | Some a => Serializer.append (serialize true) (serialize a)
     | None => serialize false
     end.
 
-  Definition option_deserialize : deserializer (option A) :=
+  Definition option_deserialize : Deserializer.t (option A) :=
     b <- deserialize ;;
     match b with
     | true => Some <$> deserialize
-    | false => ret None
+    | false => Deserializer.ret None
     end.
-
+  
   Lemma option_serialize_deserialize_id :
     serialize_deserialize_id_spec option_serialize option_deserialize.
   Proof.
+    intros.
     unfold option_serialize, option_deserialize.
-    destruct a; serialize_deserialize_id_crush.
+    destruct a;
+      repeat (cheerios_crush; simpl).
   Qed.
 
   Global Instance option_Serializer : Serializer (option A) :=
     {| serialize := option_serialize;
-        deserialize := option_deserialize;
-        serialize_deserialize_id := option_serialize_deserialize_id
-    |}.
+       deserialize := option_deserialize;
+       serialize_deserialize_id := option_serialize_deserialize_id |}.
 
-  Definition pair_serialize (x : A * B) : list bool :=
-    let (a, b) := x in serialize a ++ serialize b.
 
-  Definition pair_deserialize : deserializer (A * B) :=
-    liftD2 pair.
+  
+  Definition pair_serialize (x : A * B) : Serializer.t :=
+    let (a, b) := x in Serializer.append (serialize a) (serialize b).
+  
+  Definition pair_deserialize : Deserializer.t (A * B) :=
+    Deserializer.bind deserialize
+                      (fun (a : A) =>
+                         Deserializer.bind deserialize
+                                           (fun b =>
+                                              Deserializer.ret (a, b))).
 
   Lemma pair_serialize_deserialize_id :
     serialize_deserialize_id_spec pair_serialize pair_deserialize.
   Proof.
+    intros.
     unfold pair_serialize, pair_deserialize.
-    destruct a; serialize_deserialize_id_crush.
+    destruct a.
+    cheerios_crush.
   Qed.
 
   Global Instance pair_Serializer : Serializer (A * B) :=
     {| serialize := pair_serialize;
-        deserialize := pair_deserialize;
-        serialize_deserialize_id := pair_serialize_deserialize_id
-    |}.
+     deserialize := pair_deserialize;
+     serialize_deserialize_id := pair_serialize_deserialize_id |}.
 
-
-  Definition sum_serialize (x : A + B) : list bool :=
+  Definition sum_serialize (x : A + B) : Serializer.t :=
     match x with
-    | inl a => serialize true ++ serialize a
-    | inr b => serialize false ++ serialize b
+    | inl a => Serializer.append (serialize true) (serialize a)
+    | inr b => Serializer.append (serialize false) (serialize b)
     end.
 
-  Definition sum_deserialize : deserializer (A + B) :=
+  Definition sum_deserialize : Deserializer.t (A + B) :=
     b <- deserialize ;;
     match b with
     | true => inl <$> deserialize
@@ -88,7 +96,7 @@ Section combinators.
     serialize_deserialize_id_spec sum_serialize sum_deserialize.
   Proof.
     unfold sum_serialize, sum_deserialize.
-    destruct a; serialize_deserialize_id_crush.
+    destruct a; cheerios_crush.
   Qed.
 
   Global Instance sum_Serializer : Serializer (A + B) :=
@@ -97,37 +105,44 @@ Section combinators.
         serialize_deserialize_id := sum_serialize_deserialize_id
     |}.
 
-
-  Fixpoint list_serialize_rec (l : list A) : list bool :=
+  Fixpoint list_serialize_rec (l : list A) : Serializer.t :=
     match l with
-    | [] => []
-    | a :: l' => serialize a ++ list_serialize_rec l'
+    | [] => Serializer.empty
+    | a :: l' => Serializer.append (serialize a) (list_serialize_rec l')
     end.
 
-  Definition list_serialize (l : list A) : list bool :=
-    serialize (length l) ++ list_serialize_rec l.
+  Definition list_serialize (l : list A) : Serializer.t :=
+    Serializer.append (serialize (length l)) (list_serialize_rec l).
 
-  Fixpoint list_deserialize_rec (n : nat) : deserializer (list A) :=
+  Fixpoint list_deserialize_rec (n : nat) : Deserializer.t (list A) :=
     match n with
-    | 0 => ret []
+    | 0 => Deserializer.ret []
     | S n' => cons <$> deserialize <*> list_deserialize_rec n'
     end.
 
-  Definition list_deserialize : deserializer (list A) :=
+  Definition list_deserialize : Deserializer.t (list A) :=
     deserialize >>= list_deserialize_rec.
 
   Lemma list_serialize_deserialize_id_rec :
-    forall l bin, list_deserialize_rec (length l) (list_serialize_rec l ++ bin) = Some (l, bin).
+    forall l bin, Deserializer.unwrap (list_deserialize_rec (length l))
+                                      (Serializer.unwrap (list_serialize_rec l) ++ bin)
+                  = Some(l, bin).
   Proof.
-    induction l; simpl; serialize_deserialize_id_crush.
-    now rewrite IHl.
+    intros.
+    induction l;
+      simpl;
+      cheerios_crush.
+    unfold sequence.
+    cheerios_crush. 
+    rewrite IHl.
+    cheerios_crush.
   Qed.
 
   Lemma list_serialize_deserialize_id :
     serialize_deserialize_id_spec list_serialize list_deserialize.
   Proof.
     unfold list_serialize, list_deserialize.
-    serialize_deserialize_id_crush.
+    cheerios_crush.
     apply list_serialize_deserialize_id_rec.
   Qed.
 
@@ -137,27 +152,31 @@ Section combinators.
         serialize_deserialize_id := list_serialize_deserialize_id
     |}.
 
-  Fixpoint vector_serialize {n} (v : Vector.t A n) : list bool :=
+  Fixpoint vector_serialize {n} (v : Vector.t A n) : Serializer.t :=
     match v with
-    | Vector.nil => []
-    | Vector.cons a v' => serialize a ++ vector_serialize v'
+    | Vector.nil => Serializer.empty
+    | Vector.cons a v' => Serializer.append (serialize a) (vector_serialize v')
     end.
 
-  Fixpoint vector_deserialize {n} : deserializer (Vector.t A n) :=
-    match n as n0 return deserializer (Vector.t A n0) with
-    | 0 => ret Vector.nil
-    | S n' => a <- deserialize ;; v <- vector_deserialize ;; ret (Vector.cons a v)
+  Fixpoint vector_deserialize {n} : Deserializer.t (Vector.t A n) :=
+    match n as n0 return Deserializer.t (Vector.t A n0) with
+    | 0 => Deserializer.ret Vector.nil
+    | S n' => a <- deserialize ;;
+                v <- vector_deserialize ;;
+                Deserializer.ret (Vector.cons a v)
     end.
 
   Lemma vector_serialize_deserialize_id :
     forall n, serialize_deserialize_id_spec vector_serialize (@vector_deserialize n).
   Proof.
     induction n; intros.
-    - destruct a using Vector.case0. auto.
+    - destruct a using Vector.case0. auto. unfold vector_serialize,  vector_deserialize.
+      cheerios_crush.
     - destruct a using Vector.caseS'.
       simpl.
-      serialize_deserialize_id_crush.
-      now rewrite IHn.
+      cheerios_crush.
+      rewrite IHn.
+      cheerios_crush.
   Qed.
 
   Global Instance vector_Serializer n : Serializer (Vector.t A n) :=
@@ -165,7 +184,6 @@ Section combinators.
         deserialize := vector_deserialize;
         serialize_deserialize_id := vector_serialize_deserialize_id n
     |}.
-
 End combinators.
 
 
@@ -194,14 +212,14 @@ Qed.
 Definition string_serialize (s : String.string) :=
   serialize (string_to_list s).
 
-Definition string_deserialize : deserializer String.string :=
+Definition string_deserialize : Deserializer.t String.string :=
   list_to_string <$> deserialize.
 
 Lemma string_serialize_deserialize_id :
   serialize_deserialize_id_spec string_serialize string_deserialize.
 Proof.
   unfold string_deserialize, string_serialize.
-  serialize_deserialize_id_crush.
+  cheerios_crush.
   now rewrite string_to_list_to_string.
 Qed.
 
@@ -210,5 +228,3 @@ Instance string_Serializer : Serializer String.string :=
      deserialize := string_deserialize;
      serialize_deserialize_id := string_serialize_deserialize_id
   |}.
-
-

@@ -3,23 +3,10 @@ Require Import List.
 Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 
-Ltac deserializer_unfold :=
-  unfold (* list in reverse order so that dependencies get unfolded *)
-    liftD4,
-    liftD3,
-    liftD2,
-    liftD1,
-    sequence,
-    fmap,
-    push,
-    fail,
-    put,
-    get,
-    bind,
-    ret
-  in *.
+Ltac cheerios_crush := intros; autorewrite with cheerios; auto.
 
-Ltac serialize_deserialize_id_crush :=
-  intros; deserializer_unfold;
-  repeat rewrite ?app_assoc_reverse, ?serialize_deserialize_id;
-  auto.
+Hint Rewrite app_ass 
+     Serializer.empty_unwrap Serializer.putByte_unwrap
+     Serializer.append_unwrap Deserializer.getByte_unwrap
+     Deserializer.bind_unwrap Deserializer.ret_unwrap
+     Deserializer.map_unwrap @Deserializer.fold_unwrap : cheerios.
