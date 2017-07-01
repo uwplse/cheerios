@@ -20,167 +20,167 @@ let make_positive n =
 let rec serialize_positive_two p =
   match p with
   | XI (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\000')
+     Serializer_primitives.append (byte_Serializer.serialize '\000')
                                   (serialize_positive_two p)
   | XI (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\001')
+     Serializer_primitives.append (byte_Serializer.serialize '\001')
                                   (serialize_positive_two p)
   | XO (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\002')
+     Serializer_primitives.append (byte_Serializer.serialize '\002')
                                   (serialize_positive_two p)
   | XO (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\003')
+     Serializer_primitives.append (byte_Serializer.serialize '\003')
                                   (serialize_positive_two p)
   | XI p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\004')
+     Serializer_primitives.append (byte_Serializer.serialize '\004')
                                   (serialize_positive_two p)
   | XO p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\005')
+     Serializer_primitives.append (byte_Serializer.serialize '\005')
                                   (serialize_positive_two p)
-  | XH -> ascii_Serializer.serialize '\006'
+  | XH -> byte_Serializer.serialize '\006'
 ;;
 
 (* unverified and doesn't correspond to any deserializer *)
 let rec serialize_positive_three p =
   match p with
   | XI (XI (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\014')
+     Serializer_primitives.append (byte_Serializer.serialize '\014')
                                   (serialize_positive_three p)
   | XI (XI (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\013')
+     Serializer_primitives.append (byte_Serializer.serialize '\013')
                                   (serialize_positive_three p)
   | XI (XO (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\012')
+     Serializer_primitives.append (byte_Serializer.serialize '\012')
                                   (serialize_positive_three p)
   | XI (XO (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\011')
+     Serializer_primitives.append (byte_Serializer.serialize '\011')
                                   (serialize_positive_three p)
   | XO (XI (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\010')
+     Serializer_primitives.append (byte_Serializer.serialize '\010')
                                   (serialize_positive_three p)
   | XO (XI (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\009')
+     Serializer_primitives.append (byte_Serializer.serialize '\009')
                                   (serialize_positive_three p)
   | XO (XO (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\008')
+     Serializer_primitives.append (byte_Serializer.serialize '\008')
                                   (serialize_positive_three p)
   | XO (XO (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\007')
+     Serializer_primitives.append (byte_Serializer.serialize '\007')
                                   (serialize_positive_three p)
   | XI (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\006')
+     Serializer_primitives.append (byte_Serializer.serialize '\006')
                                   (serialize_positive_three p)
   | XI (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\005')
+     Serializer_primitives.append (byte_Serializer.serialize '\005')
                                   (serialize_positive_three p)
   | XO (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\004')
+     Serializer_primitives.append (byte_Serializer.serialize '\004')
                                   (serialize_positive_three p)
   | XO (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\003')
+     Serializer_primitives.append (byte_Serializer.serialize '\003')
                                   (serialize_positive_three p)
   | XI p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\002')
+     Serializer_primitives.append (byte_Serializer.serialize '\002')
                                   (serialize_positive_three p)
   | XO p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\001')
+     Serializer_primitives.append (byte_Serializer.serialize '\001')
                                   (serialize_positive_three p)
-  | XH -> ascii_Serializer.serialize '\000'
+  | XH -> byte_Serializer.serialize '\000'
 ;;
 
 let rec serialize_positive_four p =
   match p with
   | XI (XI (XI (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\030')
+     Serializer_primitives.append (byte_Serializer.serialize '\030')
                                   (serialize_positive_four p)
   | XI (XI (XI (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\029')
+     Serializer_primitives.append (byte_Serializer.serialize '\029')
                                   (serialize_positive_four p)
   | XI (XI (XO (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\028')
+     Serializer_primitives.append (byte_Serializer.serialize '\028')
                                   (serialize_positive_four p)
   | XI (XI (XO (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\027')
+     Serializer_primitives.append (byte_Serializer.serialize '\027')
                                   (serialize_positive_four p)
   | XI (XO (XI (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\026')
+     Serializer_primitives.append (byte_Serializer.serialize '\026')
                                   (serialize_positive_four p)
   | XI (XO (XI (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\025')
+     Serializer_primitives.append (byte_Serializer.serialize '\025')
                                   (serialize_positive_four p)
   | XI (XO (XO (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\024')
+     Serializer_primitives.append (byte_Serializer.serialize '\024')
                                   (serialize_positive_four p)
   | XI (XO (XO (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\023')
+     Serializer_primitives.append (byte_Serializer.serialize '\023')
                                   (serialize_positive_four p)
   | XO (XI (XI (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\022')
+     Serializer_primitives.append (byte_Serializer.serialize '\022')
                                   (serialize_positive_four p)
   | XO (XI (XI (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\021')
+     Serializer_primitives.append (byte_Serializer.serialize '\021')
                                   (serialize_positive_four p)
   | XO (XI (XO (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\020')
+     Serializer_primitives.append (byte_Serializer.serialize '\020')
                                   (serialize_positive_four p)
   | XO (XI (XO (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\019')
+     Serializer_primitives.append (byte_Serializer.serialize '\019')
                                   (serialize_positive_four p)
   | XO (XO (XI (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\018')
+     Serializer_primitives.append (byte_Serializer.serialize '\018')
                                   (serialize_positive_four p)
   | XO (XO (XI (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\017')
+     Serializer_primitives.append (byte_Serializer.serialize '\017')
                                   (serialize_positive_four p)
   | XO (XO (XO (XI p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\016')
+     Serializer_primitives.append (byte_Serializer.serialize '\016')
                                   (serialize_positive_four p)
   | XO (XO (XO (XO p))) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\015')
+     Serializer_primitives.append (byte_Serializer.serialize '\015')
                                   (serialize_positive_four p)
   | XI (XI (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\014')
+     Serializer_primitives.append (byte_Serializer.serialize '\014')
                                   (serialize_positive_four p)
   | XI (XI (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\013')
+     Serializer_primitives.append (byte_Serializer.serialize '\013')
                                   (serialize_positive_four p)
   | XI (XO (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\012')
+     Serializer_primitives.append (byte_Serializer.serialize '\012')
                                   (serialize_positive_four p)
   | XI (XO (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\011')
+     Serializer_primitives.append (byte_Serializer.serialize '\011')
                                   (serialize_positive_four p)
   | XO (XI (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\010')
+     Serializer_primitives.append (byte_Serializer.serialize '\010')
                                   (serialize_positive_four p)
   | XO (XI (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\009')
+     Serializer_primitives.append (byte_Serializer.serialize '\009')
                                   (serialize_positive_four p)
   | XO (XO (XI p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\008')
+     Serializer_primitives.append (byte_Serializer.serialize '\008')
                                   (serialize_positive_four p)
   | XO (XO (XO p)) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\007')
+     Serializer_primitives.append (byte_Serializer.serialize '\007')
                                   (serialize_positive_four p)
   | XI (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\006')
+     Serializer_primitives.append (byte_Serializer.serialize '\006')
                                   (serialize_positive_four p)
   | XI (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\005')
+     Serializer_primitives.append (byte_Serializer.serialize '\005')
                                   (serialize_positive_four p)
   | XO (XI p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\004')
+     Serializer_primitives.append (byte_Serializer.serialize '\004')
                                   (serialize_positive_four p)
   | XO (XO p) ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\003')
+     Serializer_primitives.append (byte_Serializer.serialize '\003')
                                   (serialize_positive_four p)
   | XI p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\002')
+     Serializer_primitives.append (byte_Serializer.serialize '\002')
                                   (serialize_positive_four p)
   | XO p ->
-     Serializer_primitives.append (ascii_Serializer.serialize '\001')
+     Serializer_primitives.append (byte_Serializer.serialize '\001')
                                   (serialize_positive_four p)
-  | XH -> ascii_Serializer.serialize '\000'
+  | XH -> byte_Serializer.serialize '\000'
 ;;
 
 let test_positive p print = 
@@ -204,9 +204,8 @@ let test_main max =
   in loop 0
 ;;
 
-(*
 let _ = test_main 1000;;
- *)
+
 (* benchmarking *)
   
 let time_serialize_deserialize (p : positive)
@@ -234,8 +233,19 @@ let rec time_serialize_deserialize_loop size n serialize deserialize =
 let avg l =
   (List.fold_left (+.) 0.0 l) /. (float_of_int (List.length l))
 ;;
+
+let compare_cheerios_marshal_space size =
+  let p = make_positive size in
+  let cheerios_size =
+    let w = Bit_vector.makeWriter () in
+    (serialize_positive p w;
+     Bit_vector.numBytes w) in
+  let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
+  in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
+                   size cheerios_size marshal_size
+;;
   
-let compare_cheerios_marshall size n =
+let compare_cheerios_marshal_time size n =
   let cheerios_results : (float * float) list =
     time_serialize_deserialize_loop
       size n
@@ -272,10 +282,22 @@ let marshal_test n =
 let compare_main max interval =
   let rec loop n =
     if n < max
-    then let num_tries = 100 in
-         (compare_cheerios_marshall n num_tries;
+    then let num_tries = 500 in
+         (compare_cheerios_marshal_time n num_tries;
           loop (n + interval)) in
   loop 0
 ;;
 
+let _ =
+                      (compare_cheerios_marshal_space 1000);
+                      (compare_cheerios_marshal_space 2000);
+                      (compare_cheerios_marshal_space 4000);
+                      (compare_cheerios_marshal_space 10000);
+                      (compare_cheerios_marshal_space 50000);
+                      (compare_cheerios_marshal_space 100000);
+                      (compare_cheerios_marshal_space 200000);
+                      
+                      
+  (*
 let _ = compare_main 100000 10000
+   *) 
