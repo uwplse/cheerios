@@ -59,10 +59,10 @@ Module Deserializer : DESERIALIZER.
   Proof. reflexivity. Qed.
 
   Lemma bind_unwrap : forall A B (m : t A)
-                             (f : A -> t B) bin,
-      unwrap (bind m f) bin = match unwrap m bin with
+                             (f : A -> t B) bytes,
+      unwrap (bind m f) bytes = match unwrap m bytes with
                                 | None => None
-                                | Some (v, bin) => unwrap (f v) bin
+                                | Some (v, bytes) => unwrap (f v) bytes
                                 end.
   Proof.
     unfold bind.
@@ -84,11 +84,11 @@ Module Deserializer : DESERIALIZER.
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
 
-  Lemma map_unwrap: forall A B (f: A -> B) (d: Deserializer.t A) bin,
-      Deserializer.unwrap (map f d) bin =
-      match (Deserializer.unwrap d bin) with
+  Lemma map_unwrap: forall A B (f: A -> B) (d: Deserializer.t A) bytes,
+      Deserializer.unwrap (map f d) bytes =
+      match (Deserializer.unwrap d bytes) with
       | None => None
-      | Some (v, bin) => Some (f v, bin)
+      | Some (v, bytes) => Some (f v, bytes)
       end.
   Proof. reflexivity. Qed.
 
@@ -113,8 +113,8 @@ Arguments Deserializer.error {_}.
 
 
 Notation serialize_deserialize_id_spec s d :=
-  (forall a bin,
-      Deserializer.unwrap d (Serializer.unwrap (s a) ++ bin) = Some(a, bin)).
+  (forall a bytes,
+      Deserializer.unwrap d (Serializer.unwrap (s a) ++ bytes) = Some(a, bytes)).
 
 (* This is the class of serializable types, which is the main entrypoint to
    Cheerios. Instances are required to show that `deserialize` can correctly
