@@ -221,7 +221,7 @@ Section serializer.
     | _ => Error
     end.
 
-  Lemma serialize_deserialize_shape_id :
+  Lemma shape_aux :
     forall t acc bytes,
       Deserializer.unwrap (Deserializer.fold deserialize_tree_shape_step acc)
                           (Serializer.unwrap (serialize_tree_shape t) ++ bytes) =
@@ -241,155 +241,56 @@ Section serializer.
           `deserialize_list_tree_shape'` is always called with at least one element on the
           accumulator, so there's no need for a match like there was above.
         *)
-       forall ts acc bin,
+       forall ts acc bytes,
          Deserializer.unwrap
            (Deserializer.fold deserialize_tree_shape_step (ts :: acc))
-           (Serializer.unwrap (serialize_list_tree_shape l) ++ bin) =
+           (Serializer.unwrap (serialize_list_tree_shape l) ++ bytes) =
          Deserializer.unwrap
            (Deserializer.fold
               deserialize_tree_shape_step
-              ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc)) bin);
-      intros.
-    - cheerios_crush. simpl. cheerios_crush.
-    - unfold serialize_list_tree_shape.
-      rewrite Serializer.append_unwrap, app_ass, IHt, IHt0.
-      simpl.
-      now rewrite app_ass.
-    - intros.
-      repeat (cheerios_crush; simpl).
-      now destruct acc.
-    - intros.
-      simpl.
-      rewrite fold_append_unwrap.
-      simpl.
-      fold serialize_list_tree_shape.
-      rewrite Serializer.append_unwrap, app_ass.
-      rewrite IHt.
-      cheerios_crush. simpl.
+              ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc)) bytes);
+      intros;
+      try (unfold serialize_list_tree_shape;
+           rewrite Serializer.append_unwrap, app_ass, IHt, IHt0;
+           simpl;
+           now rewrite app_ass);
+      cheerios_crush; simpl; cheerios_crush; simpl.
+    - now destruct acc.
+    - rewrite IHt. cheerios_crush. simpl.
       destruct acc;
-        rewrite app_nil_r, rev_involutive;
-        auto.
+        now rewrite app_nil_r, rev_involutive.
   Qed.
-
-      
-      
-          
-          
-
-        
-        
-        
-        
-
-
-
-        cheerios_crush. 
-        
-        fold serialize_list_tree_shape.
-        cheerios_crush. unfold serialize_list_tree_shape.
-        
-          
-      fold deserialize_tree_shape_step.
-
-      cheerios_crush.
-
-      
-      
-
-
-
-  Fixpoint deserialize_tree_shape' (acc : list (list (tree unit))) (l : list bool) :
-    option (tree unit * list bool) :=
-    match l with
-    | [] => None
-    | b :: l =>
-      if b
-      then match acc with
-           | [] => Some (atom tt, l)
-           | ts :: acc =>
-             (* no need to call atomic deserializer, so recursion is structural! *)
-             deserialize_tree_shape' ((atom tt :: ts) :: acc) l
-           end
-      else match l with
-           | [] => None
-           | b :: l =>
-             if b
-             then deserialize_tree_shape' ([] :: acc) l
-             else match acc with
-                  | [] => None
-                  | ts :: acc => let t := node (List.rev ts) in
-                              match acc with
-                              | [] => Some (t, l)
-                              | ts :: acc => deserialize_tree_shape' ((t :: ts) :: acc) l
-                              end
-                  end
-           end
-    end.
-
-  (* Serializing and then deserializing the shape of a tree 't' is the same
-     as `map (fun _ => tt) t`. *)
-
-  (* We strengthen this statement to account for the accumulator. *)
-  Lemma serialize_deserialize_shape'_id :
-    forall t acc bin,
-      deserialize_tree_shape' acc (serialize_tree_shape t ++ bin) =
-      match acc with
-      | [] => Some (map (fun _ => tt) t, bin)
-      | j :: js => deserialize_tree_shape' ((map (fun _ => tt) t :: j) :: js) bin
-      end.
-  Proof.
-    induction t using tree_rect with
-    (P_list := fun l =>
-       (* We need to extend the statement to a list of subtrees for the mutual induction
-          hypothesis.
-          It says that serializing and then deserializing a list of trees `l` is the same
-          as `List.map (map (fun _ => tt) l)`.
-          `deserialize_list_tree_shape'` is always called with at least one element on the
-          accumulator, so there's no need for a match like there was above.
-        *)
-       forall ts acc bin,
-         deserialize_tree_shape' (ts :: acc) (serialize_list_tree_shape l ++ bin) =
-         deserialize_tree_shape' ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc) bin);
-    intros.
-    - auto.
-    - simpl. rewrite app_ass.
-      rewrite IHt.
-      rewrite IHt0.
-      rewrite app_ass. auto.
-    - auto.
-    - simpl. fold serialize_list_tree_shape.
-      rewrite app_ass.
-      rewrite IHt.
-      simpl.
-      now rewrite app_nil_r, rev_involutive.
-  Qed.
-
-  Definition deserialize_tree_shape := deserialize_tree_shape' [].
+  
+  Definition deserialize_tree_shape : Deserializer.t (tree unit) :=
+    Deserializer.fold deserialize_tree_shape_step [].
 
   (* This is the top level statement about serializing and deserializing tree shapes:
      it results in `map (fun _ => tt)` of the original tree. *)
   Lemma serialize_deserialize_shape_id :
-    forall t bin,
-      deserialize_tree_shape (serialize_tree_shape t ++ bin) = Some (map (fun _ => tt) t, bin).
-  Proof.
-    unfold deserialize_tree_shape.
+    forall t bytes,
+      Deserializer.unwrap deserialize_tree_shape
+                          (Serializer.unwrap (serialize_tree_shape t) ++ bytes)
+      = Some (map (fun _ => tt) t, bytes).
+    Proof.
     intros.
-    now rewrite serialize_deserialize_shape'_id.
+    unfold deserialize_tree_shape.
+    now rewrite shape_aux.
   Qed.
 
   (* Now we serialize the tree itself by first serializing the shape, and then a
      preorder traversal of the elements. *)
-  Definition tree_serialize (t : tree A) : list bool :=
-    serialize_tree_shape t ++ serialize (preorder t).
+  Definition tree_serialize (t : tree A) : Serializer.t :=
+    Serializer.append (serialize_tree_shape t)
+                      (serialize (preorder t)).
 
   (* To deserialize, we deserialize the shape and the elements, and then fill out
      the shape with the elements. *)
-  Definition tree_deserialize : deserializer (tree A) :=
+  Definition tree_deserialize : Deserializer.t (tree A) :=
     shape <- deserialize_tree_shape ;;
     elems <- deserialize ;;
     match fill shape elems with
-    | None => fail
-    | Some t => ret t
+    | None => Deserializer.error
+    | Some t => Deserializer.ret t
     end.
 
   (* To prove this correct, we need to know that serializ-/deserializing the shape of `t`
@@ -400,11 +301,9 @@ Section serializer.
   Lemma tree_serialize_deserialize_id :
     serialize_deserialize_id_spec tree_serialize tree_deserialize.
   Proof.
-    unfold tree_serialize, tree_deserialize.
-    serialize_deserialize_id_crush.
-    rewrite serialize_deserialize_shape_id.
-    serialize_deserialize_id_crush.
-    now rewrite fill_preorder.
+    unfold tree_serialize, tree_deserialize. cheerios_crush.
+    rewrite serialize_deserialize_shape_id. cheerios_crush.
+    rewrite fill_preorder. cheerios_crush.
   Qed.
 
   Global Instance tree_Serializer : Serializer (tree A) :=
@@ -413,3 +312,39 @@ Section serializer.
         serialize_deserialize_id := tree_serialize_deserialize_id
     |}.
 End serializer.
+
+Module sexp.
+  Import String.
+
+  Definition sexp := tree string.
+
+  Module examples.
+    (*
+       (define (id x) x)
+    *)
+    Definition id : sexp :=
+      node [atom "define"; node [atom "id"; atom "x"]; atom "x"]%string.
+
+    Lemma foo:
+           Deserializer.unwrap deserialize
+                               (Serializer.unwrap (serialize id)) = Some (id, []).
+    Proof.
+      now rewrite serialize_deserialize_id_nil.
+    Qed.
+    (*
+       (define (Y f) ((lambda (x) (f (x x)))
+                      (lambda (x) (f (x x)))))
+    *)
+    Definition Y : sexp :=
+      node [atom "define"; node [atom "Y"; atom "f"];
+          node [node [atom "lambda"; node [atom "x"]; node [atom "f"; node [atom "x"; atom "x"]]];
+                node [atom "lambda"; node [atom "x"]; node [atom "f"; node [atom "x"; atom "x"]]]]]
+           %string.
+
+    Lemma foo' : Deserializer.unwrap deserialize (Serializer.unwrap (serialize Y)) = Some (Y, []).
+    Proof.
+      now rewrite serialize_deserialize_id_nil.
+    Qed.
+  End examples.
+End sexp.
+
