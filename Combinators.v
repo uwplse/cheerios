@@ -48,11 +48,12 @@ Section combinators.
       repeat (cheerios_crush; simpl).
   Qed.
 
-  Global Instance option_Serializer : Serializer (option A) :=
-    {| serialize := option_serialize;
-       deserialize := option_deserialize;
-       serialize_deserialize_id := option_serialize_deserialize_id |}.
-
+  Global Instance option_Serializer : Serializer (option A).
+  Proof.
+    exact {| serialize := option_serialize;
+             deserialize := option_deserialize;
+             serialize_deserialize_id := option_serialize_deserialize_id |}.
+  Qed.
 
   
   Definition pair_serialize (x : A * B) : Serializer.t :=
@@ -74,10 +75,12 @@ Section combinators.
     cheerios_crush.
   Qed.
 
-  Global Instance pair_Serializer : Serializer (A * B) :=
-    {| serialize := pair_serialize;
-     deserialize := pair_deserialize;
-     serialize_deserialize_id := pair_serialize_deserialize_id |}.
+  Global Instance pair_Serializer : Serializer (A * B).
+  Proof.
+    exact {| serialize := pair_serialize;
+             deserialize := pair_deserialize;
+             serialize_deserialize_id := pair_serialize_deserialize_id |}.
+  Qed.
 
   Definition sum_serialize (x : A + B) : Serializer.t :=
     match x with
@@ -99,12 +102,14 @@ Section combinators.
     destruct a; cheerios_crush.
   Qed.
 
-  Global Instance sum_Serializer : Serializer (A + B) :=
-    {| serialize := sum_serialize;
-        deserialize := sum_deserialize;
-        serialize_deserialize_id := sum_serialize_deserialize_id
-    |}.
-
+  Global Instance sum_Serializer : Serializer (A + B).
+  Proof.
+    exact {| serialize := sum_serialize;
+             deserialize := sum_deserialize;
+             serialize_deserialize_id := sum_serialize_deserialize_id
+          |}.
+  Qed.
+  
   Fixpoint list_serialize_rec (l : list A) : Serializer.t :=
     match l with
     | [] => Serializer.empty
@@ -146,11 +151,13 @@ Section combinators.
     apply list_serialize_deserialize_id_rec.
   Qed.
 
-  Global Instance list_Serializer : Serializer (list A) :=
-    {| serialize := list_serialize;
-        deserialize := list_deserialize;
-        serialize_deserialize_id := list_serialize_deserialize_id
-    |}.
+  Global Instance list_Serializer : Serializer (list A).
+  Proof.
+    exact {| serialize := list_serialize;
+             deserialize := list_deserialize;
+             serialize_deserialize_id := list_serialize_deserialize_id
+          |}.
+  Qed.
 
   Fixpoint vector_serialize {n} (v : Vector.t A n) : Serializer.t :=
     match v with
@@ -179,11 +186,13 @@ Section combinators.
       cheerios_crush.
   Qed.
 
-  Global Instance vector_Serializer n : Serializer (Vector.t A n) :=
-    {| serialize := vector_serialize;
-        deserialize := vector_deserialize;
-        serialize_deserialize_id := vector_serialize_deserialize_id n
-    |}.
+  Global Instance vector_Serializer n : Serializer (Vector.t A n).
+  Proof.
+    exact {| serialize := vector_serialize;
+             deserialize := vector_deserialize;
+             serialize_deserialize_id := vector_serialize_deserialize_id n
+          |}.
+  Qed.
 End combinators.
 
 
@@ -223,8 +232,10 @@ Proof.
   now rewrite string_to_list_to_string.
 Qed.
 
-Instance string_Serializer : Serializer String.string :=
-  {| serialize := string_serialize;
-     deserialize := string_deserialize;
-     serialize_deserialize_id := string_serialize_deserialize_id
-  |}.
+Instance string_Serializer : Serializer String.string.
+Proof.
+  exact {| serialize := string_serialize;
+           deserialize := string_deserialize;
+           serialize_deserialize_id := string_serialize_deserialize_id
+        |}.
+Qed.

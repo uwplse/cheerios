@@ -254,11 +254,13 @@ Section serializer.
            rewrite Serializer.append_unwrap, app_ass, IHt, IHt0;
            simpl;
            now rewrite app_ass);
-      cheerios_crush; simpl; cheerios_crush; simpl.
-    - now destruct acc.
-    - rewrite IHt. cheerios_crush. simpl.
+      (cheerios_crush; simpl; cheerios_crush; simpl);
       destruct acc;
-        now rewrite app_nil_r, rev_involutive.
+      auto;
+      rewrite IHt;
+      rewrite Deserializer.fold_unwrap;
+      simpl;
+      now rewrite app_nil_r, rev_involutive.
   Qed.
   
   Definition deserialize_tree_shape : Deserializer.t (tree unit) :=
@@ -271,7 +273,7 @@ Section serializer.
       Deserializer.unwrap deserialize_tree_shape
                           (Serializer.unwrap (serialize_tree_shape t) ++ bytes)
       = Some (map (fun _ => tt) t, bytes).
-    Proof.
+  Proof.
     intros.
     unfold deserialize_tree_shape.
     now rewrite shape_aux.
@@ -348,3 +350,256 @@ Module sexp.
   End examples.
 End sexp.
 
+Module JSON.
+  Module json.
+    Inductive t :=
+    | Null : t
+    | Num : nat -> t
+    | Arr : list t -> t
+    | Obj : list (String.string * t) -> t.
+
+    Section json_rect.
+      Variable P : t -> Type.
+
+      Variable P_list : list t -> Type.
+      Variable P_list' : list (String.string * t) -> Type.
+
+      Hypothesis P_nil : P_list [].
+      Hypothesis P_cons : forall j l, P j -> P_list l -> P_list (j :: l).
+
+      Hypothesis P_nil' : P_list' [].
+      Hypothesis P_cons' : forall s j l, P j -> P_list' l -> P_list' ((s, j) :: l).
+
+      Hypothesis P_null : P Null.
+      Hypothesis P_num : forall n, P (Num n).
+      Hypothesis P_arr : forall l, P_list l -> P (Arr l).
+      Hypothesis P_obj : forall l, P_list' l -> P (Obj l).
+
+      Fixpoint json_rect (j : t) : P j :=
+        let fix go_list (l : list t) : P_list l :=
+            match l with
+            | [] => P_nil
+            | j :: l => P_cons (json_rect j) (go_list l)
+            end in
+        let fix go_list' (l : list (String.string * t)) : P_list' l :=
+            match l with
+            | [] => P_nil'
+            | (s, j) :: l => P_cons' s (json_rect j) (go_list' l)
+            end in
+        match j with
+        | Null => P_null
+        | Num n => P_num n
+        | Arr l => P_arr (go_list l)
+        | Obj l => P_obj (go_list' l)
+        end.
+    End json_rect.
+
+    (* Setting P_list := List.Forall P is a reasonable default. *)
+    Check json_rect.
+    Section json_ind.
+      Variable P : t -> Prop.
+
+      Hypothesis P_null : P Null.
+      Hypothesis P_num : forall n, P (Num n).
+      Hypothesis P_arr : forall l, List.Forall P l -> P (Arr l).
+      Hypothesis P_obj : forall l, List.Forall (fun s => P (snd s)) l -> P (Obj l).
+
+      Check (fun t l Pt Pl => List.Forall_cons t Pt Pl).
+      Definition json_ind (j : t) : P j :=
+        json_rect P (List.Forall P)
+                  (List.Forall (fun s => P (snd s)))
+                  (List.Forall_nil _) (fun j l Pt Pl => List.Forall_cons j Pt Pl)
+                  (List.Forall_nil _)
+                  (fun s j l Pj Pt => List.Forall_cons (s, j) Pj Pt)
+                  P_null
+                  P_num
+                  P_arr
+                  P_obj
+                  j.
+    End json_ind.
+  End json.
+
+  Module tag.
+    Inductive t :=
+    | Null : t
+    | Num : nat -> t
+    | Str : String.string -> t
+    | Arr : t
+    | Obj : t.
+
+    (* tag serializer *)
+    Definition tag_serialize (t : t) : Serializer.t :=
+      match t with
+      | Null => serialize x00
+      | Num n => Serializer.append (serialize x01) (serialize n)
+      | Str s => Serializer.append (serialize x02) (serialize s)
+      | Arr => serialize x03
+      | Obj => serialize x04
+      end.
+
+    Definition tag_deserialize : Deserializer.t t :=
+      tag <- deserialize ;;
+          match tag with
+          | x00 => Deserializer.ret Null
+          | x01 => Num <$> deserialize
+          | x02 => Str <$> deserialize
+          | x03 => Deserializer.ret Arr
+          | x04 => Deserializer.ret Obj
+          | _ => Deserializer.error
+          end.
+
+    Lemma tag_serialize_deserialize_id :
+      serialize_deserialize_id_spec tag_serialize tag_deserialize.
+    Proof.
+      intros.
+      destruct a;
+        unfold tag_serialize, tag_deserialize;
+        cheerios_crush; simpl; cheerios_crush.
+    Qed.
+
+    Instance tag_Serializer : Serializer t.
+    Proof.
+      exact {| serialize := tag_serialize;
+               deserialize := tag_deserialize;
+               serialize_deserialize_id := tag_serialize_deserialize_id |}.
+    Qed.
+    (* json <-> tree tag conversion *)
+
+    Fixpoint json_treeify (j : json.t) : tree tag.t :=
+      let fix obj_list_to_tree_list (l : list (String.string * json.t)) : list (tree tag.t) :=
+          match l with
+          | [] => []
+          | (s, j) :: l => atom (tag.Str s) :: json_treeify j :: obj_list_to_tree_list l
+          end
+      in
+      match j with
+      | json.Null => atom tag.Null
+      | json.Num n => atom (tag.Num n)
+      | json.Arr l => node (atom tag.Arr :: List.map json_treeify l)
+      | json.Obj l => node (atom tag.Obj :: obj_list_to_tree_list l)
+      end.
+
+    Definition obj_list_to_tree_list :=
+      fix obj_list_to_tree_list (l : list (String.string * json.t)) :
+        list (tree tag.t) :=
+          match l with
+          | [] => []
+          | (s, j) :: l => atom (tag.Str s) :: json_treeify j :: obj_list_to_tree_list l
+          end.
+
+    Fixpoint json_untreeify (t : tree tag.t) : option json.t :=
+      let fix untreeify_list (l : list (tree tag.t)) : option (list json.t) :=
+          match l with
+          | [] => Some []
+          | x :: l => match json_untreeify x with
+                      | None => None
+                      | Some y => match untreeify_list l with
+                                  | None => None
+                                  | Some l => Some (y :: l)
+                                  end
+                      end
+          end in
+      let fix untreeify_obj_list (l : list (tree tag.t)) :
+            option (list (String.string * json.t)) :=
+          match l with
+          | [] => Some []
+          | atom (tag.Str s) :: t :: l => match json_untreeify t with
+                           | None => None
+                           | Some j => match untreeify_obj_list l with
+                                       | None => None
+                                       | Some l => Some ((s, j) :: l)
+                                       end
+                                     end
+          | _ => None
+          end in
+      match t with
+      | atom (tag.Num n) => Some (json.Num n)
+      | node (atom tag.Arr :: l) => match untreeify_list l with
+                                    | None => None
+                                    | Some l => Some (json.Arr l)
+                                    end
+      | atom (tag.Null) => Some (json.Null)
+      | node (atom tag.Obj :: l) => match untreeify_obj_list l with
+                                    | None => None
+                                    | Some l => Some (json.Obj l)
+                                    end
+      | _ => None
+      end.
+
+    Definition untreeify_obj_list :=
+      fix untreeify_obj_list (l : list (tree tag.t)) :
+            option (list (String.string * json.t)) :=
+          match l with
+          | [] => Some []
+          | atom (tag.Str s) :: t :: l => match json_untreeify t with
+                           | None => None
+                           | Some j => match untreeify_obj_list l with
+                                       | None => None
+                                       | Some l => Some ((s, j) :: l)
+                                       end
+                                     end
+          | _ => None
+          end.
+
+    Definition untreeify_list :=
+      fix untreeify_list l : option (list json.t) :=
+          match l with
+          | [] => Some []
+          | x :: l => match json_untreeify x with
+                      | None => None
+                      | Some y => match untreeify_list l with
+                                  | None => None
+                                  | Some l => Some (y :: l)
+                                  end
+                      end
+          end.
+
+    Definition treeify_untreeify_aux (j : json.t) :=
+      json_untreeify (json_treeify j) = Some j.
+
+    Lemma treeify_untreeify_id : forall j : json.t,
+        treeify_untreeify_aux j .
+    Proof.
+      induction j using json.json_rect         with (P_list := fun l =>
+                          untreeify_list (List.map json_treeify l) = Some l)
+             (P_list' := fun l =>
+                           untreeify_obj_list (obj_list_to_tree_list l) = Some l);
+        unfold treeify_untreeify_aux;
+        auto;
+        simpl;
+        try (fold untreeify_list);
+        try (fold untreeify_obj_list);
+        try (fold obj_list_to_tree_list);
+        try (rewrite IHj);
+        try (rewrite IHj0);
+        auto.
+    Qed.
+
+    Definition json_serialize (j : json.t) :=
+      serialize (json_treeify j).
+
+    Definition json_deserialize : Deserializer.t json.t :=
+      j <- deserialize;;
+        match json_untreeify j with
+        | Some j => Deserializer.ret j
+        | None => Deserializer.error
+        end.
+
+    Lemma json_serialize_deserialize_id :
+      serialize_deserialize_id_spec json_serialize json_deserialize.
+    Proof.
+      intros.
+      unfold json_serialize, json_deserialize.
+      cheerios_crush.
+      rewrite treeify_untreeify_id.
+      cheerios_crush.
+    Qed.
+
+    Instance json_Serializer : Serializer json.t.
+    Proof.
+      exact {| serialize := json_serialize;
+               deserialize := json_deserialize;
+               serialize_deserialize_id := json_serialize_deserialize_id |}.
+    Qed.
+  End tag.
+End JSON.

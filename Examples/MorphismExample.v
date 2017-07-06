@@ -13,9 +13,10 @@ Section silly_example.
   Variable sA : Serializer A.
 
   Definition pair_to_vector (x : A * A) : Vector.t A 2 := [fst x; snd x].
-
+(*
   Lemma A_to_vector_triangle : triangle_spec pair_to_vector.
   Proof.
     destruct a; simpl; triangle_crush.
   Qed.
+*)
 End silly_example.

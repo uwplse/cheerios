@@ -39,6 +39,8 @@ Ltac triangle_crush :=
   repeat rewrite ?app_assoc_reverse, ?serialize_deserialize_id, ?triangle;
   cheerios_crush.
 
+(*
+
 Section morphism_combinators.
 
   Variables A B : Type.
@@ -49,8 +51,9 @@ Section morphism_combinators.
   Lemma option_triangle : triangle_spec (option_map morphism).
   Proof.
     simpl.
-    unfold option_deserialize, option_serialize.
-    destruct a; triangle_crush.
+    destruct a.
+    - intros. destruct m.
+      
   Qed.
 
   Global Instance option_Morphism : @SerializerMorphism (option A) (option B) _ _ :=
@@ -176,3 +179,5 @@ Section morphism_combinators.
     |}.
 
 End morphism_combinators.
+
+*)
