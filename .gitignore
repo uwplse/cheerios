@@ -1,9 +1,11 @@
 *.cmi
 *.cmo
-*.#*
+*#*
 *.v.d
 *.glob
 *.vo
 *.aux
 _CoqProject
 Makefile.coq*
+*~
+*_extracted*
