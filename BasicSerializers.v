@@ -203,23 +203,23 @@ Proof.
         repeat constructor.
 Qed.
 
-Definition depositive_serialize :=
+Definition positive_deserialize :=
   Deserializer.fold depositive_serialize_step (fun p => p).
 
-Theorem serialize_depositive_serialize_id :
+Theorem positive_serialize_deserialize_id :
   serialize_deserialize_id_spec positive_serialize
-                                depositive_serialize.
+                                positive_deserialize.
 Proof.
   intros.
-  unfold depositive_serialize.
+  unfold positive_deserialize.
   apply positive_step.
 Qed.
 
 Instance positive_Serializer : Serializer positive.
 Proof.
   exact ({| serialize := positive_serialize;
-            deserialize := depositive_serialize;
-            serialize_deserialize_id := serialize_depositive_serialize_id
+            deserialize := positive_deserialize;
+            serialize_deserialize_id := positive_serialize_deserialize_id
          |}).
 Qed.
 

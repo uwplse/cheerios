@@ -188,9 +188,9 @@ let test_positive p print =
           print p;
           Printf.printf "... " in
   let w = Bit_vector.makeWriter () in
-  let _ = serialize_positive p w in
+  let _ = positive_serialize p w in
   let r = Bit_vector.writerToReader w in
-  let p' = deserialize_positive r in
+  let p' = positive_deserialize r in
   (assert (p = p'));
   Printf.printf "success\n"
 ;;
@@ -238,7 +238,7 @@ let compare_cheerios_marshal_space size =
   let p = make_positive size in
   let cheerios_size =
     let w = Bit_vector.makeWriter () in
-    (serialize_positive p w;
+    (positive_serialize p w;
      Bit_vector.numBytes w) in
   let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
   in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
@@ -250,9 +250,9 @@ let compare_cheerios_marshal_time size n =
     time_serialize_deserialize_loop
       size n
       (fun p -> let w = Bit_vector.makeWriter ()
-                in (serialize_positive p w);
+                in (positive_serialize p w);
                    w)
-      (fun w -> deserialize_positive (Bit_vector.writerToReader w)) in
+      (fun w -> positive_deserialize (Bit_vector.writerToReader w)) in
   let marshal_results : (float * float) list =
     time_serialize_deserialize_loop
       size n
@@ -282,22 +282,11 @@ let marshal_test n =
 let compare_main max interval =
   let rec loop n =
     if n < max
-    then let num_tries = 500 in
+    then let num_tries = 50 in
          (compare_cheerios_marshal_time n num_tries;
           loop (n + interval)) in
   loop 0
 ;;
 
-let _ =
-                      (compare_cheerios_marshal_space 1000);
-                      (compare_cheerios_marshal_space 2000);
-                      (compare_cheerios_marshal_space 4000);
-                      (compare_cheerios_marshal_space 10000);
-                      (compare_cheerios_marshal_space 50000);
-                      (compare_cheerios_marshal_space 100000);
-                      (compare_cheerios_marshal_space 200000);
-                      
-                      
-  (*
-let _ = compare_main 100000 10000
-   *) 
+let _ = compare_main 350000 20000
+
