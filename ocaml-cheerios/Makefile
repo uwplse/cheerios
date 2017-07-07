@@ -1,7 +1,19 @@
-%_preprocess: %_extracted.ml %_extracted.mli
-	perl remove_module.pl $*
-%_test: %_preprocess
-	ocamlbuild $*_test.native
+OCAMLBUILD = ocamlbuild -tags 'safe_string' -I . -cflag -g
+
+MLEXTRACTED = positive_extracted.ml positive_extracted.mli
+MLFILES = bit_vector.ml bit_vector.mli serializer_primitives.ml positive_test.ml
+
+default: positive_test.native
+
+$(MLEXTRACTED):
+	+$(MAKE) -C .. ocaml-cheerios/$@
+
+positive_test.native: $(MLEXTRACTED) $(MLFILES)
+	$(OCAMLBUILD) positive_test.native
+
+.PHONY: default clean $(MLEXTRACTED)
 
 clean:
-	$(RM) -r _build *.native
+	ocamlbuild -clean
+
+.NOTPARALLEL: $(MLEXTRACTED)
