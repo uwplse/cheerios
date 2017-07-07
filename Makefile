@@ -30,6 +30,7 @@ clean:
 	if [ -f Makefile.coq ]; then \
 	  $(MAKE) -f Makefile.coq cleanall; fi
 	rm -f Makefile.coq
+	$(MAKE) -C ocaml-cheerios clean
 
 .PHONY: default clean install
 
