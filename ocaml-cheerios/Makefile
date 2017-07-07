@@ -9,6 +9,7 @@ $(MLEXTRACTED):
 	+$(MAKE) -C .. ocaml-cheerios/$@
 
 positive_test.native: $(MLEXTRACTED) $(MLFILES)
+	perl remove_module.pl positive
 	$(OCAMLBUILD) positive_test.native
 
 .PHONY: default clean $(MLEXTRACTED)
