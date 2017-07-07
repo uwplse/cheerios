@@ -183,22 +183,32 @@ let rec serialize_positive_four p =
   | XH -> byte_Serializer.serialize '\000'
 ;;
 
-let test_positive p print = 
+let test_serialize_deserialize (v : 'a)
+                               (serialize : 'a -> 'b)
+                               (deserialize : 'b -> 'a)
+                               (print : 'a -> unit) = 
   let _ = Printf.printf "Serializing/deserializing ";
-          print p;
+          print v;
           Printf.printf "... " in
-  let w = Bit_vector.makeWriter () in
-  let _ = positive_serialize p w in
-  let r = Bit_vector.writerToReader w in
-  let p' = positive_deserialize r in
-  (assert (p = p'));
+  let serialized = serialize v in
+  let v' = deserialize serialized in 
+  (assert (v = v'));
   Printf.printf "success\n"
+;;
+
+let test_cheerios p print =
+  test_serialize_deserialize p
+                             (fun p -> let w = Bit_vector.makeWriter () in
+                                       let _ = positive_serialize p w in
+                                       Bit_vector.writerToReader w)
+                             positive_deserialize
+                             print
 ;;
 
 let test_main max =
   let rec loop n =
     if n < max
-    then (test_positive (make_positive n)
+    then (test_cheerios (make_positive n)
                         (fun _ -> Printf.printf "make_positive %d" n);
           loop (n + 1))
   in loop 0
@@ -208,9 +218,9 @@ let _ = test_main 1000;;
 
 (* benchmarking *)
   
-let time_serialize_deserialize (p : positive)
-                               (serialize : positive -> 'a)
-                               (deserialize: 'a -> positive) : float * float =
+let time_serialize_deserialize (p : 'a)
+                               (serialize : 'a -> 'b)
+                               (deserialize: 'b -> 'a) : float * float =
   let serialize_start = Sys.time () in
   let serialized = serialize p in
   let serialize_stop = Sys.time () in
@@ -219,12 +229,13 @@ let time_serialize_deserialize (p : positive)
   (serialize_stop -. serialize_start, deserialize_stop -. serialize_stop)
 ;;
 
-let rec time_serialize_deserialize_loop size n serialize deserialize =
+let rec time_serialize_deserialize_loop make size n
+                                        serialize deserialize =
   let rec loop i acc = 
     if i = n
     then acc
     else loop (i + 1)
-              (time_serialize_deserialize (make_positive size)
+              (time_serialize_deserialize (make size)
                                           serialize
                                           deserialize :: acc)
   in loop 0 []
@@ -245,19 +256,19 @@ let compare_cheerios_marshal_space size =
                    size cheerios_size marshal_size
 ;;
   
-let compare_cheerios_marshal_time size n =
+let compare_cheerios_marshal_time make size n
+                                  serialize deserialize
+                                  serialize' deserialize' =
   let cheerios_results : (float * float) list =
     time_serialize_deserialize_loop
-      size n
-      (fun p -> let w = Bit_vector.makeWriter ()
-                in (positive_serialize p w);
-                   w)
-      (fun w -> positive_deserialize (Bit_vector.writerToReader w)) in
+      make size n
+      serialize deserialize
+  in
   let marshal_results : (float * float) list =
     time_serialize_deserialize_loop
-      size n
-      (fun p -> Marshal.to_bytes p [])
-      (fun b -> (Marshal.from_bytes b 0)) in
+      make size n
+      serialize' deserialize'
+       in
   let cheerios_serialize_avg = avg (List.map fst cheerios_results) in
   let marshal_serialize_avg =  avg (List.map fst marshal_results) in
   let cheerios_deserialize_avg = avg (List.map snd cheerios_results) in
@@ -282,11 +293,18 @@ let marshal_test n =
 let compare_main max interval =
   let rec loop n =
     if n < max
-    then let num_tries = 50 in
-         (compare_cheerios_marshal_time n num_tries;
+    then let num_tries = 500 in
+         (compare_cheerios_marshal_time
+            make_positive n num_tries
+            (fun p -> let w = Bit_vector.makeWriter ()
+                      in (positive_serialize p w);
+                         w)
+            (fun w -> positive_deserialize (Bit_vector.writerToReader w))
+            (fun p -> Marshal.to_bytes p [])
+            (fun b -> (Marshal.from_bytes b 0));
           loop (n + interval)) in
   loop 0
 ;;
 
-let _ = compare_main 350000 20000
+let _ = compare_main 170000 20000
 
