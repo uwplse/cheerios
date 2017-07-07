@@ -1,4 +1,4 @@
-Require Import ExtractionDeps.
+Require Import Cheerios.ExtractionDeps.
 
 Extract Inlined Constant
         Serializer.t => "Serializer_primitives.serializer".
