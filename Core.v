@@ -138,3 +138,18 @@ Proof.
   pose proof serialize_deserialize_id a [].
   now rewrite app_nil_r in *.
 Qed.
+
+Definition deserialize_top {A} (sA : Serializer A) : Serializer.t -> option A :=
+  fun s =>
+    match Deserializer.unwrap deserialize (Serializer.unwrap s) with
+    | None => None
+    | Some (a, _) => Some a
+    end.
+
+Theorem serialize_deserialize_top_id : forall {A} (sA : Serializer A) a,
+    deserialize_top sA (serialize a) = Some a.
+Proof.
+  intros.
+  unfold deserialize_top.
+  now rewrite serialize_deserialize_id_nil.
+Qed.
