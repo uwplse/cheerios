@@ -1,6 +1,4 @@
-Require Import Cheerios.BasicSerializers.
-Require Import Cheerios.Core.
-Require Import Cheerios.Types.
+Require Import ExtractionDeps.
 
 Extract Inlined Constant
         Serializer.t => "Serializer_primitives.serializer".
