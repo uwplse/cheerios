@@ -34,7 +34,7 @@ Inductive byte :=
 Module Type SERIALIZER.
   Parameter t : Type.
   Parameter wire : Type.
-  
+
   Parameter empty : t.
   Parameter append : t -> t -> t.
   Parameter putByte : byte -> t.
@@ -42,10 +42,11 @@ Module Type SERIALIZER.
   (* For proof only! Do not call from serializers. *)
   Parameter unwrap : t -> list byte.
   Parameter wire_wrap : t -> wire.
-  
+  Parameter wire_unwrap : wire -> t.
+
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
       forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
   Parameter putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
+  Parameter wire_wrap_unwrap_inv : forall x, wire_unwrap (wire_wrap x) = x.
 End SERIALIZER.
-

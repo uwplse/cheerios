@@ -16,7 +16,7 @@ Module Serializer : SERIALIZER.
 
   Definition unwrap (x : t) : list byte := x.
   Definition wire_wrap (x : t) : wire := x.
-  Definition wire_unwrap (x : wire) : list byte := x.
+  Definition wire_unwrap (x : wire) : t := x.
   
   Lemma empty_unwrap : unwrap empty = [].
   Proof. reflexivity. Qed.
@@ -26,6 +26,9 @@ Module Serializer : SERIALIZER.
 
   Lemma append_unwrap :
     forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
+  Proof. reflexivity. Qed.
+
+  Lemma wire_wrap_unwrap_inv : forall x, wire_unwrap (wire_wrap x) = x.
   Proof. reflexivity. Qed.
 End Serializer.
 
@@ -191,17 +194,26 @@ Proof.
   now rewrite app_nil_r in *.
 Qed.
 
-Definition deserialize_top {A} (sA : Serializer A) : Serializer.wire -> option A :=
-  fun s =>
-    match Deserializer.unwrap deserialize (Serializer.unwrap s) with
+Section top.
+  Variable A : Type.
+  Variable sA: Serializer A.
+  
+  Definition serialize_top (a : A) : Serializer.wire :=
+    Serializer.wire_wrap (serialize a).
+
+  Definition deserialize_top (w : Serializer.wire) : option A :=
+    match Deserializer.unwrap deserialize
+                              (Serializer.unwrap (Serializer.wire_unwrap w)) with
     | None => None
     | Some (a, _) => Some a
     end.
 
-Theorem serialize_deserialize_top_id : forall {A} (sA : Serializer A) a,
-    deserialize_top sA (serialize a) = Some a.
-Proof.
-  intros.
-  unfold deserialize_top.
-  now rewrite serialize_deserialize_id_nil.
-Qed.
+  Theorem serialize_deserialize_top_id : forall {A} (sA : Serializer A) a,
+      deserialize_top (serialize_top a) = Some a.
+  Proof.
+    intros.
+    unfold serialize_top, deserialize_top.
+    rewrite Serializer.wire_wrap_unwrap_inv.
+    now rewrite serialize_deserialize_id_nil.
+  Qed.
+End top.
