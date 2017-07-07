@@ -6,14 +6,18 @@ Require Import Cheerios.Types.
 Set Implicit Arguments.
 
 Module Serializer : SERIALIZER.
-    Definition t := list byte.
+  Definition t := list byte.
+  Definition wire := list byte.
+  
   Definition empty : t := [].
   Definition putByte (a : byte) : t := [a].
 
   Definition append (x y : t) : t := x ++ y.
 
   Definition unwrap (x : t) : list byte := x.
-
+  Definition wire_wrap (x : t) : wire := x.
+  Definition wire_unwrap (x : wire) : list byte := x.
+  
   Lemma empty_unwrap : unwrap empty = [].
   Proof. reflexivity. Qed.
 
@@ -27,6 +31,54 @@ End Serializer.
 
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
+
+Module Type DESERIALIZER.
+  Parameter t : Type -> Type.
+  
+  Parameter getByte : t byte.
+  Parameter unwrap : forall {A}, t A -> list byte -> option (A * list byte).
+
+  Parameter getByte_unwrap : forall l,
+      unwrap getByte l = match l with
+                         | [] => None
+                         | a :: l => Some (a, l)
+                         end.
+
+  Parameter bind : forall {A B}, t A -> (A -> t B) -> t B.
+  Parameter ret : forall {A}, A -> t A.
+  Parameter map : forall {A B}, (A -> B) -> t A -> t B.
+  Parameter error : forall {A}, t A.
+
+  Parameter fold : forall {S A},
+      (byte -> S -> fold_state S A) -> S -> t A.
+
+  Parameter bind_unwrap : forall A B (m : t A)
+                             (f : A -> t B) bytes,
+      unwrap (bind m f) bytes = match unwrap m bytes with
+                                | None => None
+                                | Some (v, bytes) => unwrap (f v) bytes
+                              end.
+  Parameter ret_unwrap : forall A (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
+
+  Parameter map_unwrap: forall A B (f: A -> B) (d: t A) bin,
+      unwrap (map f d) bin =
+      match (unwrap d bin) with
+      | None => None
+      | Some (v, bin) => Some (f v, bin)
+      end.
+
+  Parameter fold_unwrap : forall {S A : Type}
+                             (f : byte -> S -> fold_state S A) (s : S) l,
+      unwrap (fold f s) l =
+      match l with
+      | [] => None
+      | b :: l => match f b s with
+                  | Done a => Some (a, l)
+                  | More s => unwrap (fold f s) l
+                  | Error => None
+                  end
+      end.
+End DESERIALIZER.
 
 Module Deserializer : DESERIALIZER.
   Definition t (A : Type) := list byte -> option (A * list byte).
@@ -139,7 +191,7 @@ Proof.
   now rewrite app_nil_r in *.
 Qed.
 
-Definition deserialize_top {A} (sA : Serializer A) : Serializer.t -> option A :=
+Definition deserialize_top {A} (sA : Serializer A) : Serializer.wire -> option A :=
   fun s =>
     match Deserializer.unwrap deserialize (Serializer.unwrap s) with
     | None => None

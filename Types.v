@@ -33,62 +33,19 @@ Inductive byte :=
 
 Module Type SERIALIZER.
   Parameter t : Type.
+  Parameter wire : Type.
+  
   Parameter empty : t.
   Parameter append : t -> t -> t.
   Parameter putByte : byte -> t.
 
   (* For proof only! Do not call from serializers. *)
   Parameter unwrap : t -> list byte.
+  Parameter wire_wrap : t -> wire.
+  
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
       forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
   Parameter putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
 End SERIALIZER.
 
-Module Type DESERIALIZER.
-  Parameter t : Type -> Type.
-
-  Parameter getByte : t byte.
-  Parameter unwrap : forall {A}, t A -> list byte -> option (A * list byte).
-
-  Parameter getByte_unwrap : forall l,
-      unwrap getByte l = match l with
-                         | [] => None
-                         | a :: l => Some (a, l)
-                         end.
-
-  Parameter bind : forall {A B}, t A -> (A -> t B) -> t B.
-  Parameter ret : forall {A}, A -> t A.
-  Parameter map : forall {A B}, (A -> B) -> t A -> t B.
-  Parameter error : forall {A}, t A.
-
-  Parameter fold : forall {S A},
-      (byte -> S -> fold_state S A) -> S -> t A.
-
-  Parameter bind_unwrap : forall A B (m : t A)
-                             (f : A -> t B) bytes,
-      unwrap (bind m f) bytes = match unwrap m bytes with
-                                | None => None
-                                | Some (v, bytes) => unwrap (f v) bytes
-                              end.
-  Parameter ret_unwrap : forall A (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
-
-  Parameter map_unwrap: forall A B (f: A -> B) (d: t A) bin,
-      unwrap (map f d) bin =
-      match (unwrap d bin) with
-      | None => None
-      | Some (v, bin) => Some (f v, bin)
-      end.
-
-  Parameter fold_unwrap : forall {S A : Type}
-                             (f : byte -> S -> fold_state S A) (s : S) l,
-      unwrap (fold f s) l =
-      match l with
-      | [] => None
-      | b :: l => match f b s with
-                  | Done a => Some (a, l)
-                  | More s => unwrap (fold f s) l
-                  | Error => None
-                  end
-      end.
-End DESERIALIZER.
