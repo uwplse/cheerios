@@ -1,9 +1,13 @@
+Require Import ZArith.
+
 Require Import Cheerios.BasicSerializers.
 Require Import Cheerios.Core.
 Require Import Cheerios.Types.
 
 Extract Inlined Constant
         Serializer.t => "Serializer_primitives.serializer".
+Extract Inlined Constant
+        Serializer.wire => "Serializer_primitives.wire".
 Extract Constant
         Deserializer.t "'a"  => "Serializer_primitives.deserializer".
 Extraction Inline Deserializer.t.
@@ -19,6 +23,7 @@ Extract Inductive byte =>
 Extract Inlined Constant Serializer.putByte => "Serializer_primitives.putByte".
 Extract Inlined Constant Serializer.empty => "Serializer_primitives.empty".
 Extract Inlined Constant Serializer.append => "Serializer_primitives.append".
+Extract Inlined Constant Serializer.wire_wrap => "Serializer_primitives.wire_wrap".
 
 Extract Inlined Constant Deserializer.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant Deserializer.bind => "Serializer_primitives.bind".
@@ -27,9 +32,12 @@ Extract Inlined Constant Deserializer.map => "Serializer_primitives.map".
 Extract Inlined Constant Deserializer.ret => "Serializer_primitives.ret".
 Extract Inlined Constant Deserializer.fold => "Serializer_primitives.fold".
 
+Extract Inlined Constant deserialize_top => "Serializer_primitives.deserialize_top".
+
 Extract Inlined Constant Serializer.empty_unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.putByte_unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.append_unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.wire_wrap_unwrap_inv => "Obj.magic".
 
 Extract Inlined Constant Deserializer.getByte_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.bind_unwrap => "Obj.magic".
@@ -38,10 +46,18 @@ Extract Inlined Constant Deserializer.map_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.fold_unwrap => "Obj.magic".
 
 Extract Inlined Constant Serializer.unwrap => "Obj.magic".
+Extract Inlined Constant Serializer.wire_unwrap => "Obj.magic".
+
 Extract Inlined Constant Deserializer.unwrap => "Obj.magic".
 
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
+Definition positive_serialize_top : positive -> Serializer.wire :=
+  serialize_top (serialize : positive -> Serializer.t).
+
+Definition positive_deserialize_top : Serializer.wire -> option positive :=
+  deserialize_top (deserialize : Deserializer.t positive).
+
 Extraction "ocaml-cheerios/positive_extracted.ml"
-           positive_serialize positive_deserialize.
+           positive_serialize_top positive_deserialize_top.
