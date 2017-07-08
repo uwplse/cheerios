@@ -1,5 +1,3 @@
-*.cmi
-*.cmo
 *#*
 *.v.d
 *.glob
@@ -8,4 +6,3 @@
 _CoqProject
 Makefile.coq*
 *~
-*_extracted*

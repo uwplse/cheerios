@@ -9,11 +9,19 @@ ifeq "$(COQPROJECT_EXISTS)" ""
 $(error "Run ./configure before running make")
 endif
 
+MLFILES = ocaml-cheerios/positive_extracted.ml ocaml-cheerios/positive_extracted.mli
+
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: _CoqProject
-	coq_makefile -f _CoqProject -o Makefile.coq
+	coq_makefile -f _CoqProject -o Makefile.coq \
+	  -extra '$(MLFILES)' \
+	    'Extraction.v ExtractionDeps.vo' \
+	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) Extraction.v'
+
+$(MLFILES): Makefile.coq
+	$(MAKE) -f Makefile.coq $@
 
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install
@@ -22,5 +30,8 @@ clean:
 	if [ -f Makefile.coq ]; then \
 	  $(MAKE) -f Makefile.coq cleanall; fi
 	rm -f Makefile.coq
+	$(MAKE) -C ocaml-cheerios clean
 
 .PHONY: default clean install
+
+.NOTPARALLEL: $(MLFILES)

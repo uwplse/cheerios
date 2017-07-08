@@ -16,6 +16,7 @@ remove: [ "sh" "-c" "rm -rf '%{lib}%/coq/user-contrib/Cheerios'" ]
 depends: [ 
   "coq" {((>= "8.5" & < "8.6~") | (>= "8.6" & < "8.7~"))}
   "StructTact" {= "dev"}
+  "coq-mathcomp-ssreflect" {>= "1.6" & < "1.7~"}
 ]
 
 tags: [ "keyword:serialization" ]
@@ -23,4 +24,6 @@ authors: [
   "Keith Simmons <>"
   "Doug Woos <>"
   "James Wilcox <>"
+  "Justin Adsuara <>"
+  "Karl Palmskog <>"
 ]

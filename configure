@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DEPS=(StructTact)
-CANARIES=("StructTact.StructTactics" "Build StructTact before building Cheerios")
+CANARIES=("mathcomp.ssreflect.ssreflect" "Verdi requires mathcomp to be installed" "StructTact.StructTactics" "Build StructTact before building Cheerios")
 NAMESPACE__="Cheerios"
 
 source coqproject.sh
