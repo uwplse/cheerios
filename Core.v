@@ -164,7 +164,7 @@ Module Deserializer : DESERIALIZER.
   Qed.
 End Deserializer.
 Arguments Deserializer.error {_}.
-  
+
 
 
 Notation serialize_deserialize_id_spec s d :=
@@ -197,19 +197,21 @@ Qed.
 Section top.
   Variable A : Type.
   Variable sA: Serializer A.
-  
-  Definition serialize_top (a : A) : Serializer.wire :=
-    Serializer.wire_wrap (serialize a).
 
-  Definition deserialize_top (w : Serializer.wire) : option A :=
-    match Deserializer.unwrap deserialize
+  Definition serialize_top (s : A -> Serializer.t) (a : A) : Serializer.wire :=
+    Serializer.wire_wrap (s a).
+
+  Definition deserialize_top
+             (d : Deserializer.t A)
+             (w : Serializer.wire) : option A :=
+    match Deserializer.unwrap d
                               (Serializer.unwrap (Serializer.wire_unwrap w)) with
     | None => None
     | Some (a, _) => Some a
     end.
 
-  Theorem serialize_deserialize_top_id : forall {A} (sA : Serializer A) a,
-      deserialize_top (serialize_top a) = Some a.
+  Theorem serialize_deserialize_top_id : forall a,
+      deserialize_top deserialize (serialize_top serialize a) = Some a.
   Proof.
     intros.
     unfold serialize_top, deserialize_top.

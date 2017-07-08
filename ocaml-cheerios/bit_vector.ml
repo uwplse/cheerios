@@ -1,4 +1,4 @@
-(* serialize -> truncate unused bytes, add one byte to indicate how many bitse of the last byte are padding *)
+(* serialize -> truncate unused bytes, add one byte to indicate how many bits of the last byte are padding *)
 type node = {bytes : bytes;
              mutable next : node option}
               
@@ -83,3 +83,18 @@ let dumpReader (r : reader) =
     loop () in
   loop ()
 ;;        
+
+let writerToBytes (w : writer) =
+  let iter = makeIter w.head in
+  let bytes = Bytes.make w.count (Char.chr 0) in
+  let rec loop i =
+    if i < w.count
+    then (Bytes.set bytes i (read iter);
+          loop (i + 1)) in
+  loop 0;
+  bytes
+;;
+
+let bytesToReader (b : bytes) : reader =
+  makeIter {bytes = b; next = None}
+;;

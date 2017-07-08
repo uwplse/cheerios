@@ -1,10 +1,13 @@
 type serializer = Bit_vector.writer -> unit
 type 'a deserializer = Bit_vector.reader -> 'a
+type wire = bytes
 
-let empty = fun w -> ()
+(* serializer *)
+
+let empty : serializer = fun w -> ()
 ;;
 
-let putByte b : serializer =
+let putByte (b : char) : serializer =
   fun w -> Bit_vector.pushBack w b  
 ;;
 
@@ -12,26 +15,18 @@ let empty : serializer =
   fun w -> ()
 ;;
 
-let append m1 m2 : serializer =
+let append (m1 : serializer) (m2 : serializer) : serializer =
   fun w ->
   m1 w;
   m2 w
 ;;  
 
-(* I think we can avoid capturing failure with an option because failure's
-   verified not to happen *)
-
-(* bound check, and either throw an exception or return none 
-
-   since our spec says things always deserialize to a Some, we might as well
-   not return an option here and just throw an exception when we run into this
-   sort of situation *)
-
+(* deserializer *)
+  
 let getByte : char deserializer =
   Bit_vector.pop
 ;;
 
-(* bind : 'a deserializer -> ('a -> 'b deserializer) -> 'b deserializer *)
 let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
   fun r -> let v = d r in
            (f v) r
@@ -64,3 +59,14 @@ let rec fold (f : char -> 's -> ('s, 'a) fold_state)
               | Error -> failwith "Fold deserializer error"
 ;;    
   
+(* wire *)
+
+let wire_wrap (s : serializer) : wire =
+  let w = Bit_vector.makeWriter () in
+  (s w;
+   Bit_vector.writerToBytes w)
+;;
+
+let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
+  Some (d (Bit_vector.bytesToReader w))
+;;
