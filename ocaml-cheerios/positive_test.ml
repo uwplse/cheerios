@@ -198,10 +198,10 @@ let test_serialize_deserialize (v : 'a)
 
 let test_cheerios p print =
   test_serialize_deserialize p
-                             (fun p -> let w = Bit_vector.makeWriter () in
-                                       let _ = positive_serialize p w in
-                                       Bit_vector.writerToReader w)
-                             positive_deserialize
+                             positive_serialize_top
+                             (fun w -> match positive_deserialize_top w with
+                                       | Some p -> p
+                                       | None -> failwith "Deserialization failed")
                              print
 ;;
 
@@ -293,18 +293,17 @@ let marshal_test n =
 let compare_main max interval =
   let rec loop n =
     if n < max
-    then let num_tries = 500 in
+    then let num_tries = 100 in
          (compare_cheerios_marshal_time
             make_positive n num_tries
-            (fun p -> let w = Bit_vector.makeWriter ()
-                      in (positive_serialize p w);
-                         w)
-            (fun w -> positive_deserialize (Bit_vector.writerToReader w))
+            positive_serialize_top
+            (fun w -> match positive_deserialize_top w with
+                      | Some p -> p
+                      | None -> failwith "Deserialization failed")
             (fun p -> Marshal.to_bytes p [])
             (fun b -> (Marshal.from_bytes b 0));
           loop (n + interval)) in
   loop 0
 ;;
 
-let _ = compare_main 170000 20000
-
+let _ = compare_main 200000 20000
