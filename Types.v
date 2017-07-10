@@ -34,6 +34,7 @@ Inductive byte :=
 Module Type SERIALIZER.
   Parameter t : Type.
   Parameter wire : Type.
+  Parameter wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
 
   Parameter empty : t.
   Parameter append : t -> t -> t.
