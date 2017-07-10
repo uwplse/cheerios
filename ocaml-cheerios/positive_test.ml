@@ -248,9 +248,8 @@ let avg l =
 let compare_cheerios_marshal_space size =
   let p = make_positive size in
   let cheerios_size =
-    let w = Bit_vector.makeWriter () in
-    (positive_serialize p w;
-     Bit_vector.numBytes w) in
+    Serializer_primitives.size
+      (Serializer_primitives.wire_wrap (positive_serialize p)) in
   let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
   in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
                    size cheerios_size marshal_size

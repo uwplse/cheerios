@@ -72,17 +72,6 @@ let pop : reader -> char =
 let numBytes (w : writer) : int =
   w.count
 ;;
-    
-(* dumps bytes from current iterator position until end *)
-let dumpReader (r : reader) =
-  let rec loop () =
-    (try (let c = read r
-         in Printf.printf "%x " (Char.code c))
-     with
-     | Out_of_bounds -> ());
-    loop () in
-  loop ()
-;;        
 
 let writerToBytes (w : writer) =
   let iter = makeIter w.head in

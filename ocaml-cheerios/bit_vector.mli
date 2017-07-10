@@ -11,5 +11,3 @@ val bytesToReader : bytes -> reader
 
 (* for testing *)
 val numBytes : writer -> int
-val writerToReader : writer -> reader
-val dumpReader : reader -> unit

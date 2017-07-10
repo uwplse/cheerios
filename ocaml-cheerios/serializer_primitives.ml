@@ -11,10 +11,6 @@ let putByte (b : char) : serializer =
   fun w -> Bit_vector.pushBack w b  
 ;;
 
-let empty : serializer =
-  fun w -> ()
-;;
-
 let append (m1 : serializer) (m2 : serializer) : serializer =
   fun w ->
   m1 w;
@@ -66,6 +62,9 @@ let wire_wrap (s : serializer) : wire =
   (s w;
    Bit_vector.writerToBytes w)
 ;;
+
+let size : wire -> int =
+  Bytes.length
 
 let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
   Some (d (Bit_vector.bytesToReader w))

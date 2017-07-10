@@ -1,16 +1,16 @@
 let test_byte_vector (n : int) (f : int -> char) =
-  let rec loop_write w i =
+  let rec loop_write i =
+    if (i = n)
+    then Serializer_primitives.empty
+    else (Serializer_primitives.append
+            (Serializer_primitives.putByte (f i))
+            (loop_write (i + 1))) in
+  let rec loop_read bytes i =
     if not (i = n)
-    then (Serializer_primitives.putByte (f i) w;
-          loop_write w (i + 1)) in
-  let rec loop_read r i =
-    if not (i = n)
-    then (assert (Serializer_primitives.getByte r = f i);
-          loop_read r (i + 1)) in
-  let w = Bit_vector.makeWriter () in
-  (loop_write w 0;
-   let r = Bit_vector.writerToReader w in
-   loop_read r 0)
+    then (assert (Bytes.get bytes i = f i);
+          loop_read bytes (i + 1)) in
+  let w = Serializer_primitives.wire_wrap (loop_write 0) in
+  loop_read w 0
 ;;
 
 let main n =
