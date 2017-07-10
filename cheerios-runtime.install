@@ -1,0 +1,15 @@
+# cheerios-runtime
+
+doc: [
+  "README.md" {"README.md"}
+]
+lib: [
+  "cheerios-runtime.opam" {"opam"}
+  "ocaml-cheerios/META" {"META"}
+  "ocaml-cheerios/_build/bit_vector.cmi" {"bit_vector.cmi"}
+  "ocaml-cheerios/_build/serializer_primitives.cmi" {"serializer_primitives.cmi"}
+  "ocaml-cheerios/_build/cheerios_runtime.a" {"cheerios_runtime.a"}
+  "ocaml-cheerios/_build/cheerios_runtime.cma" {"cheerios_runtime.cma"}
+  "ocaml-cheerios/_build/cheerios_runtime.cmxa" {"cheerios_runtime.cmxa"}
+  "ocaml-cheerios/_build/cheerios_runtime.cmxs" {"cheerios_runtime.cmxs"}
+]

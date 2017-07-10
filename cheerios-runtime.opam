@@ -1,0 +1,28 @@
+opam-version: "1.2"
+version: "dev"
+maintainer: "palmskog@gmail.com"
+
+homepage: "https://github.com/uwplse/cheerios"
+dev-repo: "https://github.com/uwplse/cheerios.git"
+bug-reports: "https://github.com/uwplse/cheerios/issues"
+license: "BSD"
+
+build: [
+  [ "./configure" ]
+  [ make "-j%{jobs}%" "-C" "ocaml-cheerios" ]
+]
+available: [ ocaml-version >= "4.02.3" ]
+depends: [
+  "coq" {((>= "8.5" & < "8.6~") | (>= "8.6" & < "8.7~"))}
+  "StructTact" {= "dev"}
+  "coq-mathcomp-ssreflect" {>= "1.6" & < "1.7~"}
+  "ocamlbuild" {build}
+]
+
+authors: [
+  "Keith Simmons <>"
+  "Doug Woos <>"
+  "James Wilcox <>"
+  "Justin Adsuara <>"
+  "Karl Palmskog <>"
+]
