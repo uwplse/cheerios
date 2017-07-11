@@ -4,8 +4,6 @@ Require Import Cheerios.BasicSerializers.
 Require Import Cheerios.Core.
 Require Import Cheerios.Types.
 
-Require Import Cheerios.ExtractionDeps.
-
 Extract Inlined Constant
         Serializer.t => "Serializer_primitives.serializer".
 Extract Inlined Constant
@@ -52,15 +50,3 @@ Extract Inlined Constant Serializer.unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.wire_unwrap => "Obj.magic".
 
 Extract Inlined Constant Deserializer.unwrap => "Obj.magic".
-
-Require Import ExtrOcamlBasic.
-Require Import ExtrOcamlString.
-
-Definition positive_serialize_top : positive -> Serializer.wire :=
-  serialize_top (serialize : positive -> Serializer.t).
-
-Definition positive_deserialize_top : Serializer.wire -> option positive :=
-  deserialize_top (deserialize : Deserializer.t positive).
-
-Extraction "ocaml-cheerios/positive_extracted.ml"
-           positive_serialize_top positive_deserialize_top.
