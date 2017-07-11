@@ -8,7 +8,7 @@ let empty : serializer = fun w -> ()
 ;;
 
 let putByte (b : char) : serializer =
-  fun w -> Bit_vector.pushBack w b  
+  fun w -> Bit_vector.pushBack w b
 ;;
 
 let append (m1 : serializer) (m2 : serializer) : serializer =
@@ -17,9 +17,15 @@ let append (m1 : serializer) (m2 : serializer) : serializer =
   m2 w
 ;;  
 
+let putInt (i : int32) : serializer =
+  let aux n = putByte (Char.chr ((Int32.to_int i lsr n) land 0xff))
+  in append (aux 24)
+            (append (aux 16)
+                    (append (aux 8) (aux 0)))
+
 (* deserializer *)
   
-let getByte : char deserializer =
+let getByte =
   Bit_vector.pop
 ;;
 
@@ -31,6 +37,18 @@ let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
 let ret (v : 'a) : 'a deserializer =
   fun r -> v
 ;;
+
+let getInt : int32 deserializer =
+  let aux b n = Char.code b lsl n in
+  bind getByte (fun b1 ->
+         bind getByte (fun b2 ->
+                bind getByte (fun b3 ->
+                       bind getByte (fun b4 ->
+                              let i = (aux b1 24) lor
+                                        (aux b2 16) lor
+                                          (aux b3 8) lor
+                                            (aux b4 0) in
+                                       ret (Int32.of_int i)))))
 
 let fail : 'a deserializer =
   fun r -> failwith "Deserialization failed"

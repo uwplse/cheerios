@@ -10,10 +10,12 @@ type ('s, 'a) fold_state =
 (* serializer *)
 val empty : serializer
 val putByte : char -> serializer
+val putInt : int32 -> serializer
 val append : serializer -> serializer -> serializer
 
   (* deserializer *)
 val getByte : char deserializer
+val getInt : int32 deserializer
 val bind : 'a deserializer -> ('a -> 'b deserializer) -> 'b deserializer
 val ret : 'a -> 'a deserializer
 val fail : 'a deserializer

@@ -1,3 +1,5 @@
+open Test_utils
+
 let test_byte_vector (n : int) (f : int -> char) =
   let rec loop_write i =
     if (i = n)
@@ -22,4 +24,19 @@ let main n =
   loop 0
 ;;
 
-let _ = main 10000
+let test_int n =
+  let rec loop i =
+    if i < n
+    then (test_serialize_deserialize
+           (Int32.of_int i)
+           (fun i -> Serializer_primitives.wire_wrap (Serializer_primitives.putInt i))
+           (fun w -> match Serializer_primitives.deserialize_top
+                             Serializer_primitives.getInt w with
+                     | Some i -> i
+                     | None -> failwith "Deserialization failed")
+           (fun _ -> Printf.printf "%d" i);
+          loop (i + 1)) in
+  loop 0
+
+let _ = main 10000;
+        test_int 10000
