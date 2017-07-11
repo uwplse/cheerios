@@ -6,8 +6,8 @@ use warnings;
 # https://perlmaven.com/how-to-replace-a-string-in-a-file-with-perl
 
 my $serializer_name = $ARGV[0];
-my $mli_name = $serializer_name . '_extracted.mli';
-my $ml_name = $serializer_name . '_extracted.ml';
+my $mli_name = $serializer_name . '.mli';
+my $ml_name = $serializer_name . '.ml';
 
 my $ml = read_file($ml_name);
 $ml =~ s/module.*erializer =\n\s*struct\n\s*end//g;

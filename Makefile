@@ -9,7 +9,7 @@ ifeq "$(COQPROJECT_EXISTS)" ""
 $(error "Run ./configure before running make")
 endif
 
-MLFILES = cheerios-runtime/ocaml/positive_extracted.ml cheerios-runtime/ocaml/positive_extracted.mli
+MLFILES = runtime/ocaml/positive_serializer.ml runtime/ocaml/positive_serializer.mli
 
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
@@ -17,8 +17,8 @@ default: Makefile.coq
 Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq \
 	  -extra '$(MLFILES)' \
-	    'cheerios-runtime/coq/ExtractPositiveSerializer.v cheerios-runtime/coq/ExtractPositiveSerializerDeps.vo' \
-	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) cheerios-runtime/coq/ExtractPositiveSerializer.v'
+	    'runtime/coq/ExtractPositiveSerializer.v runtime/coq/ExtractPositiveSerializerDeps.vo' \
+	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v'
 
 $(MLFILES): Makefile.coq
 	$(MAKE) -f Makefile.coq $@
@@ -30,7 +30,7 @@ clean:
 	if [ -f Makefile.coq ]; then \
 	  $(MAKE) -f Makefile.coq cleanall; fi
 	rm -f Makefile.coq
-	$(MAKE) -C cheerios-runtime clean
+	$(MAKE) -C runtime clean
 
 .PHONY: default clean install
 

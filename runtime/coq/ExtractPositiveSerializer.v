@@ -1,5 +1,8 @@
-Require Import ExtractCheerios.
+Require Import Cheerios.ExtractPositiveSerializerDeps.
 
+Require Import Cheerios.ExtractCheerios.
+
+Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
@@ -9,5 +12,5 @@ Definition positive_serialize_top : positive -> Serializer.wire :=
 Definition positive_deserialize_top : Serializer.wire -> option positive :=
   deserialize_top (deserialize : Deserializer.t positive).
 
-Extraction "ocaml-cheerios/positive_extracted.ml"
+Extraction "runtime/ocaml/positive_serializer.ml"
            positive_serialize_top positive_deserialize_top.

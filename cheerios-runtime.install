@@ -5,11 +5,11 @@ doc: [
 ]
 lib: [
   "cheerios-runtime.opam" {"opam"}
-  "cheerios-runtime/META" {"META"}
-  "cheerios-runtime/_build/bit_vector.cmi" {"bit_vector.cmi"}
-  "cheerios-runtime/_build/serializer_primitives.cmi" {"serializer_primitives.cmi"}
-  "cheerios-runtime/_build/cheerios_runtime.a" {"cheerios_runtime.a"}
-  "cheerios-runtime/_build/cheerios_runtime.cma" {"cheerios_runtime.cma"}
-  "cheerios-runtime/_build/cheerios_runtime.cmxa" {"cheerios_runtime.cmxa"}
-  "cheerios-runtime/_build/cheerios_runtime.cmxs" {"cheerios_runtime.cmxs"}
+  "runtime/ocaml/META" {"META"}
+  "runtime/_build/ocaml/bit_vector.cmi" {"bit_vector.cmi"}
+  "runtime/_build/ocaml/serializer_primitives.cmi" {"serializer_primitives.cmi"}
+  "runtime/_build/ocaml/cheerios_runtime.a" {"cheerios_runtime.a"}
+  "runtime/_build/ocaml/cheerios_runtime.cma" {"cheerios_runtime.cma"}
+  "runtime/_build/ocaml/cheerios_runtime.cmxa" {"cheerios_runtime.cmxa"}
+  "runtime/_build/ocaml/cheerios_runtime.cmxs" {"cheerios_runtime.cmxs"}
 ]
