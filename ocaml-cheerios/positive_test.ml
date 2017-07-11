@@ -1,4 +1,5 @@
 open Positive_extracted
+open Test_utils
 
 let rec print_positive p =
   match p with
@@ -183,18 +184,6 @@ let rec serialize_positive_four p =
   | XH -> byte_Serializer.serialize '\000'
 ;;
 
-let test_serialize_deserialize (v : 'a)
-                               (serialize : 'a -> 'b)
-                               (deserialize : 'b -> 'a)
-                               (print : 'a -> unit) = 
-  let _ = Printf.printf "Serializing/deserializing ";
-          print v;
-          Printf.printf "... " in
-  let serialized = serialize v in
-  let v' = deserialize serialized in 
-  (assert (v = v'));
-  Printf.printf "success\n"
-;;
 
 let test_cheerios p print =
   test_serialize_deserialize p
@@ -218,32 +207,6 @@ let _ = test_main 1000;;
 
 (* benchmarking *)
   
-let time_serialize_deserialize (p : 'a)
-                               (serialize : 'a -> 'b)
-                               (deserialize: 'b -> 'a) : float * float =
-  let serialize_start = Sys.time () in
-  let serialized = serialize p in
-  let serialize_stop = Sys.time () in
-  let _ = deserialize serialized in
-  let deserialize_stop = Sys.time () in
-  (serialize_stop -. serialize_start, deserialize_stop -. serialize_stop)
-;;
-
-let rec time_serialize_deserialize_loop make size n
-                                        serialize deserialize =
-  let rec loop i acc = 
-    if i = n
-    then acc
-    else loop (i + 1)
-              (time_serialize_deserialize (make size)
-                                          serialize
-                                          deserialize :: acc)
-  in loop 0 []
-;;
-
-let avg l =
-  (List.fold_left (+.) 0.0 l) /. (float_of_int (List.length l))
-;;
 
 let compare_cheerios_marshal_space size =
   let p = make_positive size in
@@ -256,8 +219,7 @@ let compare_cheerios_marshal_space size =
 ;;
   
 let compare_cheerios_marshal_time make size n
-                                  serialize deserialize
-                                  serialize' deserialize' =
+                                  serialize deserialize =
   let cheerios_results : (float * float) list =
     time_serialize_deserialize_loop
       make size n
@@ -266,7 +228,8 @@ let compare_cheerios_marshal_time make size n
   let marshal_results : (float * float) list =
     time_serialize_deserialize_loop
       make size n
-      serialize' deserialize'
+      (fun p -> Marshal.to_bytes p [])
+      (fun b -> (Marshal.from_bytes b 0))
        in
   let cheerios_serialize_avg = avg (List.map fst cheerios_results) in
   let marshal_serialize_avg =  avg (List.map fst marshal_results) in
@@ -298,11 +261,9 @@ let compare_main max interval =
             positive_serialize_top
             (fun w -> match positive_deserialize_top w with
                       | Some p -> p
-                      | None -> failwith "Deserialization failed")
-            (fun p -> Marshal.to_bytes p [])
-            (fun b -> (Marshal.from_bytes b 0));
+                      | None -> failwith "Deserialization failed");
           loop (n + interval)) in
   loop 0
 ;;
 
-let _ = compare_main 200000 20000
+let _ = compare_main 50000 20000
