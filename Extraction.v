@@ -26,6 +26,7 @@ Extract Inlined Constant Serializer.putByte => "Serializer_primitives.putByte".
 Extract Inlined Constant Serializer.empty => "Serializer_primitives.empty".
 Extract Inlined Constant Serializer.append => "Serializer_primitives.append".
 Extract Inlined Constant Serializer.wire_wrap => "Serializer_primitives.wire_wrap".
+Extract Inlined Constant Serializer.wire_eq_dec => "(=)".
 
 Extract Inlined Constant Deserializer.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant Deserializer.bind => "Serializer_primitives.bind".

@@ -8,6 +8,7 @@ Set Implicit Arguments.
 Module Serializer : SERIALIZER.
   Definition t := list byte.
   Definition wire := list byte.
+  Axiom wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
   
   Definition empty : t := [].
   Definition putByte (a : byte) : t := [a].
