@@ -602,4 +602,152 @@ Module JSON.
                serialize_deserialize_id := json_serialize_deserialize_id |}.
     Qed.
   End tag.
+
+  Definition string_eqb s s' :=
+    if (String.string_dec s s') then true else false.
+
+  Lemma string_eqb_true : forall s s', string_eqb s s' = true -> s = s'.
+  Proof.
+    intros.
+    unfold string_eqb in H.
+    destruct (String.string_dec s s').
+    + assumption.
+    + congruence.
+  Qed.
+
+  Lemma string_eqb_refl : forall s, string_eqb s s = true.
+  Proof.
+    intros.
+    unfold string_eqb.
+    destruct (String.string_dec s s); congruence.
+  Qed.
+
+  Fixpoint json_eqb (j j' : json.t) : bool :=
+    let fix loop_arr (l l': list json.t) : bool :=
+        match (l, l') with
+        | ([], []) => true
+        | (j :: l, j' :: l') => andb (json_eqb j j') (loop_arr l l')
+        | (_, _) => false
+        end in
+    let fix loop_obj (l l' : list (String.string * json.t)) : bool :=
+        match (l, l') with
+        | ([], []) => true
+        | ((s, j) :: l, (s', j') :: l') => andb (string_eqb s s')
+                                                (andb (json_eqb j j') (loop_obj l l'))
+        | (_, _) => false
+        end in
+    match (j, j') with
+    | (json.Null, json.Null) => true
+    | (json.Num n, json.Num n') => Nat.eqb n n'
+    | (json.Arr l, json.Arr l') => loop_arr l l'
+    | (json.Obj l, json.Obj l') => loop_obj l l'
+    | _ => false
+    end.
+  Definition loop_arr :=
+    fix loop_arr (l l': list json.t) : bool :=
+        match (l, l') with
+        | ([], []) => true
+        | (j :: l, j' :: l') => andb (json_eqb j j') (loop_arr l l')
+        | (_, _) => false
+        end.
+  Definition loop_obj :=
+    fix loop_obj (l l' : list (String.string * json.t)) : bool :=
+        match (l, l') with
+        | ([], []) => true
+        | ((s, j) :: l, (s', j') :: l') => andb (string_eqb s s')
+                                                (andb (json_eqb j j') (loop_obj l l'))
+        | (_, _) => false
+        end.
+
+  Lemma json_eqb_eq : forall j j', json_eqb j j' = true -> j = j'.
+  Proof.
+
+    induction j using json.json_rect with (P_list := fun l =>
+                                                       forall l', loop_arr l l' = true -> l = l')
+                                          (P_list' := fun l =>
+                                                        forall l', loop_obj l l' = true -> l = l');
+      unfold json_eqb.
+    - intros.
+      destruct l'.
+      + reflexivity.
+      + simpl in H. congruence.
+    - intros.
+      destruct l'.
+      + simpl in H. congruence.
+      + simpl in H.
+        apply Bool.andb_true_iff in H.
+        assert (j = t).
+        * apply IHj. apply H.
+        * assert (l = l').
+          -- apply IHj0. apply H.
+          -- now rewrite H0, H1.
+    - intros.
+      destruct l'.
+      * reflexivity.
+      * simpl in H. congruence.
+    - intros.
+      destruct l'; simpl in H.
+      + congruence.
+      + destruct p.
+        apply Bool.andb_true_iff in H. destruct H.
+        apply Bool.andb_true_iff in H0. destruct H0.
+        assert (s = s0). now apply string_eqb_true in H.
+        assert (j = t). apply (IHj t H0).
+        assert (l = l'). apply (IHj0 _ H1).
+        now rewrite H2, H3, H4.
+    - destruct j'; try congruence.
+    - destruct j'; try congruence.
+      intros.
+      apply EqNat.beq_nat_true in H.
+      congruence.
+    - fold json_eqb.
+      fold loop_arr.
+      destruct j'; try congruence.
+      intros.
+      apply IHj in H.
+      now rewrite H.
+    - fold json_eqb.
+      fold loop_obj.
+      destruct j'; try congruence.
+      intros.
+      apply IHj in H.
+      now rewrite H.
+  Qed.
+
+  Lemma json_eq_eqb : forall j j', j = j' -> json_eqb j j' = true.
+  Proof.
+    induction j using json.json_rect with (P_list := fun l => loop_arr l l = true)
+                                          (P_list' := fun l => loop_obj l l = true).
+    - reflexivity.
+    - simpl.
+      specialize IHj with j.
+      rewrite IHj0.
+      rewrite IHj; reflexivity.
+    - reflexivity.
+    - simpl.
+      rewrite string_eqb_refl, IHj0.
+      rewrite IHj; auto.      
+    - intros. now rewrite <- H.
+    - intros.  rewrite <- H. simpl.
+      symmetry.
+      apply EqNat.beq_nat_refl.
+    - intros.
+      rewrite <- H.
+      simpl.
+      assumption.
+    - intros.
+      rewrite <- H.
+      simpl.
+      assumption.
+  Qed.
+
+  Lemma json_eq_dec : forall j j' : json.t, {j = j'} + {j <> j'}.
+  Proof.
+    intros.
+    destruct (json_eqb j j') eqn:H.
+    + left. now apply json_eqb_eq.
+    + right. intuition.
+      rewrite json_eq_eqb in H;
+        congruence.
+  Qed.
 End JSON.
