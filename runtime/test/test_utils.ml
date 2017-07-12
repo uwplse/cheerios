@@ -8,7 +8,6 @@ let test_serialize_deserialize (v : 'a)
   let serialized = serialize v in
   let v' = deserialize serialized in 
   (assert (v = v'));  Printf.printf "success\n"
-;;
 
 (* benchmarking *)
   
@@ -21,7 +20,6 @@ let time_serialize_deserialize (p : 'a)
   let _ = deserialize serialized in
   let deserialize_stop = Sys.time () in
   (serialize_stop -. serialize_start, deserialize_stop -. serialize_stop)
-;;
 
 let rec time_serialize_deserialize_loop make size n
                                         serialize deserialize =
@@ -33,11 +31,9 @@ let rec time_serialize_deserialize_loop make size n
                                           serialize
                                           deserialize :: acc)
   in loop 0 []
-;;
 
 let avg l =
   (List.fold_left (+.) 0.0 l) /. (float_of_int (List.length l))
-;;
 
 let marshal_test make n =
   let rec loop i =
@@ -48,7 +44,6 @@ let marshal_test make n =
           assert (p = make i);
           loop (i + 1)) in
   loop 0
-;;
 
 let compare_cheerios_marshal_time make size n
                                   serialize deserialize =
@@ -71,7 +66,6 @@ let compare_cheerios_marshal_time make size n
                 size cheerios_serialize_avg marshal_serialize_avg;
   Printf.printf " || deserialize: cheerios %f, marshal %f\n"
                 cheerios_deserialize_avg marshal_deserialize_avg
-;;
 
 let compare_cheerios_marshal_space make serialize_top size =
   let v = make size in
@@ -80,7 +74,6 @@ let compare_cheerios_marshal_space make serialize_top size =
   let marshal_size = Marshal.total_size (Marshal.to_bytes v []) 0
   in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
                    size cheerios_size marshal_size
-;;
 
 let compare_time_loop make max interval num_tries serialize deserialize =
   let rec loop n =
@@ -91,4 +84,3 @@ let compare_time_loop make max interval num_tries serialize deserialize =
             deserialize;
           loop (n + interval)) in
   loop 0
-;;

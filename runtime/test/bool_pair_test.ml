@@ -5,9 +5,8 @@ let test_pair (x, y) =
   let (x', y') = Bool_pair_extracted.deserialize_bool_pair r in
   let true = x = x' && y = y' in
   ()
-;;
                              
-let _ = test_pair (false, false);;
-let _ = test_pair (false, true);;
-let _ = test_pair (true, false);;
-let _ = test_pair (true, true);;
+let _ = test_pair (false, false)
+let _ = test_pair (false, true)
+let _ = test_pair (true, false)
+let _ = test_pair (true, true)

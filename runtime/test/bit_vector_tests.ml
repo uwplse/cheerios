@@ -13,7 +13,6 @@ let test_byte_vector (n : int) (f : int -> char) =
           loop_read bytes (i + 1)) in
   let w = Serializer_primitives.wire_wrap (loop_write 0) in
   loop_read w 0
-;;
 
 let main n =
   let rec loop i =
@@ -22,7 +21,6 @@ let main n =
           test_byte_vector i (fun n -> Char.chr (n mod 256));
           loop (i + 1)) in
   loop 0
-;;
 
 let test_int n =
   let rec loop i =

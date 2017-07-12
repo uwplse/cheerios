@@ -5,7 +5,6 @@ type ('s, 'a) fold_state =
   | Done of 'a
   | More of 's
   | Error
-;;
 
 (* serializer *)
 val empty : serializer
