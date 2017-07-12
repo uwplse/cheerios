@@ -1,5 +1,4 @@
 Require Import Cheerios.ExtractTreeSerializerDeps.
-Require Import Cheerios.ExtractCheerios.
 
 Require Import ZArith.
 Require Import ExtrOcamlBasic.
