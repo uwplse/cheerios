@@ -9,16 +9,20 @@ ifeq "$(COQPROJECT_EXISTS)" ""
 $(error "Run ./configure before running make")
 endif
 
-MLFILES = runtime/ocaml/positive_serializer.ml runtime/ocaml/positive_serializer.mli
+MLPOSITIVEFILES = runtime/ocaml/positive_serializer.ml runtime/ocaml/positive_serializer.mli
+MLTREEFILES = runtime/ocaml/tree_serializer.ml runtime/ocaml/tree_serializer.mli
 
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq \
-	  -extra '$(MLFILES)' \
+	  -extra '$(MLPOSITIVEFILES)' \
 	    'runtime/coq/ExtractPositiveSerializer.v runtime/coq/ExtractPositiveSerializerDeps.vo' \
 	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v'
+	  -extra '$(MLTREEFILES)' \
+	    'runtime/coq/ExtractTreeSerializer.v runtime/coq/ExtractTreeSerializerDeps.vo' \
+	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractTreeSerializer.v'	
 
 $(MLFILES): Makefile.coq
 	$(MAKE) -f Makefile.coq $@
@@ -34,4 +38,4 @@ clean:
 
 .PHONY: default clean install
 
-.NOTPARALLEL: $(MLFILES)
+.NOTPARALLEL: $(MLPOSITIVEFILES) $(MLTREEFILES)

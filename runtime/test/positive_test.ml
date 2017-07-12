@@ -207,17 +207,6 @@ let _ = test_main 1000;;
 
 (* benchmarking *)
   
-
-let compare_cheerios_marshal_space size =
-  let p = make_positive size in
-  let cheerios_size =
-    Serializer_primitives.size
-      (Serializer_primitives.wire_wrap (positive_serialize p)) in
-  let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
-  in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
-                   size cheerios_size marshal_size
-;;
-  
 let compare_cheerios_marshal_time make size n
                                   serialize deserialize =
   let cheerios_results : (float * float) list =
@@ -239,17 +228,6 @@ let compare_cheerios_marshal_time make size n
                 size cheerios_serialize_avg marshal_serialize_avg;
   Printf.printf " || deserialize: cheerios %f, marshal %f\n"
                 cheerios_deserialize_avg marshal_deserialize_avg
-;;
-
-let marshal_test n =
-  let rec loop i =
-    if i < n
-    then let bytes = Marshal.to_bytes (make_positive i) [] in
-         let p = Marshal.from_bytes bytes 0 in
-         (Printf.printf "testing marshal on make_positive %d...\n" i;
-          assert (p = make_positive i);
-          loop (i + 1)) in
-  loop 0
 ;;
   
 let compare_main max interval =

@@ -38,3 +38,23 @@ let rec time_serialize_deserialize_loop make size n
 let avg l =
   (List.fold_left (+.) 0.0 l) /. (float_of_int (List.length l))
 ;;
+
+let marshal_test make n =
+  let rec loop i =
+    if i < n
+    then let bytes = Marshal.to_bytes (make i) [] in
+         let p = Marshal.from_bytes bytes 0 in
+         (Printf.printf "testing marshal on make %d...\n" i;
+          assert (p = make i);
+          loop (i + 1)) in
+  loop 0
+;;
+
+let compare_cheerios_marshal_space make serialize_top size =
+  let p = make size in
+  let cheerios_size =
+    Serializer_primitives.size (serialize_top p) in
+  let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
+  in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
+                   size cheerios_size marshal_size
+;;
