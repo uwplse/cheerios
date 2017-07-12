@@ -11,5 +11,5 @@ Definition tree_serialize_top : tree bool -> Serializer.wire :=
 Definition tree_deserialize_top : Serializer.wire -> option (tree bool) :=
   deserialize_top deserialize.
 
-Extraction "../ocaml/tree_serializer.ml"
+Extraction "runtime/ocaml/tree_serializer.ml"
            tree_serialize_top tree_deserialize_top.
