@@ -19,12 +19,12 @@ Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq \
 	  -extra '$(MLPOSITIVEFILES)' \
 	    'runtime/coq/ExtractPositiveSerializer.v runtime/coq/ExtractPositiveSerializerDeps.vo' \
-	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v'
+	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v' \
 	  -extra '$(MLTREEFILES)' \
 	    'runtime/coq/ExtractTreeSerializer.v runtime/coq/ExtractTreeSerializerDeps.vo' \
 	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractTreeSerializer.v'	
 
-$(MLFILES): Makefile.coq
+$(MLPOSITIVEFILES) $(MLTREEFILES): Makefile.coq
 	$(MAKE) -f Makefile.coq $@
 
 install: Makefile.coq
@@ -38,4 +38,5 @@ clean:
 
 .PHONY: default clean install
 
-.NOTPARALLEL: $(MLPOSITIVEFILES) $(MLTREEFILES)
+.NOTPARALLEL: $(MLPOSITIVEFILES)
+.NOTPARALLEL: $(MLTREEFILES)
