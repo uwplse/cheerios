@@ -229,19 +229,9 @@ let compare_cheerios_marshal_time make size n
   Printf.printf " || deserialize: cheerios %f, marshal %f\n"
                 cheerios_deserialize_avg marshal_deserialize_avg
 ;;
-  
-let compare_main max interval =
-  let rec loop n =
-    if n < max
-    then let num_tries = 100 in
-         (compare_cheerios_marshal_time
-            make_positive n num_tries
-            positive_serialize_top
-            (fun w -> match positive_deserialize_top w with
-                      | Some p -> p
-                      | None -> failwith "Deserialization failed");
-          loop (n + interval)) in
-  loop 0
-;;
 
-let _ = compare_main 50000 20000
+let _ = compare_time_loop make_positive 50000 20000 positive_serialize_top
+                     (fun w -> match positive_deserialize_top w with
+                               | Some p -> p
+                               | None -> failwith "Deserialization failed")
+                     

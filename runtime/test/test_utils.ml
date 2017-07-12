@@ -50,11 +50,45 @@ let marshal_test make n =
   loop 0
 ;;
 
+let compare_cheerios_marshal_time make size n
+                                  serialize deserialize =
+  let cheerios_results : (float * float) list =
+    time_serialize_deserialize_loop
+      make size n
+      serialize deserialize
+  in
+  let marshal_results : (float * float) list =
+    time_serialize_deserialize_loop
+      make size n
+      (fun p -> Marshal.to_bytes p [])
+      (fun b -> (Marshal.from_bytes b 0))
+  in
+  let cheerios_serialize_avg = avg (List.map fst cheerios_results) in
+  let marshal_serialize_avg =  avg (List.map fst marshal_results) in
+  let cheerios_deserialize_avg = avg (List.map snd cheerios_results) in
+  let marshal_deserialize_avg =  avg (List.map snd marshal_results) in
+  Printf.printf "size %d - serialize: cheerios %f, marshal %f"
+                size cheerios_serialize_avg marshal_serialize_avg;
+  Printf.printf " || deserialize: cheerios %f, marshal %f\n"
+                cheerios_deserialize_avg marshal_deserialize_avg
+;;
+
 let compare_cheerios_marshal_space make serialize_top size =
-  let p = make size in
+  let v = make size in
   let cheerios_size =
-    Serializer_primitives.size (serialize_top p) in
-  let marshal_size = Marshal.total_size (Marshal.to_bytes p []) 0
+    Serializer_primitives.size (serialize_top v) in
+  let marshal_size = Marshal.total_size (Marshal.to_bytes v []) 0
   in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
                    size cheerios_size marshal_size
+;;
+
+let compare_time_loop make max interval num_tries serialize deserialize =
+  let rec loop n =
+    if n < max
+    then (compare_cheerios_marshal_time
+            make n num_tries
+            serialize
+            deserialize;
+          loop (n + interval)) in
+  loop 0
 ;;
