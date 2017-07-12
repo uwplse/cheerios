@@ -9,6 +9,12 @@ ifeq "$(COQPROJECT_EXISTS)" ""
 $(error "Run ./configure before running make")
 endif
 
+CHECKPATH := $(shell ./script/checkpaths.sh)
+ifneq ("$(CHECKPATH)","")
+$(info $(CHECKPATH))
+$(warning checkpath reported an error)
+endif
+
 MLPOSITIVEFILES = runtime/ocaml/positive_serializer.ml runtime/ocaml/positive_serializer.mli
 MLTREEFILES = runtime/ocaml/tree_serializer.ml runtime/ocaml/tree_serializer.mli
 
@@ -36,7 +42,10 @@ clean:
 	rm -f Makefile.coq
 	$(MAKE) -C runtime clean
 
-.PHONY: default clean install
+distclean: clean
+	rm -f _CoqProject
+
+.PHONY: default clean install distclean
 
 .NOTPARALLEL: $(MLPOSITIVEFILES)
 .NOTPARALLEL: $(MLTREEFILES)

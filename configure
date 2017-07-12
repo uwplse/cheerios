@@ -6,5 +6,4 @@ CANARIES=("mathcomp.ssreflect.ssreflect" "Cheerios requires mathcomp to be insta
 NAMESPACE_core="Cheerios"
 NAMESPACE_extraction="Cheerios"
 NAMESPACE_runtime_coq="Cheerios"
-
-source coqproject.sh
+source script/coqproject.sh
