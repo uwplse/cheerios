@@ -9,7 +9,7 @@ MLFILES = ocaml/bit_vector.ml ocaml/bit_vector.mli \
 
 default: cheerios-runtime
 
-$(MLEXTRACTED):
+$(MLPOSITIVEEXTRACTED) $(MLTREEEXTRACTED):
 	+$(MAKE) -C .. runtime/$@
 
 positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) script/remove_module.pl test/positive_test.ml
@@ -28,4 +28,5 @@ cheerios-runtime: $(MLFILES) ocaml/cheerios_runtime.mllib
 clean:
 	ocamlbuild -clean
 
-.NOTPARALLEL: $(MLPOSITIVEEXTRACTED) $(MLTREEEXTRACTED)
+.NOTPARALLEL: $(MLPOSITIVEEXTRACTED)
+.NOTPARALLEL: $(MLTREEEXTRACTED)
