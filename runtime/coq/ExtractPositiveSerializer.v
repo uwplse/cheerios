@@ -1,7 +1,5 @@
 Require Import Cheerios.ExtractPositiveSerializerDeps.
 
-Require Import Cheerios.ExtractCheerios.
-
 Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
