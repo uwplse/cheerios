@@ -69,12 +69,109 @@ Section tree.
   End tree_ind.
 End tree.
 
+Fixpoint rev_rec {A} (l : list A) (acc : list A) :=
+  match l with
+  | [] => acc
+  | a :: l => rev_rec l (a :: acc)
+  end.
+
+Lemma rev_rec_spec : forall {A : Type} (l : list A) acc,
+    rev_rec l acc = rev l ++ acc.
+Proof.
+  intros A l.
+  induction l.
+  - reflexivity.
+  - intros.
+    simpl.
+    rewrite <- app_assoc.
+    now rewrite IHl.
+Qed.
+
+Definition rev' {A} (l : list A) :=
+  rev_rec l [].
+
+Fixpoint map_rec {A B} (f : A -> B) (l : list A) (acc : list B) :=
+  match l with
+  | [] => rev' acc
+  | a :: l => map_rec f l (f a :: acc)
+  end.
+
+Lemma map_rec_spec : forall {A B} (f : A -> B) (l : list A) (acc : list B),
+    map_rec f l acc = rev acc ++ List.map f l.
+Proof.
+  intros A B f l.
+  induction l.
+  - intros.
+    simpl.
+    unfold rev'.
+    now rewrite rev_rec_spec.
+  - intros.
+    simpl.
+    rewrite IHl.
+    simpl.
+    rewrite <- app_assoc.
+    reflexivity.
+Qed.
+
+Definition list_map' {A B} (f : A -> B) (l : list A) :=
+  map_rec f l [].
+
+Theorem map'_spec : forall {A B} (f : A -> B) (l : list A),
+    List.map f l = list_map' f l.
+  intros.
+  unfold list_map'.
+  now rewrite map_rec_spec.
+Qed.
+
 (* The shape of a tree can be expressed by mapping (fun _ => tt) over it. *)
 Fixpoint map {A B} (f : A -> B) (t : tree A) : tree B :=
   match t with
   | atom a => atom (f a)
   | node l => node (List.map (map f) l)
   end.
+
+Fixpoint tree_map' {A B} (f : A -> B) (t : tree A) : tree B :=
+  let fix tree_map_loop {A B} (f : A -> B) (l : list (tree A)) acc :=
+    match l with
+    | [] => rev_rec acc []
+    | a :: l => tree_map_loop f l (map f a :: acc)
+    end in
+  match t with
+  | atom a => atom (f a)
+  | node l => node (tree_map_loop f l [])
+  end.
+
+Definition tree_map_loop :=
+  fix tree_map_loop {A B} (f : A -> B) (l : list (tree A)) acc :=
+    match l with
+    | [] => rev_rec acc []
+    | a :: l => tree_map_loop f l (map f a :: acc)
+    end.
+
+Check @map_rec_spec.
+Lemma tree_map_loop_spec :
+      forall {A B} (f : A -> B) l acc,
+        tree_map_loop f l acc = rev acc ++ List.map (map f) l.
+Proof.
+  intros A B f l.
+  induction l; intros.
+  - simpl.
+    now rewrite rev_rec_spec.
+  - simpl.
+    rewrite IHl.
+    simpl.
+    now rewrite <- app_assoc.
+Qed.
+
+Theorem tree_map'_spec : forall {A B} (f : A -> B) (t : tree A),
+    tree_map' f t = map f t.
+Proof.
+  intros.
+  destruct t.
+  - reflexivity.
+  - simpl.
+    now rewrite tree_map_loop_spec.
+Qed.
 
 (* Fill out a tree using a list of elements given in preorder traversal order. *)
 Fixpoint fill' {A B} (x : tree A) (bs : list B) : option (tree B * list B) :=
@@ -139,6 +236,18 @@ Definition preorder_list {A} :=
       | x :: l => preorder x ++ preorder_list l
       end.
 
+Fixpoint preorder' {A} (x : tree A) : list A :=
+  let fix preorder_list (l : list (tree A)) acc : list A :=
+      match l with
+      | [] => acc
+      | x :: l => preorder_list l (acc ++ preorder x)
+      end
+  in
+  match x with
+  | atom a => [a]
+  | node l => preorder_list l []
+  end.
+
 (* Since the shape is expressed as mapping, we will need the fact that filling
    out the a mapped tree with the elements of the original tree gives the
    original.
@@ -184,15 +293,32 @@ Section serializer.
         | [] => Serializer.empty
         | x :: xs => Serializer.append (serialize_tree_shape x)
                                        (serialize_list_tree_shape xs)
+        end in
+    match t with
+    | atom _ => serialize x00 (* ignore the data, since we're just focused on the shape *)
+    | node l => Serializer.append (serialize x01)
+                                  (Serializer.append
+                                     (serialize_list_tree_shape l)
+                                     (serialize x02))
+    end.
+
+  Fixpoint serialize_tree_shape' (t : tree A) : Serializer.t :=
+    let fix serialize_list_tree_shape (l : list (tree A)) acc : Serializer.t :=
+        match l with
+        | [] => acc
+        | x :: xs =>
+          serialize_list_tree_shape xs
+                                    (Serializer.append acc (serialize_tree_shape x))
         end
     in
     match t with
     | atom _ => serialize x00 (* ignore the data, since we're just focused on the shape *)
     | node l => Serializer.append (serialize x01)
-                                  (Serializer.append (serialize_list_tree_shape l)
-                                                     (serialize x02))
+                                  (Serializer.append
+                                     (serialize_list_tree_shape l Serializer.empty)
+                                     (serialize x02))
     end.
-  
+
   Definition serialize_list_tree_shape :=
     fix serialize_list_tree_shape (l : list (tree A)) : Serializer.t :=
         match l with
@@ -284,6 +410,10 @@ Section serializer.
   Definition tree_serialize (t : tree A) : Serializer.t :=
     Serializer.append (serialize_tree_shape t)
                       (serialize (preorder t)).
+
+  Definition tree_serialize' (t : tree A) : Serializer.t :=
+    Serializer.append (serialize_tree_shape' t)
+                      (list_serialize' _ _ (preorder' t)).
 
   (* To deserialize, we deserialize the shape and the elements, and then fill out
      the shape with the elements. *)

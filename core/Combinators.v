@@ -116,8 +116,36 @@ Section combinators.
     | a :: l' => Serializer.append (serialize a) (list_serialize_rec l')
     end.
 
+  Fixpoint list_serialize_aux (l : list A) (acc : Serializer.t) : Serializer.t :=
+    match l with
+    | [] => acc
+    | a :: l' =>  list_serialize_aux l' (Serializer.append acc (serialize a))
+    end.
+
+  Lemma list_serialize_rec'_aux : forall l acc,
+      Serializer.unwrap (list_serialize_aux l acc) =
+      Serializer.unwrap (Serializer.append acc (list_serialize_rec l)).
+  Proof.
+    intros l.
+    induction l; intros.
+    - simpl.
+      cheerios_crush.
+      now rewrite app_nil_r.
+    - unfold list_serialize_aux. fold list_serialize_aux.
+      rewrite IHl.
+      unfold list_serialize_rec at 2.
+      fold list_serialize_rec.
+      cheerios_crush.
+  Qed.
+
+  Definition list_serialize_rec' (l : list A) : Serializer.t :=
+    list_serialize_aux l Serializer.empty.
+
   Definition list_serialize (l : list A) : Serializer.t :=
     Serializer.append (serialize (length l)) (list_serialize_rec l).
+
+  Definition list_serialize' (l : list A) : Serializer.t :=
+    Serializer.append (serialize (length l)) (list_serialize_rec' l).
 
   Fixpoint list_deserialize_rec (n : nat) : Deserializer.t (list A) :=
     match n with
@@ -130,10 +158,13 @@ Section combinators.
 
   Lemma list_serialize_deserialize_id_rec :
     forall l bin, Deserializer.unwrap (list_deserialize_rec (length l))
-                                      (Serializer.unwrap (list_serialize_rec l) ++ bin)
+                                      (Serializer.unwrap (list_serialize_rec' l) ++ bin)
                   = Some(l, bin).
   Proof.
     intros.
+    unfold list_serialize_rec'.
+    rewrite list_serialize_rec'_aux.
+    cheerios_crush. simpl.
     induction l;
       simpl;
       cheerios_crush.
@@ -143,19 +174,19 @@ Section combinators.
     cheerios_crush.
   Qed.
 
-  Lemma list_serialize_deserialize_id :
-    serialize_deserialize_id_spec list_serialize list_deserialize.
+  Lemma list_serialize'_deserialize_id :
+    serialize_deserialize_id_spec list_serialize' list_deserialize.
   Proof.
-    unfold list_serialize, list_deserialize.
+    unfold list_serialize', list_deserialize.
     cheerios_crush.
-    apply list_serialize_deserialize_id_rec.
+    now rewrite list_serialize_deserialize_id_rec.
   Qed.
 
   Global Instance list_Serializer : Serializer (list A).
   Proof.
-    exact {| serialize := list_serialize;
+    exact {| serialize := list_serialize';
              deserialize := list_deserialize;
-             serialize_deserialize_id := list_serialize_deserialize_id
+             serialize_deserialize_id := list_serialize'_deserialize_id
           |}.
   Qed.
 

@@ -10,26 +10,37 @@ let test_serialize_deserialize (v : 'a)
   (assert (v = v'));  Printf.printf "success\n"
 
 (* benchmarking *)
-  
-let time_serialize_deserialize (p : 'a)
-                               (serialize : 'a -> 'b)
-                               (deserialize: 'b -> 'a) : float * float =
-  let serialize_start = Sys.time () in
-  let serialized = serialize p in
-  let serialize_stop = Sys.time () in
-  let _ = deserialize serialized in
-  let deserialize_stop = Sys.time () in
-  (serialize_stop -. serialize_start, deserialize_stop -. serialize_stop)
 
+let time (f : 'a -> 'b) (a : 'a) : 'b * float =
+  let start = Sys.time () in
+  let b = f a in
+  let stop = Sys.time ()
+  in (b, stop -. start)
+                       
+let time_f_g (a : 'a)
+             (f : 'a -> 'b)
+             (g: 'b -> 'a) : float * float =
+  let (b, time_f) = time f a in
+  let (_, time_g) = time g b in
+  (time_f, time_g)
+
+let rec time_loop make size n f =
+  let rec loop i acc =
+    if i = n
+    then acc
+    else match time f (make size) with
+         | (_, t) -> (t :: acc) in
+  loop 0 []
+       
 let rec time_serialize_deserialize_loop make size n
                                         serialize deserialize =
   let rec loop i acc = 
     if i = n
     then acc
     else loop (i + 1)
-              (time_serialize_deserialize (make size)
-                                          serialize
-                                          deserialize :: acc)
+              (time_f_g (make size)
+                        serialize
+                        deserialize :: acc)
   in loop 0 []
 
 let avg l =

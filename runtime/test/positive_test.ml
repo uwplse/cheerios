@@ -85,6 +85,53 @@ let rec serialize_positive_three p =
                                   (serialize_positive_three p)
   | XH -> byte_Serializer.serialize '\000'
 
+let rec serialize_positive_three p =
+  match p with
+  | XI (XI (XI p)) -> fun w ->
+                      (byte_Serializer.serialize '\014' w;
+                       serialize_positive_three p w)
+  | XI (XI (XO p)) -> fun w ->
+     (byte_Serializer.serialize '\013' w;
+     serialize_positive_three p w)
+  | XI (XO (XI p)) -> fun w ->
+     (byte_Serializer.serialize '\012' w;
+     serialize_positive_three p w)
+  | XI (XO (XO p)) -> fun w ->
+     (byte_Serializer.serialize '\011' w;
+     serialize_positive_three p w)
+  | XO (XI (XI p)) -> fun w ->
+     (byte_Serializer.serialize '\010' w;
+     serialize_positive_three p w)
+  | XO (XI (XO p)) -> fun w ->
+     (byte_Serializer.serialize '\009' w;
+     serialize_positive_three p w)
+  | XO (XO (XI p)) -> fun w ->
+     (byte_Serializer.serialize '\008' w;
+     serialize_positive_three p w)
+  | XO (XO (XO p)) -> fun w ->
+     (byte_Serializer.serialize '\007' w;
+     serialize_positive_three p w)
+  | XI (XI p) -> fun w ->
+     (byte_Serializer.serialize '\006' w;
+     serialize_positive_three p w)
+  | XI (XO p) -> fun w ->
+     (byte_Serializer.serialize '\005' w;
+     serialize_positive_three p w)
+  | XO (XI p) -> fun w ->
+     (byte_Serializer.serialize '\004' w;
+     serialize_positive_three p w)
+  | XO (XO p) -> fun w ->
+     (byte_Serializer.serialize '\003' w;
+     serialize_positive_three p w)
+  | XI p -> fun w ->
+     (byte_Serializer.serialize '\002' w;
+     serialize_positive_three p w)
+  | XO p -> fun w ->
+     (byte_Serializer.serialize '\001' w;
+     serialize_positive_three p w)
+  | XH -> fun w -> byte_Serializer.serialize '\000' w
+
+                                    
 let rec serialize_positive_four p =
   match p with
   | XI (XI (XI (XI p))) ->
@@ -182,7 +229,8 @@ let rec serialize_positive_four p =
 
 let test_cheerios p print =
   test_serialize_deserialize p
-                             positive_serialize_top
+                             (fun p -> Serializer_primitives.wire_wrap
+                                         (serialize_positive_three p))
                              (fun w -> match positive_deserialize_top w with
                                        | Some p -> p
                                        | None -> failwith "Deserialization failed")
@@ -200,8 +248,14 @@ let _ = test_main 1000
 
 (* benchmarking *)
   
+let _ = compare_time_loop make_positive
+                          200000 20000 50
 
-let _ = compare_time_loop make_positive 50000 20000 positive_serialize_top
-                     (fun w -> match positive_deserialize_top w with
-                               | Some p -> p
-                               | None -> failwith "Deserialization failed")
+                          (*
+                          positive_serialize_top
+                           *)
+                          (fun p -> Serializer_primitives.wire_wrap
+                                      (serialize_positive_three p))
+                          (fun w -> match positive_deserialize_top w with
+                                    | Some p -> p
+                                    | None -> failwith "Deserialization failed")

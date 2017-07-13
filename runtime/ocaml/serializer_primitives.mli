@@ -1,4 +1,4 @@
-type serializer
+type serializer = Bit_vector.writer -> unit
 type 'a deserializer
 type wire = bytes
 type ('s, 'a) fold_state =
