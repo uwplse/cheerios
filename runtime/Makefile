@@ -1,4 +1,4 @@
-OCAMLBUILD = ocamlbuild -tags 'safe_string' -I ocaml -cflag -g
+OCAMLBUILD = ocamlbuild -tags 'safe_string' -I ocaml -cflag -g -lflag -g
 OCAMLBUILDTEST = $(OCAMLBUILD) -pkg oUnit -I test
 
 MLPOSITIVEEXTRACTED = ocaml/positive_serializer.ml ocaml/positive_serializer.mli
@@ -19,6 +19,10 @@ positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) script/remove_module.pl 
 tree_test.native: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
 	perl script/remove_module.pl ocaml/tree_serializer
 	$(OCAMLBUILDTEST) tree_test.native
+
+tree_test.byte: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
+	perl script/remove_module.pl ocaml/tree_serializer
+	$(OCAMLBUILDTEST) tree_test.byte
 
 cheerios-runtime: $(MLFILES) ocaml/cheerios_runtime.mllib
 	$(OCAMLBUILD) cheerios_runtime.cma cheerios_runtime.cmxa cheerios_runtime.cmxs
