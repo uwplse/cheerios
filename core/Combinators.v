@@ -158,12 +158,11 @@ Section combinators.
 
   Lemma list_serialize_deserialize_id_rec :
     forall l bin, Deserializer.unwrap (list_deserialize_rec (length l))
-                                      (Serializer.unwrap (list_serialize_rec' l) ++ bin)
+                                      (Serializer.unwrap (list_serialize_rec l) ++ bin)
                   = Some(l, bin).
   Proof.
     intros.
-    unfold list_serialize_rec'.
-    rewrite list_serialize_rec'_aux.
+    unfold list_serialize_rec.
     cheerios_crush. simpl.
     induction l;
       simpl;
@@ -174,12 +173,32 @@ Section combinators.
     cheerios_crush.
   Qed.
 
+  Lemma list_serialize_deserialize_id :
+    serialize_deserialize_id_spec list_serialize list_deserialize.
+  Proof.
+    unfold list_serialize, list_deserialize.
+    cheerios_crush.
+    now rewrite list_serialize_deserialize_id_rec.
+  Qed.
+
+  Lemma list_serialize'_deserialize_id_rec :
+    forall l bin, Deserializer.unwrap (list_deserialize_rec (length l))
+                                      (Serializer.unwrap (list_serialize_rec' l) ++ bin)
+                  = Some(l, bin).
+  Proof.
+    intros.
+    unfold list_serialize_rec'.
+    rewrite list_serialize_rec'_aux.
+    cheerios_crush. simpl.
+    now rewrite list_serialize_deserialize_id_rec.
+  Qed.
+
   Lemma list_serialize'_deserialize_id :
     serialize_deserialize_id_spec list_serialize' list_deserialize.
   Proof.
     unfold list_serialize', list_deserialize.
     cheerios_crush.
-    now rewrite list_serialize_deserialize_id_rec.
+    now rewrite list_serialize'_deserialize_id_rec.
   Qed.
 
   Global Instance list_Serializer : Serializer (list A).
