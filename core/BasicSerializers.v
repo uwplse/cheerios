@@ -8,11 +8,18 @@ Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
-Import DeserializerNotations.
+Require Import Cheerios.IOStream.
 
-Lemma byte_serialize_deserialize_id :
-  serialize_deserialize_id_spec Serializer.putByte Deserializer.getByte.
-Proof. cheerios_crush. Qed.
+
+Module BasicSerializers (Writer : WRITER) (Reader : READER).
+  Module Serializer := SerializerClass Writer Reader.
+  Import Serializer.
+
+  Module RRewrite := R
+
+  Lemma byte_serialize_deserialize_id :
+    serialize_deserialize_id_spec Writer.putByte Reader.getByte.
+  Proof. intros. rewrite Writer.putByte_unwrap. simpl. rewrite Reader.getByte_unwrap.
 
 Instance byte_Serializer : Serializer byte :=
   {| serialize := Serializer.putByte;
@@ -157,6 +164,25 @@ Fixpoint positive_serialize p :=
                               (positive_serialize p)
   | xO p => Serializer.append (serialize x01)
                               (positive_serialize p)
+  | XH => serialize x00
+  end.
+
+Fixpoint positive_serialize_rec p acc :=
+  match p with
+  | xI (xI (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0e))
+  | xI (xI (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x0d))
+  | xI (xO (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0c))
+  | xI (xO (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x0b))
+  | xO (xI (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0a))
+  | xO (xI (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x09))
+  | xO (xO (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x08))
+  | xO (xO (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x07))
+  | xI (xI p) => positive_serialize_rec p (Serializer.append acc (serialize x06))
+  | xI (xO p) => positive_serialize_rec p (Serializer.append acc (serialize x05))
+  | xO (xI p) => positive_serialize_rec p (Serializer.append acc (serialize x04))
+  | xO (xO p) => positive_serialize_rec p (Serializer.append acc (serialize x03))
+  | xI p => positive_serialize_rec p (Serializer.append acc (serialize x02))
+  | xO p => positive_serialize_rec p (Serializer.append acc (serialize x01))
   | XH => serialize x00
   end.
 

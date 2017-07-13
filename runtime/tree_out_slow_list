@@ -1,0 +1,73 @@
+Serializing/deserializing height 0, width 2... success
+Serializing/deserializing height 1, width 2... success
+Serializing/deserializing height 2, width 2... success
+Serializing/deserializing height 3, width 2... success
+Serializing/deserializing height 4, width 2... success
+Serializing/deserializing height 5, width 2... success
+Serializing/deserializing height 6, width 2... success
+Serializing/deserializing height 7, width 2... success
+Serializing/deserializing height 8, width 2... success
+Serializing/deserializing height 9, width 2... success
+Serializing/deserializing height 10, width 2... success
+Serializing/deserializing height 11, width 2... success
+Serializing/deserializing height 12, width 2... success
+Serializing/deserializing height 13, width 2... success
+Serializing/deserializing height 14, width 2... success
+Serializing/deserializing height 0, width 3... success
+Serializing/deserializing height 1, width 3... success
+Serializing/deserializing height 2, width 3... success
+Serializing/deserializing height 3, width 3... success
+Serializing/deserializing height 4, width 3... success
+Serializing/deserializing height 5, width 3... success
+Serializing/deserializing height 6, width 3... success
+Serializing/deserializing height 7, width 3... success
+Serializing/deserializing height 8, width 3... success
+Serializing/deserializing height 9, width 3... success
+Serializing/deserializing height 0, width 4... success
+Serializing/deserializing height 1, width 4... success
+Serializing/deserializing height 2, width 4... success
+Serializing/deserializing height 3, width 4... success
+Serializing/deserializing height 4, width 4... success
+Serializing/deserializing height 5, width 4... success
+Serializing/deserializing height 6, width 4... success
+Serializing/deserializing height 7, width 4... success
+Serializing/deserializing height 8, width 4... success
+Serializing/deserializing height 9, width 4... success
+Serializing/deserializing height 0, width 5... success
+Serializing/deserializing height 1, width 5... success
+Serializing/deserializing height 2, width 5... success
+Serializing/deserializing height 3, width 5... success
+Serializing/deserializing height 4, width 5... success
+Serializing/deserializing height 5, width 5... success
+Serializing/deserializing height 6, width 5... success
+Serializing/deserializing height 7, width 5... success
+
+Space usage tests...
+size: 0 - cheerios: 4 bytes, marshal: 22 bytes
+size: 1 - cheerios: 9 bytes, marshal: 28 bytes
+size: 2 - cheerios: 17 bytes, marshal: 40 bytes
+size: 3 - cheerios: 33 bytes, marshal: 64 bytes
+size: 4 - cheerios: 66 bytes, marshal: 112 bytes
+size: 5 - cheerios: 130 bytes, marshal: 208 bytes
+size: 6 - cheerios: 258 bytes, marshal: 400 bytes
+size: 7 - cheerios: 515 bytes, marshal: 784 bytes
+size: 8 - cheerios: 1027 bytes, marshal: 1552 bytes
+size: 9 - cheerios: 2051 bytes, marshal: 3088 bytes
+
+Benchmarks...
+size 0 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 1 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 2 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 3 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 4 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000020
+size 5 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 6 - serialize: cheerios 0.000020, marshal 0.000000 || deserialize: cheerios 0.000000, marshal 0.000000
+size 7 - serialize: cheerios 0.000000, marshal 0.000000 || deserialize: cheerios 0.000020, marshal 0.000000
+size 8 - serialize: cheerios 0.000080, marshal 0.000020 || deserialize: cheerios 0.000020, marshal 0.000000
+size 9 - serialize: cheerios 0.000140, marshal 0.000000 || deserialize: cheerios 0.000100, marshal 0.000040
+size 10 - serialize: cheerios 0.000380, marshal 0.000120 || deserialize: cheerios 0.000380, marshal 0.000040
+size 11 - serialize: cheerios 0.001060, marshal 0.000160 || deserialize: cheerios 0.001020, marshal 0.000040
+size 12 - serialize: cheerios 0.002800, marshal 0.000260 || deserialize: cheerios 0.002420, marshal 0.000180
+size 13 - serialize: cheerios 0.007760, marshal 0.000640 || deserialize: cheerios 0.009180, marshal 0.000300
+size 14 - serialize: cheerios 0.017140, marshal 0.001200 || deserialize: cheerios 0.019760, marshal 0.000560
+size 15 - serialize: cheerios 0.037860, marshal 0.002880 || deserialize: cheerios 0.042440, marshal 0.005640

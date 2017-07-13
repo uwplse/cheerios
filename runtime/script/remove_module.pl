@@ -14,7 +14,7 @@ $ml =~ s/module.*erializer =\n\s*struct\n\s*end//g;
 write_file($ml_name, $ml);
 
 my $mli = read_file($mli_name);
-$mli =~ s/module.*erializer :\n\s*.*ERIALIZER//g;
+$mli =~ s/module.*erializer :\n\s*.*ER//g;
 write_file($mli_name, $mli);
 exit;
 

@@ -8,6 +8,8 @@ Require Import Cheerios.DeserializerMonad.
 Import DeserializerNotations.
 Require Import Cheerios.Tactics.
 
+Import ByteListSerializer.
+
 (* These functions are either missing obvious implicits, or have
    implicit arguments that are not marked "maximally inserted", which
    means they cannot easily be used with map or fmap. *)

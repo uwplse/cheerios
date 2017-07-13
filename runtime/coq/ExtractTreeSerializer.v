@@ -5,11 +5,16 @@ Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
+Import ByteListSerializer.
+
+Check serialize_top.
+Check serialize.
+
 Definition tree_serialize_top : tree bool -> Serializer.wire :=
-  serialize_top serialize.
+  serialize_top _ serialize.
 
 Definition tree_deserialize_top : Serializer.wire -> option (tree bool) :=
-  deserialize_top deserialize.
+  deserialize_top _ deserialize.
 
 Definition tree_serialize_top' (t : tree bool) : Serializer.wire :=
   Serializer.wire_wrap (tree_serialize' _ t).

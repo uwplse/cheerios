@@ -4,6 +4,8 @@ Require Import Cheerios.BasicSerializers.
 Require Import Cheerios.Core.
 Require Import Cheerios.Types.
 
+Import ByteListSerializer.
+
 Extract Inlined Constant
         Serializer.t => "Serializer_primitives.serializer".
 Extract Inlined Constant
@@ -38,7 +40,7 @@ Extract Inlined Constant deserialize_top => "Serializer_primitives.deserialize_t
 Extract Inlined Constant Serializer.empty_unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.putByte_unwrap => "Obj.magic".
 Extract Inlined Constant Serializer.append_unwrap => "Obj.magic".
-Extract Inlined Constant Serializer.wire_wrap_unwrap_inv => "Obj.magic".
+Extract Inlined Constant Serializer.wire_wrap_unwrap => "Obj.magic".
 
 Extract Inlined Constant Deserializer.getByte_unwrap => "Obj.magic".
 Extract Inlined Constant Deserializer.bind_unwrap => "Obj.magic".

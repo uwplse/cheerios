@@ -3,6 +3,7 @@ Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Types.
 
+Import ByteListSerializer.
 (*
    Most user-defined datatypes are tree-like, which are typically nontrivial to
    deserialize by structural recursion on the bitstream. This file provides a
