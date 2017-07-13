@@ -60,7 +60,7 @@ let compare_map_main () =
     if i < max_height
     then let map_avg = avg_time_height (map0 (fun _ -> ())) i in
          let tr_map_avg = avg_time_height (tree_map' (fun _ -> ())) i in
-         (Printf.printf "map: %f, tail-rec map: %f \n" map_avg tr_map_avg;
+         (Printf.printf "map: %f, tail-rec map: %f \n%!" map_avg tr_map_avg;
           loop (i + 1)) in
   loop 0
 
@@ -70,7 +70,7 @@ let compare_serialize_tr_main () =
     if i < max_height
     then let s_avg = avg_time_height (fun t -> t) i in
          let tr_s_avg = avg_time_height tree_serialize_top' i in
-         (Printf.printf "height: %d, serialize: %f, tail-rec serialize: %f \n"
+         (Printf.printf "height: %d, serialize: %f, tail-rec serialize: %f \n%!"
                         i s_avg tr_s_avg;
           loop (i + 1)) in
   loop 0
