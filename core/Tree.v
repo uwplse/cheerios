@@ -130,6 +130,9 @@ Fixpoint map {A B} (f : A -> B) (t : tree A) : tree B :=
   | node l => node (List.map (map f) l)
   end.
 
+Definition shape {A} (t : tree A) : tree unit :=
+  map (fun _ => tt) t.
+
 Fixpoint tree_map' {A B} (f : A -> B) (t : tree A) : tree B :=
   let fix tree_map_loop {A B} (f : A -> B) (l : list (tree A)) acc :=
     match l with
@@ -352,10 +355,10 @@ Section serializer.
       Deserializer.unwrap (Deserializer.fold deserialize_tree_shape_step acc)
                           (Serializer.unwrap (serialize_tree_shape t) ++ bytes) =
       match acc with
-      | [] => Some (map (fun _ => tt) t, bytes)
+      | [] => Some (shape t, bytes)
       | j :: js => Deserializer.unwrap
                      (Deserializer.fold deserialize_tree_shape_step
-                                        ((map (fun _ => tt) t :: j) :: js)) bytes
+                                        ((shape t :: j) :: js)) bytes
       end.
   Proof.
     induction t using tree_rect with
@@ -374,7 +377,7 @@ Section serializer.
          Deserializer.unwrap
            (Deserializer.fold
               deserialize_tree_shape_step
-              ((List.rev (List.map (map (fun _ => tt)) l) ++ ts) :: acc)) bytes);
+              ((List.rev (List.map shape l) ++ ts) :: acc)) bytes);
       intros;
       try (unfold serialize_list_tree_shape;
            rewrite Serializer.append_unwrap, app_ass, IHt, IHt0;
@@ -393,40 +396,103 @@ Section serializer.
     Deserializer.fold deserialize_tree_shape_step [].
 
   (* This is the top level statement about serializing and deserializing tree shapes:
-     it results in `map (fun _ => tt)` of the original tree. *)
+     it results in `shape` of the original tree. *)
   Lemma serialize_deserialize_shape_id :
     forall t bytes,
       Deserializer.unwrap deserialize_tree_shape
                           (Serializer.unwrap (serialize_tree_shape t) ++ bytes)
-      = Some (map (fun _ => tt) t, bytes).
+      = Some (shape t, bytes).
   Proof.
     intros.
     unfold deserialize_tree_shape.
     now rewrite shape_aux.
   Qed.
 
+  Fixpoint serialize_tree_elements (t : tree A) : Serializer.t :=
+    let fix serialize_tree_elements_list (l : list (tree A)) : Serializer.t :=
+        match l with
+        | [] => Serializer.empty
+        | t :: l' => Serializer.append (serialize_tree_elements t)
+                                      (serialize_tree_elements_list l')
+        end
+    in match t with
+       | atom a => serialize a
+       | node l => serialize_tree_elements_list l
+       end.
+
+  Definition serialize_tree_elements_list :=
+    fix serialize_tree_elements_list (l : list (tree A)) : Serializer.t :=
+        match l with
+        | [] => Serializer.empty
+        | t :: l' => Serializer.append (serialize_tree_elements t)
+                                      (serialize_tree_elements_list l')
+        end.
+
+  Fixpoint deserialize_tree_elements (t : tree unit) : Deserializer.t (tree A) :=
+    let fix deserialize_tree_elements_list (l : list (tree unit)) : Deserializer.t (list (tree A)) :=
+        match l with
+        | [] => Deserializer.ret []
+        | t :: l' => cons <$> deserialize_tree_elements t <*> deserialize_tree_elements_list l'
+        end
+    in match t with
+       | atom tt => @atom _ <$> deserialize
+       | node l => @node _ <$> deserialize_tree_elements_list l
+       end.
+
+  Definition deserialize_tree_elements_list :=
+    fix deserialize_tree_elements_list (l : list (tree unit)) : Deserializer.t (list (tree A)) :=
+        match l with
+        | [] => Deserializer.ret []
+        | t :: l' => cons <$> deserialize_tree_elements t <*> deserialize_tree_elements_list l'
+        end.
+
+  Lemma serialize_deserialize_tree_elements_id :
+    forall t bytes,
+      Deserializer.unwrap (deserialize_tree_elements (shape t))
+                          (Serializer.unwrap (serialize_tree_elements t) ++ bytes) =
+      Some (t, bytes).
+  Proof.
+    induction t using tree_rect with
+        (P_list := fun l => forall bytes,
+           Deserializer.unwrap (deserialize_tree_elements_list (List.map shape l))
+             (Serializer.unwrap (serialize_tree_elements_list l) ++ bytes) =
+           Some (l, bytes));
+    intros;
+    cbn [shape map List.map
+         serialize_tree_shape deserialize_tree_shape
+         serialize_tree_elements deserialize_tree_elements
+         serialize_tree_elements_list deserialize_tree_elements_list].
+    - now cheerios_crush.
+    - cheerios_crush.
+      rewrite IHt.
+      cheerios_crush.
+      rewrite IHt0.
+      cheerios_crush.
+    - now cheerios_crush.
+    - fold deserialize_tree_elements_list.
+      fold serialize_tree_elements_list.
+      cheerios_crush.
+      now rewrite IHt.
+  Qed.
+
   (* Now we serialize the tree itself by first serializing the shape, and then a
      preorder traversal of the elements. *)
   Definition tree_serialize (t : tree A) : Serializer.t :=
     Serializer.append (serialize_tree_shape t)
-                      (serialize (preorder t)).
+                      (serialize_tree_elements t).
 
   Definition tree_serialize' (t : tree A) : Serializer.t :=
     Serializer.append (serialize_tree_shape' t)
-                      (list_serialize' _ _ (preorder' t)).
+                      (serialize_tree_elements t).
 
   (* To deserialize, we deserialize the shape and the elements, and then fill out
      the shape with the elements. *)
   Definition tree_deserialize : Deserializer.t (tree A) :=
     shape <- deserialize_tree_shape ;;
-    elems <- deserialize ;;
-    match fill shape elems with
-    | None => Deserializer.error
-    | Some t => Deserializer.ret t
-    end.
+    deserialize_tree_elements shape.
 
   (* To prove this correct, we need to know that serializ-/deserializing the shape of `t`
-     results in `map (fun _ => tt) t` (`serialize_deserialize_shape_id`), and that
+     results in `shape t` (`serialize_deserialize_shape_id`), and that
      filling out a `map f t` with the elements of `preorder t` results in `t`
      (`fill_preorder`).
    *)
@@ -434,8 +500,8 @@ Section serializer.
     serialize_deserialize_id_spec tree_serialize tree_deserialize.
   Proof.
     unfold tree_serialize, tree_deserialize. cheerios_crush.
-    rewrite serialize_deserialize_shape_id. cheerios_crush.
-    rewrite fill_preorder. cheerios_crush.
+    rewrite serialize_deserialize_shape_id.
+    now rewrite serialize_deserialize_tree_elements_id.
   Qed.
 
   Global Instance tree_Serializer : Serializer (tree A) :=
