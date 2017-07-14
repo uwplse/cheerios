@@ -1,6 +1,5 @@
 Require Import List.
 
-Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.IOStream.
 Require Import Cheerios.Types.

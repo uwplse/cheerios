@@ -5,7 +5,7 @@ Require Import Cheerios.Types.
 
 Set Implicit Arguments.
 
-Module Serializer : WRITER.
+Module ByteListWriter : WRITER.
   Definition t := list byte.
   Definition wire := list byte.
   Axiom wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
@@ -13,7 +13,7 @@ Module Serializer : WRITER.
   Definition empty : t := [].
   Definition putByte (a : byte) : t := [a].
 
-  Definition append (x y : t) : t := x ++ y.
+  Definition append (x y : unit -> t) : t := (x tt) ++ (y tt).
 
   Definition unwrap (x : t) : list byte := x.
   Definition wire_wrap (x : t) : wire := x.
@@ -26,17 +26,17 @@ Module Serializer : WRITER.
   Proof. reflexivity. Qed.
 
   Lemma append_unwrap :
-    forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
+    forall x y : unit -> t, unwrap (append x y) = unwrap (x tt) ++ unwrap (y tt).
   Proof. reflexivity. Qed.
 
   Lemma wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
   Proof. reflexivity. Qed.
-End Serializer.
+End ByteListWriter.
 
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
 
-Module Deserializer : READER.
+Module ByteListReader : READER.
   Definition t (A : Type) := list byte -> option (A * list byte).
   Definition unwrap {A} (x : t A) := x.
 
@@ -53,7 +53,7 @@ Module Deserializer : READER.
                        | Some (a, s') => f a s'
              end.
 
-  Definition map {A B} (f : A -> B) (d : Deserializer.t A) : Deserializer.t B :=
+  Definition map {A B} (f : A -> B) (d : t A) : t B :=
     bind d (fun a => ret (f a)).
 
   Definition error {A} : t A :=
@@ -92,9 +92,9 @@ Module Deserializer : READER.
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
 
-  Lemma map_unwrap: forall A B (f: A -> B) (d: Deserializer.t A) bytes,
-      Deserializer.unwrap (map f d) bytes =
-      match (Deserializer.unwrap d bytes) with
+  Lemma map_unwrap: forall A B (f: A -> B) (d: t A) bytes,
+      unwrap (map f d) bytes =
+      match (unwrap d bytes) with
       | None => None
       | Some (v, bytes) => Some (f v, bytes)
       end.
@@ -115,7 +115,7 @@ Module Deserializer : READER.
     intros.
     simpl. destruct l; reflexivity.
   Qed.
-End Deserializer.
-Arguments Deserializer.error {_}.
+End ByteListReader.
+Arguments ByteListReader.error {_}.
 
-Module ByteListSerializer := SerializerClass Serializer Deserializer.
+Module ByteListSerializer := SerializerClass ByteListWriter ByteListReader.

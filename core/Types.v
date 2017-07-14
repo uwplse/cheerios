@@ -37,7 +37,7 @@ Module Type WRITER.
   Parameter wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
 
   Parameter empty : t.
-  Parameter append : t -> t -> t.
+  Parameter append : (unit -> t) -> (unit -> t) -> t.
   Parameter putByte : byte -> t.
 
   (* For proof only! Do not call from serializers. *)
@@ -47,7 +47,8 @@ Module Type WRITER.
 
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
-      forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
+    forall x y : unit -> t,
+      unwrap (append x y) = unwrap (x tt) ++ unwrap (y tt).
   Parameter putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
   Parameter wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
 End WRITER.
@@ -100,10 +101,10 @@ Module Type READER.
       end.
 End READER.
 
-Module SerializerClass (Serializer : WRITER) (Deserializer : READER).
+Module SerializerClass (Writer : WRITER) (Reader : READER).
   Notation serialize_deserialize_id_spec s d :=
     (forall a bytes,
-        Deserializer.unwrap d (Serializer.unwrap (s a) ++ bytes) = Some(a, bytes)).
+        Reader.unwrap d (Writer.unwrap (s a) ++ bytes) = Some(a, bytes)).
 
   (* This is the class of serializable types, which is the main entrypoint to
    Cheerios. Instances are required to show that `deserialize` can correctly
@@ -111,8 +112,8 @@ Module SerializerClass (Serializer : WRITER) (Deserializer : READER).
    bitstream. *)
   Class Serializer (A : Type) : Type :=
     {
-      serialize : A -> Serializer.t;
-      deserialize : Deserializer.t A;
+      serialize : A -> Writer.t;
+      deserialize : Reader.t A;
       serialize_deserialize_id : serialize_deserialize_id_spec serialize deserialize
     }.
   Hint Rewrite @serialize_deserialize_id : cheerios.
@@ -121,7 +122,7 @@ Module SerializerClass (Serializer : WRITER) (Deserializer : READER).
    serialize are inverses. *)
   Lemma serialize_deserialize_id_nil :
     forall A (sA : Serializer A) a,
-      Deserializer.unwrap deserialize (Serializer.unwrap (serialize a)) = Some (a, []).
+      Reader.unwrap deserialize (Writer.unwrap (serialize a)) = Some (a, []).
   Proof.
     intros.
     pose proof serialize_deserialize_id a [].
@@ -132,14 +133,14 @@ Module SerializerClass (Serializer : WRITER) (Deserializer : READER).
     Variable A : Type.
     Variable sA: Serializer A.
 
-    Definition serialize_top (s : A -> Serializer.t) (a : A) : Serializer.wire :=
-      Serializer.wire_wrap (s a).
+    Definition serialize_top (s : A -> Writer.t) (a : A) : Writer.wire :=
+      Writer.wire_wrap (s a).
 
     Definition deserialize_top
-               (d : Deserializer.t A)
-               (w : Serializer.wire) : option A :=
-      match Deserializer.unwrap d
-                                (Serializer.wire_unwrap w) with
+               (d : Reader.t A)
+               (w : Writer.wire) : option A :=
+      match Reader.unwrap d
+                                (Writer.wire_unwrap w) with
       | None => None
       | Some (a, _) => Some a
       end.
@@ -149,7 +150,7 @@ Module SerializerClass (Serializer : WRITER) (Deserializer : READER).
     Proof.
       intros.
       unfold serialize_top, deserialize_top.
-      rewrite Serializer.wire_wrap_unwrap.
+      rewrite Writer.wire_wrap_unwrap.
       now rewrite serialize_deserialize_id_nil.
     Qed.
   End top.

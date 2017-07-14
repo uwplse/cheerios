@@ -1,4 +1,3 @@
-Require Import Cheerios.Core.
 Require Import Cheerios.Types.
 Require Import List.
 Import ListNotations.
@@ -40,6 +39,7 @@ Module DeserializerMonad (Reader : READER).
   Check sequence.
   Import DeserializerNotations.
 
+  (*
   Section lift.
     Import ByteListSerializer.
     Context {A B C D : Type}.
@@ -58,4 +58,7 @@ Module DeserializerMonad (Reader : READER).
 
     Definition liftD4 {X} (f : A -> B -> C -> D -> X) : Reader.t X :=
       (f <$> deserialize) >>= liftD3.
+
   End lift.
+   *)
+End DeserializerMonad.

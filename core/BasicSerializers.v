@@ -4,37 +4,64 @@ Import ListNotations.
 From StructTact Require Import StructTactics Fin.
 Require Fin Ascii.
 
-Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 Require Import Cheerios.IOStream.
 
+Module Type BASICSERIALIZERS (Writer : WRITER) (Reader : READER).
+  Module RWClass := SerializerClass Writer Reader.
+  Export RWClass.
+  
+  Parameter byte_Serializer : RWClass.Serializer byte.
+  Parameter bool_Serializer : RWClass.Serializer bool.
+  Parameter ascii_Serializer : RWClass.Serializer Ascii.ascii.
+  Parameter nat_Serializer : RWClass.Serializer nat.
 
-Module BasicSerializers (Writer : WRITER) (Reader : READER).
-  Module Serializer := SerializerClass Writer Reader.
-  Import Serializer.
+  Parameter byte_unwrap : forall b, Writer.unwrap (serialize b) = [b].
+End BASICSERIALIZERS.
 
-  Module RRewrite := R
+Module BasicSerializers (Writer : WRITER) (Reader : READER) :
+  BASICSERIALIZERS Writer Reader.
+  Module SerializerClass := SerializerClass Writer Reader.
+  Module RWClass := SerializerClass.
+  Import SerializerClass.
 
+  Module WRewrite := WriterRewrite Writer.
+  Module RRewrite := ReaderRewrite Reader.
+  Import WRewrite.
+  Import RRewrite.
+
+  Module DeserializerMonad := DeserializerMonad Reader.
+  Import DeserializerMonad.
+  Import DeserializerNotations.
+  
   Lemma byte_serialize_deserialize_id :
     serialize_deserialize_id_spec Writer.putByte Reader.getByte.
-  Proof. intros. rewrite Writer.putByte_unwrap. simpl. rewrite Reader.getByte_unwrap.
+  Proof. cheerios_crush. Qed.
 
 Instance byte_Serializer : Serializer byte :=
-  {| serialize := Serializer.putByte;
-     deserialize := Deserializer.getByte;
+  {| serialize := Writer.putByte;
+     deserialize := Reader.getByte;
      serialize_deserialize_id := byte_serialize_deserialize_id |}.
 
-Definition bool_serialize (b : bool) : Serializer.t :=
+Lemma byte_unwrap : forall b, Writer.unwrap (serialize b) = [b].
+Proof.
+  unfold serialize. simpl.
+  cheerios_crush.
+Qed.
+
+Hint Rewrite byte_unwrap : cheerios.
+
+Definition bool_serialize (b : bool) : Writer.t :=
   if b then serialize x01 else serialize x00.
 
 Definition bool_deserialize :=
   b <- deserialize ;;
     match b with
-    | x00 => Deserializer.ret false
-    | x01 => Deserializer.ret true
-    | _ => Deserializer.error
+    | x00 => Reader.ret false
+    | x01 => Reader.ret true
+    | _ => Reader.error
     end.
 
 Lemma bool_serialize_deserialize_id :
@@ -46,7 +73,7 @@ Proof.
     cheerios_crush; simpl; cheerios_crush.
 Qed.
 
-Instance bool_Serializer : Serializer bool :=
+Global Instance bool_Serializer : Serializer bool :=
   {| serialize := bool_serialize;
      deserialize := bool_deserialize;
      serialize_deserialize_id := bool_serialize_deserialize_id |}.
@@ -55,15 +82,15 @@ Instance bool_Serializer : Serializer bool :=
 Lemma fold_append_unwrap :
   forall {S A : Type}
          (f : byte -> S -> fold_state S A) (s : S)
-         (b : byte) (tail : Serializer.t) (bin : list byte),
-    Deserializer.unwrap (Deserializer.fold f s)
-                        (Serializer.unwrap (Serializer.append
-                                              (serialize b)
-                                              tail) ++ bin) =
+         (b : byte) (tail : Writer.t) (bin : list byte),
+    Reader.unwrap (Reader.fold f s)
+                        (Writer.unwrap (Writer.append
+                                              (fun _ => (serialize b))
+                                              (fun _ => tail)) ++ bin) =
     match f b s with
-    | Done a => Some(a, Serializer.unwrap tail ++ bin)
-    | More s => Deserializer.unwrap (Deserializer.fold f s)
-                                    (Serializer.unwrap tail ++ bin)
+    | Done a => Some(a, Writer.unwrap tail ++ bin)
+    | More s => Reader.unwrap (Reader.fold f s)
+                                    (Writer.unwrap tail ++ bin)
     | Error => None
     end.
 Proof.
@@ -73,15 +100,15 @@ Qed.
 Lemma fold_append_unwrap' :
   forall {S A : Type}
          (f : byte -> S -> fold_state S A) (s : S)
-         (b : byte) (tail : Serializer.t) (bin : list byte),
-    Deserializer.unwrap (Deserializer.fold f s)
-                        (Serializer.unwrap (Serializer.append
-                                              (Serializer.putByte b)
-                                              tail) ++ bin) =
+         (b : byte) (tail : Writer.t) (bin : list byte),
+    Reader.unwrap (Reader.fold f s)
+                        (Writer.unwrap (Writer.append
+                                              (fun _ => (Writer.putByte b))
+                                              (fun _ => tail)) ++ bin) =
   match f b s with
-    | Done a => Some(a, Serializer.unwrap tail ++ bin)
-    | More s => Deserializer.unwrap (Deserializer.fold f s)
-                                    (Serializer.unwrap tail ++ bin)
+    | Done a => Some(a, Writer.unwrap tail ++ bin)
+    | More s => Reader.unwrap (Reader.fold f s)
+                                    (Writer.unwrap tail ++ bin)
     | Error => None
     end.
 Proof.
@@ -136,53 +163,34 @@ Local Open Scope char_scope.
 
 Fixpoint positive_serialize p :=
   match p with
-  | xI (xI (xI p)) => Serializer.append (serialize x0e)
-                                        (positive_serialize p)
-  | xI (xI (xO p)) => Serializer.append (serialize x0d)
-                                        (positive_serialize p)
-  | xI (xO (xI p)) => Serializer.append (serialize x0c)
-                                        (positive_serialize p)
-  | xI (xO (xO p)) => Serializer.append (serialize x0b)
-                                        (positive_serialize p)
-  | xO (xI (xI p)) => Serializer.append (serialize x0a)
-                                        (positive_serialize p)
-  | xO (xI (xO p)) => Serializer.append (serialize x09)
-                                        (positive_serialize p)
-  | xO (xO (xI p)) => Serializer.append (serialize x08)
-                                        (positive_serialize p)
-  | xO (xO (xO p)) => Serializer.append (serialize x07)
-                                        (positive_serialize p)
-  | xI (xI p) => Serializer.append (serialize x06)
-                                   (positive_serialize p)
-  | xI (xO p) => Serializer.append (serialize x05)
-                                   (positive_serialize p)
-  | xO (xI p) => Serializer.append (serialize x04)
-                                   (positive_serialize p)
-  | xO (xO p) => Serializer.append (serialize x03)
-                                   (positive_serialize p)
-  | xI p => Serializer.append (serialize x02)
-                              (positive_serialize p)
-  | xO p => Serializer.append (serialize x01)
-                              (positive_serialize p)
-  | XH => serialize x00
-  end.
-
-Fixpoint positive_serialize_rec p acc :=
-  match p with
-  | xI (xI (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0e))
-  | xI (xI (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x0d))
-  | xI (xO (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0c))
-  | xI (xO (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x0b))
-  | xO (xI (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x0a))
-  | xO (xI (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x09))
-  | xO (xO (xI p)) => positive_serialize_rec p (Serializer.append acc (serialize x08))
-  | xO (xO (xO p)) => positive_serialize_rec p (Serializer.append acc (serialize x07))
-  | xI (xI p) => positive_serialize_rec p (Serializer.append acc (serialize x06))
-  | xI (xO p) => positive_serialize_rec p (Serializer.append acc (serialize x05))
-  | xO (xI p) => positive_serialize_rec p (Serializer.append acc (serialize x04))
-  | xO (xO p) => positive_serialize_rec p (Serializer.append acc (serialize x03))
-  | xI p => positive_serialize_rec p (Serializer.append acc (serialize x02))
-  | xO p => positive_serialize_rec p (Serializer.append acc (serialize x01))
+  | xI (xI (xI p)) => Writer.append (fun _ => (serialize x0e))
+                                    (fun _ => (positive_serialize p))
+  | xI (xI (xO p)) => Writer.append (fun _ => (serialize x0d))
+                                    (fun _ => (positive_serialize p))
+  | xI (xO (xI p)) => Writer.append (fun _ => (serialize x0c))
+                                    (fun _ => (positive_serialize p))
+  | xI (xO (xO p)) => Writer.append (fun _ => (serialize x0b))
+                                    (fun _ => (positive_serialize p))
+  | xO (xI (xI p)) => Writer.append (fun _ => (serialize x0a))
+                                    (fun _ => (positive_serialize p))
+  | xO (xI (xO p)) => Writer.append (fun _ => (serialize x09))
+                                    (fun _ => (positive_serialize p))
+  | xO (xO (xI p)) => Writer.append (fun _ => (serialize x08))
+                                    (fun _ => (positive_serialize p))
+  | xO (xO (xO p)) => Writer.append (fun _ => (serialize x07))
+                                    (fun _ => (positive_serialize p))
+  | xI (xI p) => Writer.append (fun _ => (serialize x06))
+                               (fun _ => (positive_serialize p))
+  | xI (xO p) => Writer.append (fun _ => (serialize x05))
+                               (fun _ => (positive_serialize p))
+  | xO (xI p) => Writer.append (fun _ => (serialize x04))
+                               (fun _ => (positive_serialize p))
+  | xO (xO p) => Writer.append (fun _ => (serialize x03))
+                               (fun _ => (positive_serialize p))
+  | xI p => Writer.append (fun _ => (serialize x02))
+                          (fun _ => (positive_serialize p))
+  | xO p => Writer.append (fun _ => (serialize x01))
+                          (fun _ => (positive_serialize p))
   | XH => serialize x00
   end.
 
@@ -210,8 +218,8 @@ Definition depositive_serialize_step
 
 Definition positive_step_aux p :=
   forall (k : positive -> positive) (bytes : list byte),
-    Deserializer.unwrap (Deserializer.fold depositive_serialize_step k)
-                        (Serializer.unwrap (positive_serialize p) ++ bytes)
+    Reader.unwrap (Reader.fold depositive_serialize_step k)
+                        (Writer.unwrap (positive_serialize p) ++ bytes)
     = Some(k p, bytes).
 
 Lemma positive_step :
@@ -230,7 +238,7 @@ Proof.
 Qed.
 
 Definition positive_deserialize :=
-  Deserializer.fold depositive_serialize_step (fun p => p).
+  Reader.fold depositive_serialize_step (fun p => p).
 
 Theorem positive_serialize_deserialize_id :
   serialize_deserialize_id_spec positive_serialize
@@ -254,20 +262,22 @@ Qed.
 (* This is the first example of a "typical" serializer: it combines more
    primitive serializers (in this case, just for byte and positive) together in
    order to serialize a Z. *)
-Definition Z_serialize (z : Z) : Serializer.t :=
+Definition Z_serialize (z : Z) : Writer.t :=
   match z with
   | Z0 => serialize x00
-  | Zpos p => Serializer.append (serialize x01) (serialize p)
-  | Zneg p => Serializer.append (serialize x02) (serialize p)
+  | Zpos p => Writer.append (fun _ => (serialize x01))
+                            (fun _ => (serialize p))
+  | Zneg p => Writer.append (fun _ => (serialize x02))
+                            (fun _ => (serialize p))
   end.
 
-Definition Z_deserialize : Deserializer.t Z :=
+Definition Z_deserialize : Reader.t Z :=
   tag <- deserialize ;;
   match tag with
   | x02 => Zneg <$> deserialize
   | x01 => Zpos <$> deserialize
-  | x00 => Deserializer.ret Z0
-  | _ => Deserializer.error
+  | x00 => Reader.ret Z0
+  | _ => Reader.error
   end.
 
 (* This proof is typical for serializing an algebraic datatype. Unfold the
@@ -291,13 +301,14 @@ Instance Z_Serializer : Serializer Z :=
 Definition N_serialize n :=
   match n with
   | N0 => serialize false
-  | Npos p => Serializer.append (serialize true) (serialize p)
+  | Npos p => Writer.append (fun _ => (serialize true))
+                            (fun _ => (serialize p))
   end.
 
-Definition N_deserialize : Deserializer.t N :=
+Definition N_deserialize : Reader.t N :=
   tag <- deserialize ;;
   match tag with
-  | false => Deserializer.ret N0
+  | false => Reader.ret N0
   | true => Npos <$> deserialize
   end.
 
@@ -321,9 +332,9 @@ Instance N_Serializer : Serializer N :=
 
 (* The other main way to define a serializer is to use an isomorphism to another
    type that is already serializable. *)
-Definition nat_serialize n : Serializer.t := serialize (N.of_nat n).
+Definition nat_serialize n : Writer.t := serialize (N.of_nat n).
 
-Definition nat_deserialize : Deserializer.t nat := N.to_nat <$> deserialize.
+Definition nat_deserialize : Reader.t nat := N.to_nat <$> deserialize.
 
 
 (* This proof is typical for serializers defined by converting to and from a
@@ -347,14 +358,14 @@ Proof.
 Qed.
 
 (* Serializer for the standard library's Fin.t based on converting to nat. *)
-Definition Fin_serialize {n} (x : Fin.t n) : Serializer.t :=
+Definition Fin_serialize {n} (x : Fin.t n) : Writer.t :=
   serialize (proj1_sig (Fin.to_nat x)).
 
-Definition Fin_deserialize {n} : Deserializer.t (Fin.t n) :=
+Definition Fin_deserialize {n} : Reader.t (Fin.t n) :=
   m <- deserialize ;;
     match Fin.of_nat m n with
-    | inleft x => Deserializer.ret x
-    | inright _ => Deserializer.error
+    | inleft x => Reader.ret x
+    | inright _ => Reader.error
     end.
 
 Lemma Fin_of_nat_to_nat:
@@ -381,14 +392,14 @@ Instance Fin_Serializer n : Serializer (Fin.t n) :=
   |}.
 
 (* Serializer for StructTact's fin based on converting to nat. *)
-Definition fin_serialize {n} (x : fin n) : Serializer.t :=
+Definition fin_serialize {n} (x : fin n) : Writer.t :=
   serialize (fin_to_nat x).
 
-Definition fin_deserialize {n} : Deserializer.t (fin n) :=
+Definition fin_deserialize {n} : Reader.t (fin n) :=
   m <- deserialize ;;
     match fin_of_nat m n with
-    | inleft x => Deserializer.ret x
-    | inright _ => Deserializer.error
+    | inleft x => Reader.ret x
+    | inright _ => Reader.error
     end.
 
 Lemma fin_serialize_deserialize_id n : serialize_deserialize_id_spec fin_serialize (@fin_deserialize n).
@@ -405,10 +416,10 @@ Instance fin_Serializer n : Serializer (fin n) :=
      serialize_deserialize_id := fin_serialize_deserialize_id n
   |}.
 
-Definition ascii_serialize (a : Ascii.ascii) : Serializer.t :=
+Definition ascii_serialize (a : Ascii.ascii) : Writer.t :=
   serialize (Ascii.nat_of_ascii a).
 
-Definition ascii_deserialize : Deserializer.t Ascii.ascii :=
+Definition ascii_deserialize : Reader.t Ascii.ascii :=
   Ascii.ascii_of_nat <$> deserialize.
 
 Lemma ascii_serialize_deserialize_id :
@@ -424,3 +435,4 @@ Instance ascii_Serializer : Serializer Ascii.ascii :=
      deserialize := ascii_deserialize;
      serialize_deserialize_id := ascii_serialize_deserialize_id
   |}.
+End BasicSerializers.

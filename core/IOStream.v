@@ -1,4 +1,3 @@
-Require Import Cheerios.Core.
 Require Import Cheerios.Types.
 
 Require Import List.
@@ -7,16 +6,16 @@ Import ListNotations.
 Module IOStream : WRITER.
   Inductive iostream :=
   | Done : iostream
-  | WriteByte : byte -> (unit -> iostream) -> iostream
-  | Seq : iostream -> iostream -> iostream.
+  | WriteByte : byte -> iostream
+  | Seq : iostream -> (unit -> iostream) -> iostream.
 
   Definition t := iostream.
 
   Fixpoint iostreamDenote (i : iostream) : list byte :=
     match i with
     | Done => []
-    | WriteByte b thunk => b :: iostreamDenote (thunk tt)
-    | Seq i1 i2 => iostreamDenote i1 ++ iostreamDenote i2
+    | WriteByte b => [b]
+    | Seq i1 i2 => iostreamDenote i1 ++ iostreamDenote (i2 tt)
     end.
 
   Definition unwrap := iostreamDenote.
@@ -25,21 +24,16 @@ Module IOStream : WRITER.
   Definition empty : iostream := Done.
 
   Definition putByte : byte -> iostream :=
-    fun b => WriteByte b (fun _ => Done).
+    WriteByte.
 
-  Fixpoint putList (l : list byte) :  iostream :=
-    match l with
-    | [] => Done
-    | b :: l => WriteByte b (fun _ => putList l)
-    end.
-
-  Definition append : iostream -> iostream -> iostream := Seq.
+  Definition append : (unit -> iostream) -> (unit -> iostream) -> iostream :=
+    fun t1 t2 => Seq (t1 tt) t2.
 
   Lemma empty_unwrap : unwrap empty = [].
   Proof. reflexivity. Qed.
     
   Lemma append_unwrap :
-    forall x y : t, unwrap (append x y) = unwrap x ++ unwrap y.
+    forall x y : unit -> t, unwrap (append x y) = unwrap (x tt) ++ unwrap (y tt).
   Proof. reflexivity. Qed.
   
   Lemma putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
@@ -56,5 +50,3 @@ Module IOStream : WRITER.
   Lemma wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
   Proof. reflexivity. Qed.
 End IOStream.
-
-Module IOStreamSerializer := SerializerClass IOStream Deserializer.
