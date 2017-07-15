@@ -101,7 +101,29 @@ Module Type READER.
       end.
 End READER.
 
-Module SerializerClass (Writer : WRITER) (Reader : READER).
+Module Type SERIALIZERCLASS (Writer : WRITER) (Reader : READER).
+  Notation serialize_deserialize_id_spec s d :=
+    (forall a bytes,
+        Reader.unwrap d (Writer.unwrap (s a) ++ bytes) = Some(a, bytes)).
+  Class Serializer (A : Type) : Type :=
+    {
+      serialize : A -> Writer.t;
+      deserialize : Reader.t A;
+      serialize_deserialize_id : serialize_deserialize_id_spec serialize deserialize
+    }.
+  Hint Rewrite @serialize_deserialize_id : cheerios.
+
+  Parameter serialize_deserialize_id_nil :
+    forall A (sA : Serializer A) a,
+      Reader.unwrap deserialize (Writer.unwrap (serialize a)) = Some (a, []).
+  Parameter serialize_top : forall A : Type,
+      Serializer A -> (A -> Writer.t) -> A -> Writer.wire.
+  Parameter deserialize_top :  forall A: Type,
+      Serializer A -> Reader.t A -> Writer.wire -> option A.
+End SERIALIZERCLASS.
+
+Module SerializerClass (Writer : WRITER) (Reader : READER) :
+  SERIALIZERCLASS Writer Reader.
   Notation serialize_deserialize_id_spec s d :=
     (forall a bytes,
         Reader.unwrap d (Writer.unwrap (s a) ++ bytes) = Some(a, bytes)).
@@ -118,7 +140,7 @@ Module SerializerClass (Writer : WRITER) (Reader : READER).
     }.
   Hint Rewrite @serialize_deserialize_id : cheerios.
 
-  (* In particular, if there is nothing else in the bitsream, then deserialize and
+  (* In panrticular, if there is nothing else in the bitsream, then deserialize and
    serialize are inverses. *)
   Lemma serialize_deserialize_id_nil :
     forall A (sA : Serializer A) a,
@@ -129,29 +151,23 @@ Module SerializerClass (Writer : WRITER) (Reader : READER).
     now rewrite app_nil_r in *.
   Qed.
 
-  Section top.
-    Variable A : Type.
-    Variable sA: Serializer A.
+  Definition serialize_top {A: Type} {sA: Serializer A}
+             (s : A -> Writer.t) (a : A) : Writer.wire :=
+    Writer.wire_wrap (s a).
 
-    Definition serialize_top (s : A -> Writer.t) (a : A) : Writer.wire :=
-      Writer.wire_wrap (s a).
+  Definition deserialize_top {A: Type} {sA: Serializer A}
+             (d : Reader.t A) (w : Writer.wire) : option A :=
+    match Reader.unwrap d (Writer.wire_unwrap w) with
+    | None => None
+    | Some (a, _) => Some a
+    end.
 
-    Definition deserialize_top
-               (d : Reader.t A)
-               (w : Writer.wire) : option A :=
-      match Reader.unwrap d
-                                (Writer.wire_unwrap w) with
-      | None => None
-      | Some (a, _) => Some a
-      end.
-
-    Theorem serialize_deserialize_top_id : forall a,
-        deserialize_top deserialize (serialize_top serialize a) = Some a.
-    Proof.
-      intros.
-      unfold serialize_top, deserialize_top.
-      rewrite Writer.wire_wrap_unwrap.
-      now rewrite serialize_deserialize_id_nil.
-    Qed.
-  End top.
+  Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
+      deserialize_top deserialize (serialize_top serialize a) = Some a.
+  Proof.
+    intros.
+    unfold serialize_top, deserialize_top.
+    rewrite Writer.wire_wrap_unwrap.
+    now rewrite serialize_deserialize_id_nil.
+  Qed.
 End SerializerClass.

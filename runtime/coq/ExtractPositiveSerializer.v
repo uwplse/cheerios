@@ -4,17 +4,24 @@ Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
-Import ByteListSerializer.
 
-Definition positive_serialize_top : positive -> Serializer.wire :=
-  serialize_top _ serialize.
+Module ByteListBasics := BasicSerializers ByteListWriter ByteListReader.
+Require Import Cheerios.IOStream.
+Module IOStreamBasics := BasicSerializers IOStream ByteListReader.
 
-Definition positive_serialize_top_tr :=
-  serialize_top _ (fun p => positive_serialize_rec p Serializer.empty).
+Definition positive_serialize_bytelist_top : positive -> ByteListWriter.wire :=
+  ByteListBasics.RWClass.serialize_top positive _ ByteListBasics.RWClass.serialize.
 
-Definition positive_deserialize_top : Serializer.wire -> option positive :=
-  deserialize_top _ (deserialize : Deserializer.t positive).
+Definition positive_deserialize_bytelist_top : ByteListWriter.wire -> option positive :=
+  ByteListBasics.RWClass.deserialize_top _ _ ByteListBasics.RWClass.deserialize.
+
+Definition positive_serialize_iostream_top : positive -> IOStream.wire :=
+  IOStreamBasics.RWClass.serialize_top positive _ IOStreamBasics.RWClass.serialize.
+
+Definition positive_deserialize_iostream_top : ByteListWriter.wire -> option positive :=
+  ByteListBasics.RWClass.deserialize_top _ _ IOStreamBasics.RWClass.deserialize.
 
 Extraction "runtime/ocaml/positive_serializer.ml"
-           positive_serialize_top positive_deserialize_top
-           positive_serialize_top_tr.
+           positive_serialize_bytelist_top positive_deserialize_bytelist_top
+           positive_serialize_iostream_top positive_deserialize_iostream_top.
+

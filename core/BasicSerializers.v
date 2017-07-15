@@ -16,9 +16,11 @@ Module Type BASICSERIALIZERS (Writer : WRITER) (Reader : READER).
   Parameter byte_Serializer : RWClass.Serializer byte.
   Parameter bool_Serializer : RWClass.Serializer bool.
   Parameter ascii_Serializer : RWClass.Serializer Ascii.ascii.
+
+  Parameter positive_Serializer : RWClass.Serializer positive.
   Parameter nat_Serializer : RWClass.Serializer nat.
 
-  Parameter byte_unwrap : forall b, Writer.unwrap (serialize b) = [b].
+  Parameter byte_unwrap : forall b : byte, Writer.unwrap (serialize b) = [b].
 End BASICSERIALIZERS.
 
 Module BasicSerializers (Writer : WRITER) (Reader : READER) :
