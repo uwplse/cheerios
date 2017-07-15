@@ -102,6 +102,14 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
   Definition rev' {A} (l : list A) :=
     rev_rec l [].
 
+  Theorem rev'_spec : forall {A : Type} (l : list A),
+      rev' l = rev l.
+  Proof.
+    intros. unfold rev'.
+    now rewrite rev_rec_spec, app_nil_r.
+  Qed.
+  
+
   Fixpoint map_rec {A B} (f : A -> B) (l : list A) (acc : list B) :=
     match l with
     | [] => rev' acc
@@ -353,7 +361,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
       | x01 => More ([] :: s)
       | x02 => match s with
                | [] => Error
-               | ts :: s => let t := node (List.rev ts) in
+               | ts :: s => let t := node (rev' ts) in
                             match s with
                             | [] => Done t
                             | ts :: acc => More ((t :: ts) :: acc)
@@ -390,14 +398,14 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
                          Reader.unwrap
                            (Reader.fold
                               deserialize_tree_shape_step
-                              ((List.rev (List.map shape l) ++ ts) :: acc)) bytes);
+                              ((rev (List.map shape l) ++ ts) :: acc)) bytes);
         intros;
         try (unfold serialize_list_tree_shape;
              rewrite Writer.append_unwrap, app_ass, IHt, IHt0;
              simpl;
              now rewrite app_ass).
       (cheerios_crush; simpl; cheerios_crush; simpl).
-      - destruct acc;
+      -  destruct acc;
           cheerios_crush;
           simpl;
           rewrite byte_unwrap;
@@ -414,8 +422,10 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
             rewrite app_ass;
             rewrite IHt;
             rewrite Reader.fold_unwrap;
-            rewrite byte_unwrap; simpl;
-              now rewrite app_nil_r, rev_involutive. 
+            rewrite byte_unwrap;
+            simpl;
+            rewrite rev'_spec;
+            now rewrite app_nil_r, rev_involutive. 
     Qed.
     
     Definition deserialize_tree_shape : Reader.t (tree unit) :=

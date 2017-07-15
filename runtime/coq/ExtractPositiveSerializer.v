@@ -1,4 +1,5 @@
 Require Import Cheerios.ExtractPositiveSerializerDeps.
+Require Import Cheerios.IOStream.
 
 Require Import ZArith.
 Require Import ExtrOcamlBasic.
@@ -6,7 +7,7 @@ Require Import ExtrOcamlString.
 
 
 Module ByteListBasics := BasicSerializers ByteListWriter ByteListReader.
-Require Import Cheerios.IOStream.
+
 Module IOStreamBasics := BasicSerializers IOStream ByteListReader.
 
 Definition positive_serialize_bytelist_top : positive -> ByteListWriter.wire :=

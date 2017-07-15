@@ -11,18 +11,39 @@ Module IOStreamBasics := BasicSerializers IOStream ByteListReader.
 Module ByteListTree := TreeSerializer ByteListWriter ByteListReader.
 Module IOStreamTree := TreeSerializer IOStream ByteListReader.
 
-Locate serialize.
-Check ByteListTree.RWCombinators.RWBasic.bool_Serializer.
-Definition tree_serialize_bytelist_top :=
-  ByteListBasics.RWClass.serialize_top (tree bool)
-                                       (ByteListTree.tree_Serializer ByteListBasics.bool_Serializer). 
 
-Check tree_serialize_bytelist_top.
+Definition tree_serialize_bytelist_top : tree bool -> ByteListWriter.wire :=
+  ByteListTree.RWCombinators.RWBasic.RWClass.serialize_top
+    (tree bool)
+    (ByteListTree.tree_Serializer
+       ByteListTree.RWCombinators.RWBasic.bool_Serializer)
+    (ByteListTree.tree_serialize
+       ByteListTree.RWCombinators.RWBasic.bool_Serializer).
+
 Definition tree_deserialize_bytelist_top : ByteListWriter.wire -> option (tree bool) :=
-  deserialize_top _ deserialize.
+  ByteListTree.RWCombinators.RWBasic.RWClass.deserialize_top
+    (tree bool)
+    (ByteListTree.tree_Serializer
+       ByteListTree.RWCombinators.RWBasic.bool_Serializer)
+    (ByteListTree.tree_deserialize
+       ByteListTree.RWCombinators.RWBasic.bool_Serializer).
+
+Definition tree_serialize_iostream_top : tree bool -> IOStream.wire :=
+  IOStreamTree.RWCombinators.RWBasic.RWClass.serialize_top
+    (tree bool)
+    (IOStreamTree.tree_Serializer
+       IOStreamTree.RWCombinators.RWBasic.bool_Serializer)
+    (IOStreamTree.tree_serialize
+       IOStreamTree.RWCombinators.RWBasic.bool_Serializer).
+
+Definition tree_deserialize_iostream_top : IOStream.wire -> option (tree bool) :=
+  IOStreamTree.RWCombinators.RWBasic.RWClass.deserialize_top
+    (tree bool)
+    (IOStreamTree.tree_Serializer
+       IOStreamTree.RWCombinators.RWBasic.bool_Serializer)
+    (IOStreamTree.tree_deserialize
+       IOStreamTree.RWCombinators.RWBasic.bool_Serializer).
 
 Extraction "runtime/ocaml/tree_serializer.ml"
-           map tree_map'
-           tree_serialize_top'
-           tree_serialize_top tree_deserialize_top.
-*)
+           tree_serialize_bytelist_top tree_deserialize_bytelist_top
+           tree_serialize_iostream_top tree_deserialize_iostream_top.
