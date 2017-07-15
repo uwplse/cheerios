@@ -15,7 +15,7 @@ let make_positive n =
                                  then fun p -> XI (k p)
                                  else fun p -> XO (k p)) in
   aux n true (fun p -> p)
-
+(*
 let rec serialize_positive_three p =
   match p with
   | XI (XI (XI p)) -> fun w ->
@@ -61,15 +61,15 @@ let rec serialize_positive_three p =
             (byte_Serializer.serialize '\001' w;
              serialize_positive_three p w)
   | XH -> fun w -> byte_Serializer.serialize '\000' w
-
+ *)
 let test_cheerios p print =
   test_serialize_deserialize p
 (*
                              (fun p -> Serializer_primitives.wire_wrap
                                          (serialize_positive_three p))
  *)
-                             positive_serialize_top
-                             (fun w -> match positive_deserialize_top w with
+                             positive_serialize_bytelist_top
+                             (fun w -> match positive_deserialize_bytelist_top w with
                                        | Some p -> p
                                        | None -> failwith "Deserialization failed")
                              print
@@ -78,27 +78,20 @@ let test_main max =
   let rec loop n =
     if n < max
     then (test_cheerios (make_positive n)
-                        (fun _ -> Printf.printf "make_positive %d" n);
+                        (fun _ -> Printf.printf "make_positive %d%!" n);
           loop (n + 1))
   in loop 0
 
-let _ = test_main 1000
-
 (* benchmarking *)
-  
-let _ = compare_time_loop make_positive
-                          200000 20000 50
 
-                          (*
-                          positive_serialize_top
-                           *)
 
-                          (*
-                          (fun p -> Serializer_primitives.wire_wrap
-                                      (serialize_positive_three p))
-                           *)
+let bench_main () =
+  compare_time_loop make_positive
+                    200000 20000 100
+                    positive_serialize_iostream_top
+                    (fun w -> match positive_deserialize_bytelist_top w with
+                              | Some p -> p
+                              | None -> failwith "Deserialization failed")
 
-                          positive_serialize_top                          
-                          (fun w -> match positive_deserialize_top w with
-                                    | Some p -> p
-                                    | None -> failwith "Deserialization failed")
+let _ = test_main 1000;
+        bench_main ()

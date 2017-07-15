@@ -13,7 +13,7 @@ $(MLPOSITIVEEXTRACTED) $(MLTREEEXTRACTED):
 	+$(MAKE) -C .. runtime/$@
 
 positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) script/remove_module.pl test/positive_test.ml
-	perl script/remove_module.pl ocaml/positive_serializer
+#	perl script/remove_module.pl ocaml/positive_serializer
 	$(OCAMLBUILDTEST) positive_test.native
 
 tree_test.native: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
