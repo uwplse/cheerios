@@ -9,10 +9,7 @@ Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 Require Import Cheerios.IOStream.
 
-Module BasicSerializers (Writer : WRITER) (Reader : READER).
-  Module RWClass := SerializerClass Writer Reader.
-  Export RWClass.
-
+Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERCLASS Writer Reader).
   Module WRewrite := WriterRewrite Writer.
   Module RRewrite := ReaderRewrite Reader.
   Export WRewrite.
@@ -21,7 +18,9 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER).
   Module DeserializerMonad := DeserializerMonad Reader.
   Export DeserializerMonad.
   Export DeserializerNotations.
-  
+
+  Import RWClass.
+
   Lemma byte_serialize_deserialize_id :
     serialize_deserialize_id_spec Writer.putByte Reader.getByte.
   Proof. cheerios_crush. Qed.

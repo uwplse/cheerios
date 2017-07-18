@@ -17,11 +17,15 @@ Arguments option_map {_ _} _ _.
 Arguments Vector.nil {_}.
 Arguments Vector.cons {_} _ {_} _.
 
-Module Combinators (Writer : WRITER) (Reader : READER).
+Module Combinators
+       (Writer : WRITER)
+       (Reader : READER)
+       (RWClass : SERIALIZERCLASS Writer Reader).
   (* This section gives instances for various type constructors, including pairs
     and lists. *)
-  Module RWBasic := BasicSerializers Writer Reader.
-  Import RWBasic.
+  Module RWBasic := BasicSerializers Writer Reader RWClass.
+  Export RWClass.
+  Export RWBasic.
 
   Section BasicCombinators.
     Variables A B : Type.

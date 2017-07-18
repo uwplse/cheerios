@@ -6,50 +6,23 @@ Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
-Module ByteListTree := TreeSerializer ByteListWriter ByteListReader.
-Module IOStreamTree := TreeSerializer IOStream ByteListReader.
-
-Check @ByteListTree.RWCombinators.RWBasic.RWClass.serialize_top (tree bool)
-      (ByteListTree.tree_Serializer
-            ByteListTree.RWCombinators.RWBasic.bool_Serializer)
-      (ByteListTree.tree_serialize
-         ByteListTree.RWCombinators.RWBasic.bool_Serializer).
+Module ByteListTree := TreeSerializer ByteListWriter ByteListReader ByteListSerializer.
+Module IOStreamTree := TreeSerializer IOStream ByteListReader IOStreamSerializer.
 
 Definition tree_serialize_bytelist_top : tree bool -> ByteListWriter.wire :=
-  @ByteListTree.RWCombinators.RWBasic.RWClass.serialize_top
-    (tree bool)
-    (ByteListTree.tree_Serializer
-       ByteListTree.RWCombinators.RWBasic.bool_Serializer)
-    (ByteListTree.tree_serialize
-       ByteListTree.RWCombinators.RWBasic.bool_Serializer).
+  ByteListSerializer.serialize_top ByteListSerializer.serialize.
 
 Definition tree_deserialize_bytelist_top : ByteListWriter.wire -> option (tree bool) :=
-  @ByteListTree.RWCombinators.RWBasic.RWClass.deserialize_top
-    (tree bool)
-    (ByteListTree.tree_Serializer
-       ByteListTree.RWCombinators.RWBasic.bool_Serializer)
-    (ByteListTree.tree_deserialize
-       ByteListTree.RWCombinators.RWBasic.bool_Serializer).
+  ByteListSerializer.deserialize_top ByteListSerializer.deserialize.
 
 Definition tree_serialize_iostream_top : tree bool -> IOStream.wire :=
-  @IOStreamTree.RWCombinators.RWBasic.RWClass.serialize_top
-    (tree bool)
-    (IOStreamTree.tree_Serializer
-       IOStreamTree.RWCombinators.RWBasic.bool_Serializer)
-    (IOStreamTree.tree_serialize
-       IOStreamTree.RWCombinators.RWBasic.bool_Serializer).
-Check @IOStreamTree.RWCombinators.RWBasic.RWClass.deserialize_top.
+  IOStreamSerializer.serialize_top IOStreamSerializer.serialize.
 
 Definition tree_deserialize_iostream_top : IOStream.wire -> option (tree bool) :=
-  @IOStreamTree.RWCombinators.RWBasic.RWClass.deserialize_top
-    (tree bool)
-    (IOStreamTree.tree_Serializer
-       IOStreamTree.RWCombinators.RWBasic.bool_Serializer)
-    (IOStreamTree.tree_deserialize
-       IOStreamTree.RWCombinators.RWBasic.bool_Serializer).
+  IOStreamSerializer.deserialize_top IOStreamSerializer.deserialize.
 
-Extract Inlined Constant IOStreamTree.RWCombinators.RWBasic.RWClass.deserialize_top => "Serializer_primitives.deserialize_top".
-Extract Inlined Constant ByteListTree.RWCombinators.RWBasic.RWClass.deserialize_top => "Serializer_primitives.deserialize_top".
+Extract Inlined Constant IOStreamSerializer.deserialize_top => "Serializer_primitives.deserialize_top".
+Extract Inlined Constant ByteListSerializer.deserialize_top => "Serializer_primitives.deserialize_top".
 
 Extraction "runtime/ocaml/tree_serializer.ml"
            tree_serialize_bytelist_top tree_deserialize_bytelist_top

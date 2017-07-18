@@ -67,9 +67,9 @@ Section tree.
   End tree_ind.
 End tree.
 
-Module TreeSerializer (Writer : WRITER) (Reader : READER).
-  Module RWCombinators := Combinators Writer Reader.
-  Import RWCombinators.RWBasic.
+Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERCLASS Writer Reader).
+  Module RWCombinators := Combinators Writer Reader RWClass.
+  Import RWCombinators.
   
   Fixpoint rev_rec {A} (l : list A) (acc : list A) :=
     match l with
@@ -304,12 +304,12 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
       let fix serialize_list_tree_shape (l : list (tree A)) : Writer.t :=
           match l with
           | [] => Writer.empty
-          | x :: xs => Writer.append (fun _ => (serialize_tree_shape x))
-                                     (fun _ => (serialize_list_tree_shape xs))
+          | x :: xs => Writer.append (fun _ => serialize_tree_shape x)
+                                     (fun _ => serialize_list_tree_shape xs)
           end in
       match t with
       | atom _ => serialize x00 (* ignore the data, since we're just focused on the shape *)
-      | node l => Writer.append (fun _ => (serialize x01))
+      | node l => Writer.append (fun _ => serialize x01)
                                 (fun _ => (Writer.append
                                              (fun _ => serialize_list_tree_shape l)
                                              (fun _ => (serialize x02))))
@@ -327,7 +327,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
       in
       match t with
       | atom _ => serialize x00 (* ignore the data, since we're just focused on the shape *)
-      | node l => Writer.append (fun _ => (serialize x01))
+      | node l => Writer.append (fun _ => serialize x01)
                                 (fun _ => (Writer.append
                                              (fun _ => serialize_list_tree_shape l Writer.empty)
                                              (fun _ => serialize x02)))
