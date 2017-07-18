@@ -17,28 +17,11 @@ Arguments option_map {_ _} _ _.
 Arguments Vector.nil {_}.
 Arguments Vector.cons {_} _ {_} _.
 
-Module Type COMBINATORS (Writer : WRITER) (Reader : READER).
-  Module RWBasic := BasicSerializers Writer Reader.
-
-  Parameter list_Serializer : forall A : Type,
-      RWBasic.RWClass.Serializer A -> RWBasic.RWClass.Serializer (list A).
-  Parameter string_Serializer : RWBasic.RWClass.Serializer (String.string).
-End COMBINATORS.
-
-Module Combinators (Writer : WRITER) (Reader : READER) :
-  COMBINATORS Writer Reader.
+Module Combinators (Writer : WRITER) (Reader : READER).
   (* This section gives instances for various type constructors, including pairs
     and lists. *)
-  Module RWClass := SerializerClass Writer Reader.
-  Module WRewrite := WriterRewrite Writer.
-  Module RRewrite := ReaderRewrite Reader.
-  Module DeserializerMonad := DeserializerMonad Reader.
   Module RWBasic := BasicSerializers Writer Reader.
-  
-  Import WRewrite.
-  Import RRewrite.
-  Import DeserializerMonad.DeserializerNotations.
-  Import RWBasic.RWClass.
+  Import RWBasic.
 
   Section BasicCombinators.
     Variables A B : Type.

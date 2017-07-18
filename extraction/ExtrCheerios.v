@@ -36,10 +36,6 @@ Extract Constant ByteListReader.map => "Serializer_primitives.map".
 Extract Constant ByteListReader.ret => "Serializer_primitives.ret".
 Extract Constant ByteListReader.fold => "Serializer_primitives.fold".
 
-Extract Inlined Constant Basics.RWClass.deserialize_top =>
-"Serializer_primitives.deserialize_top".
-
-Recursive Extraction deserialize_top.
 Extract Constant ByteListWriter.empty_unwrap => "Obj.magic".
 Extract Constant ByteListWriter.putByte_unwrap => "Obj.magic".
 Extract Constant ByteListWriter.append_unwrap => "Obj.magic".

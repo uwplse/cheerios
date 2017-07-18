@@ -11,7 +11,6 @@ my $ml_name = $serializer_name . '.ml';
 
 my $ml = read_file($ml_name);
 $ml =~ s/type wire\n/type wire = bytes\n/g;
-$ml =~ s/(\w|\.)+.RWClass\.deserialize_top/Serializer_primitives.deserialize_top/g;
 write_file($ml_name, $ml);
 
 my $mli = read_file($mli_name);

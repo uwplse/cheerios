@@ -43,7 +43,7 @@ let space_main () =
 let bench_main () =
   print_string "\nBenchmarks...\n";
   compare_time_loop (fun n -> make false n 2)
-                    20 1 20
+                    20 1 10
                     tree_serialize_iostream_top
                     (fun w -> match tree_deserialize_iostream_top w with
                               | Some p -> p
@@ -51,7 +51,7 @@ let bench_main () =
                     
                     
 let avg_time_height (f : 'a tree -> 'b) (h : int) =
-  let num_tries = 100 in
+  let num_tries = 10 in
   avg (time_loop (fun n -> make false n 2) h num_tries f)
 
 let main () = test_main ();

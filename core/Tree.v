@@ -68,19 +68,9 @@ Section tree.
 End tree.
 
 Module TreeSerializer (Writer : WRITER) (Reader : READER).
-  Module RWClass := SerializerClass Writer Reader.
   Module RWCombinators := Combinators Writer Reader.
-  Module DeserializerMonad := DeserializerMonad Reader.
-  Module WRewrite := WriterRewrite Writer.
-  Module RRewrite := ReaderRewrite Reader.
-
-  Import DeserializerMonad.DeserializerNotations.
   Import RWCombinators.RWBasic.
-  Import WRewrite.
-  Import RRewrite.
   
-
-
   Fixpoint rev_rec {A} (l : list A) (acc : list A) :=
     match l with
     | [] => acc
@@ -306,7 +296,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
 
   Section serializer.
     Variables A : Type.
-    Variable sA : Serializer A.
+    Variable sA :Serializer A.
 
     (* Now we're ready to serialize trees. First, we serialize their shape. *)
 
@@ -809,7 +799,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER).
           auto.
       Qed.
 
-      Definition json_serialize (j : json.t) :=
+      Definition json_serialize (j : json.t) : Writer.t :=
         serialize (json_treeify j).
 
       Definition json_deserialize : Reader.t json.t :=

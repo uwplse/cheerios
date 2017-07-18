@@ -101,29 +101,7 @@ Module Type READER.
       end.
 End READER.
 
-Module Type SERIALIZERCLASS (Writer : WRITER) (Reader : READER).
-  Notation serialize_deserialize_id_spec s d :=
-    (forall a bytes,
-        Reader.unwrap d (Writer.unwrap (s a) ++ bytes) = Some(a, bytes)).
-  Class Serializer (A : Type) : Type :=
-    {
-      serialize : A -> Writer.t;
-      deserialize : Reader.t A;
-      serialize_deserialize_id : serialize_deserialize_id_spec serialize deserialize
-    }.
-  Hint Rewrite @serialize_deserialize_id : cheerios.
-
-  Parameter serialize_deserialize_id_nil :
-    forall A (sA : Serializer A) a,
-      Reader.unwrap deserialize (Writer.unwrap (serialize a)) = Some (a, []).
-  Parameter serialize_top : forall A : Type,
-      Serializer A -> (A -> Writer.t) -> A -> Writer.wire.
-  Parameter deserialize_top :  forall A: Type,
-      Serializer A -> Reader.t A -> Writer.wire -> option A.
-End SERIALIZERCLASS.
-
-Module SerializerClass (Writer : WRITER) (Reader : READER) :
-  SERIALIZERCLASS Writer Reader.
+Module SerializerClass (Writer : WRITER) (Reader : READER).
   Notation serialize_deserialize_id_spec s d :=
     (forall a bytes,
         Reader.unwrap d (Writer.unwrap (s a) ++ bytes) = Some(a, bytes)).
