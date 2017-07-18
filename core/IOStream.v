@@ -1,4 +1,5 @@
 Require Import Cheerios.Types.
+Require Import Cheerios.Core.
 
 Require Import List.
 Import ListNotations.
@@ -50,3 +51,5 @@ Module IOStream : WRITER.
   Lemma wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
   Proof. reflexivity. Qed.
 End IOStream.
+
+Module IOStreamSerializer := SerializerClass IOStream ByteListReader.

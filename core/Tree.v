@@ -312,7 +312,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       | node l => Writer.append (fun _ => serialize x01)
                                 (fun _ => (Writer.append
                                              (fun _ => serialize_list_tree_shape l)
-                                             (fun _ => (serialize x02))))
+                                             (fun _ => serialize x02)))
       end.
 
     Fixpoint serialize_tree_shape' (t : tree A) : Writer.t :=
@@ -322,7 +322,7 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
           | x :: xs =>
             serialize_list_tree_shape xs
                                       (Writer.append (fun _ => acc)
-                                                     (fun _ => (serialize_tree_shape x)))
+                                                     (fun _ => serialize_tree_shape x))
           end
       in
       match t with
@@ -438,8 +438,8 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       let fix serialize_tree_elements_list (l : list (tree A)) : Writer.t :=
           match l with
           | [] => Writer.empty
-          | t :: l' => Writer.append (fun _ => (serialize_tree_elements t))
-                                     (fun _ => (serialize_tree_elements_list l'))
+          | t :: l' => Writer.append (fun _ => serialize_tree_elements t)
+                                     (fun _ => serialize_tree_elements_list l')
           end
       in match t with
          | atom a => serialize a
@@ -450,15 +450,16 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       fix serialize_tree_elements_list (l : list (tree A)) : Writer.t :=
         match l with
         | [] => Writer.empty
-        | t :: l' => Writer.append (fun _ => (serialize_tree_elements t))
-                                   (fun _ => (serialize_tree_elements_list l'))
+        | t :: l' => Writer.append (fun _ => serialize_tree_elements t)
+                                   (fun _ => serialize_tree_elements_list l')
         end.
 
     Fixpoint deserialize_tree_elements (t : tree unit) : Reader.t (tree A) :=
-      let fix deserialize_tree_elements_list (l : list (tree unit)) : Reader.t (list (tree A)) :=
+      let fix deserialize_tree_elements_list (l : list (tree unit)) :=
           match l with
           | [] => Reader.ret []
-          | t :: l' => cons <$> deserialize_tree_elements t <*> deserialize_tree_elements_list l'
+          | t :: l' => cons <$> deserialize_tree_elements t
+                            <*> deserialize_tree_elements_list l'
           end
       in match t with
          | atom tt => @atom _ <$> deserialize
@@ -466,10 +467,11 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
          end.
 
     Definition deserialize_tree_elements_list :=
-      fix deserialize_tree_elements_list (l : list (tree unit)) : Reader.t (list (tree A)) :=
+      fix deserialize_tree_elements_list (l : list (tree unit)) :=
         match l with
         | [] => Reader.ret []
-        | t :: l' => cons <$> deserialize_tree_elements t <*> deserialize_tree_elements_list l'
+        | t :: l' => cons <$> deserialize_tree_elements t
+                          <*> deserialize_tree_elements_list l'
         end.
 
     Lemma serialize_deserialize_tree_elements_id :
@@ -504,12 +506,12 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
     (* Now we serialize the tree itself by first serializing the shape, and then a
      preorder traversal of the elements. *)
     Definition tree_serialize (t : tree A) : Writer.t :=
-      Writer.append (fun _ => (serialize_tree_shape t))
-                    (fun _ => (serialize_tree_elements t)).
+      Writer.append (fun _ => serialize_tree_shape t)
+                    (fun _ => serialize_tree_elements t).
 
     Definition tree_serialize' (t : tree A) : Writer.t :=
-      Writer.append (fun _ => (serialize_tree_shape' t))
-                    (fun _ => (serialize_tree_elements t)).
+      Writer.append (fun _ => serialize_tree_shape' t)
+                    (fun _ => serialize_tree_elements t).
 
     (* To deserialize, we deserialize the shape and the elements, and then fill out
      the shape with the elements. *)
@@ -653,10 +655,10 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       Definition tag_serialize (t : t) : Writer.t :=
         match t with
         | Null => serialize x00
-        | Num n => Writer.append (fun _ => (serialize x01))
-                                 (fun _ => (serialize n))
-        | Str s => Writer.append (fun _ => (serialize x02))
-                                 (fun _ => (serialize s))
+        | Num n => Writer.append (fun _ => serialize x01)
+                                 (fun _ => serialize n)
+        | Str s => Writer.append (fun _ => serialize x02)
+                                 (fun _ => serialize s)
         | Arr => serialize x03
         | Obj => serialize x04
         end.
@@ -690,10 +692,12 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       (* json <-> tree tag conversion *)
 
       Fixpoint json_treeify (j : json.t) : tree tag.t :=
-        let fix obj_list_to_tree_list (l : list (String.string * json.t)) : list (tree tag.t) :=
+        let fix obj_list_to_tree_list (l : list (String.string * json.t)) :=
             match l with
             | [] => []
-            | (s, j) :: l => atom (tag.Str s) :: json_treeify j :: obj_list_to_tree_list l
+            | (s, j) :: l => atom (tag.Str s)
+                                  :: json_treeify j
+                                  :: obj_list_to_tree_list l
             end
         in
         match j with
@@ -727,13 +731,14 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
               option (list (String.string * json.t)) :=
             match l with
             | [] => Some []
-            | atom (tag.Str s) :: t :: l => match json_untreeify t with
-                                            | None => None
-                                            | Some j => match untreeify_obj_list l with
-                                                        | None => None
-                                                        | Some l => Some ((s, j) :: l)
-                                                        end
-                                            end
+            | atom (tag.Str s) :: t :: l =>
+              match json_untreeify t with
+              | None => None
+              | Some j => match untreeify_obj_list l with
+                          | None => None
+                          | Some l => Some ((s, j) :: l)
+                          end
+              end
             | _ => None
             end in
         match t with
@@ -755,13 +760,14 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
           option (list (String.string * json.t)) :=
           match l with
           | [] => Some []
-          | atom (tag.Str s) :: t :: l => match json_untreeify t with
-                                          | None => None
-                                          | Some j => match untreeify_obj_list l with
-                                                      | None => None
-                                                      | Some l => Some ((s, j) :: l)
-                                                      end
-                                          end
+          | atom (tag.Str s) :: t :: l =>
+            match json_untreeify t with
+            | None => None
+            | Some j => match untreeify_obj_list l with
+                        | None => None
+                        | Some l => Some ((s, j) :: l)
+                        end
+            end
           | _ => None
           end.
 
@@ -784,10 +790,9 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       Lemma treeify_untreeify_id : forall j : json.t,
           treeify_untreeify_aux j .
       Proof.
-        induction j using json.json_rect         with (P_list := fun l =>
-                                                                   untreeify_list (List.map json_treeify l) = Some l)
-                                                      (P_list' := fun l =>
-                                                                    untreeify_obj_list (obj_list_to_tree_list l) = Some l);
+        induction j using json.json_rect with
+            (P_list := fun l => untreeify_list (List.map json_treeify l) = Some l)
+            (P_list' := fun l => untreeify_obj_list (obj_list_to_tree_list l) = Some l);
           unfold treeify_untreeify_aux;
           auto;
           simpl;
@@ -857,7 +862,8 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
           match (l, l') with
           | ([], []) => true
           | ((s, j) :: l, (s', j') :: l') => andb (string_eqb s s')
-                                                  (andb (json_eqb j j') (loop_obj l l'))
+                                                  (andb (json_eqb j j')
+                                                        (loop_obj l l'))
           | (_, _) => false
           end in
       match (j, j') with

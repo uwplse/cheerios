@@ -37,8 +37,8 @@ Module Combinators
     
     Definition option_serialize (x : option A) : Writer.t :=
       match x with
-      | Some a => Writer.append (fun _ => (serialize true))
-                                (fun _ => (serialize a))
+      | Some a => Writer.append (fun _ => serialize true)
+                                (fun _ => serialize a)
       | None => serialize false
       end.
 
@@ -67,15 +67,13 @@ Module Combinators
 
     
     Definition pair_serialize (x : A * B) : Writer.t :=
-      let (a, b) := x in Writer.append (fun _ => (serialize a))
-                                       (fun _ => (serialize b)).
+      let (a, b) := x in Writer.append (fun _ => serialize a)
+                                       (fun _ => serialize b).
     
     Definition pair_deserialize : Reader.t (A * B) :=
-      Reader.bind deserialize
-                  (fun (a : A) =>
-                     Reader.bind deserialize
-                                 (fun b =>
-                                    Reader.ret (a, b))).
+      a <- deserialize ;;
+        b <- deserialize ;;
+        Reader.ret (a, b).
 
     Lemma pair_serialize_deserialize_id :
       serialize_deserialize_id_spec pair_serialize pair_deserialize.
@@ -95,10 +93,10 @@ Module Combinators
 
     Definition sum_serialize (x : A + B) : Writer.t :=
       match x with
-      | inl a => Writer.append (fun _ => (serialize true))
-                               (fun _ => (serialize a))
-      | inr b => Writer.append (fun _ => (serialize false))
-                               (fun _ => (serialize b))
+      | inl a => Writer.append (fun _ => serialize true)
+                               (fun _ => serialize a)
+      | inr b => Writer.append (fun _ => serialize false)
+                               (fun _ => serialize b)
       end.
 
     Definition sum_deserialize : Reader.t (A + B) :=
@@ -126,21 +124,21 @@ Module Combinators
     Fixpoint list_serialize_rec (l : list A) : Writer.t :=
       match l with
       | [] => Writer.empty
-      | a :: l' => Writer.append (fun _ => (serialize a))
-                                 (fun _ => (list_serialize_rec l'))
+      | a :: l' => Writer.append (fun _ => serialize a)
+                                 (fun _ => list_serialize_rec l')
       end.
 
     Fixpoint list_serialize_aux (l : list A) (acc : Writer.t) : Writer.t :=
       match l with
       | [] => acc
       | a :: l' =>  list_serialize_aux l' (Writer.append (fun _ => acc)
-                                                         (fun _ => (serialize a)))
+                                                         (fun _ => serialize a))
       end.
 
     Lemma list_serialize_rec'_aux : forall l acc,
         Writer.unwrap (list_serialize_aux l acc) =
         Writer.unwrap (Writer.append (fun _ => acc)
-                                     (fun _ => (list_serialize_rec l))).
+                                     (fun _ => list_serialize_rec l)).
     Proof.
       intros l.
       induction l; intros.
@@ -158,12 +156,12 @@ Module Combinators
       list_serialize_aux l Writer.empty.
 
     Definition list_serialize (l : list A) : Writer.t :=
-      Writer.append (fun _ => (serialize (length l)))
-                    (fun _ => (list_serialize_rec l)).
+      Writer.append (fun _ => serialize (length l))
+                    (fun _ => list_serialize_rec l).
 
     Definition list_serialize' (l : list A) : Writer.t :=
-        Writer.append (fun _ => (serialize (length l)))
-                      (fun _ => (list_serialize_rec' l)).
+        Writer.append (fun _ => serialize (length l))
+                      (fun _ => list_serialize_rec' l).
 
     Fixpoint list_deserialize_rec (n : nat) : Reader.t (list A) :=
       match n with
@@ -221,17 +219,17 @@ Module Combinators
 
     Global Instance list_Serializer : Serializer (list A).
     Proof.
-      exact {| serialize := list_serialize';
+      exact {| serialize := list_serialize;
                deserialize := list_deserialize;
-               serialize_deserialize_id := list_serialize'_deserialize_id
+               serialize_deserialize_id := list_serialize_deserialize_id
             |}.
     Qed.
 
     Fixpoint vector_serialize {n} (v : Vector.t A n) : Writer.t :=
       match v with
       | Vector.nil => Writer.empty
-      | Vector.cons a v' => Writer.append (fun _ => (serialize a))
-                                          (fun _ => (vector_serialize v'))
+      | Vector.cons a v' => Writer.append (fun _ => serialize a)
+                                          (fun _ => vector_serialize v')
       end.
 
     Fixpoint vector_deserialize {n} : Reader.t (Vector.t A n) :=

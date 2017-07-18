@@ -9,7 +9,10 @@ Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 Require Import Cheerios.IOStream.
 
-Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERCLASS Writer Reader).
+Module BasicSerializers
+       (Writer : WRITER)
+       (Reader : READER)
+       (RWClass : SERIALIZERCLASS Writer Reader).
   Module WRewrite := WriterRewrite Writer.
   Module RRewrite := ReaderRewrite Reader.
   Export WRewrite.
@@ -88,7 +91,7 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
            (b : byte) (tail : Writer.t) (bin : list byte),
       Reader.unwrap (Reader.fold f s)
                     (Writer.unwrap (Writer.append
-                                      (fun _ => (Writer.putByte b))
+                                      (fun _ => Writer.putByte b)
                                       (fun _ => tail)) ++ bin) =
       match f b s with
       | Done a => Some(a, Writer.unwrap tail ++ bin)
@@ -148,38 +151,38 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
 
   Fixpoint positive_serialize p :=
     match p with
-    | xI (xI (xI p)) => Writer.append (fun _ => (serialize x0e))
-                                      (fun _ => (positive_serialize p))
-    | xI (xI (xO p)) => Writer.append (fun _ => (serialize x0d))
-                                      (fun _ => (positive_serialize p))
-    | xI (xO (xI p)) => Writer.append (fun _ => (serialize x0c))
-                                      (fun _ => (positive_serialize p))
-    | xI (xO (xO p)) => Writer.append (fun _ => (serialize x0b))
-                                      (fun _ => (positive_serialize p))
-    | xO (xI (xI p)) => Writer.append (fun _ => (serialize x0a))
-                                      (fun _ => (positive_serialize p))
-    | xO (xI (xO p)) => Writer.append (fun _ => (serialize x09))
-                                      (fun _ => (positive_serialize p))
-    | xO (xO (xI p)) => Writer.append (fun _ => (serialize x08))
-                                      (fun _ => (positive_serialize p))
-    | xO (xO (xO p)) => Writer.append (fun _ => (serialize x07))
-                                      (fun _ => (positive_serialize p))
-    | xI (xI p) => Writer.append (fun _ => (serialize x06))
-                                 (fun _ => (positive_serialize p))
-    | xI (xO p) => Writer.append (fun _ => (serialize x05))
-                                 (fun _ => (positive_serialize p))
-    | xO (xI p) => Writer.append (fun _ => (serialize x04))
-                                 (fun _ => (positive_serialize p))
-    | xO (xO p) => Writer.append (fun _ => (serialize x03))
-                                 (fun _ => (positive_serialize p))
-    | xI p => Writer.append (fun _ => (serialize x02))
-                            (fun _ => (positive_serialize p))
-    | xO p => Writer.append (fun _ => (serialize x01))
-                            (fun _ => (positive_serialize p))
+    | xI (xI (xI p)) => Writer.append (fun _ => serialize x0e)
+                                      (fun _ => positive_serialize p)
+    | xI (xI (xO p)) => Writer.append (fun _ => serialize x0d)
+                                      (fun _ => positive_serialize p)
+    | xI (xO (xI p)) => Writer.append (fun _ => serialize x0c)
+                                      (fun _ => positive_serialize p)
+    | xI (xO (xO p)) => Writer.append (fun _ => serialize x0b)
+                                      (fun _ => positive_serialize p)
+    | xO (xI (xI p)) => Writer.append (fun _ => serialize x0a)
+                                      (fun _ => positive_serialize p)
+    | xO (xI (xO p)) => Writer.append (fun _ => serialize x09)
+                                      (fun _ => positive_serialize p)
+    | xO (xO (xI p)) => Writer.append (fun _ => serialize x08)
+                                      (fun _ => positive_serialize p)
+    | xO (xO (xO p)) => Writer.append (fun _ => serialize x07)
+                                      (fun _ => positive_serialize p)
+    | xI (xI p) => Writer.append (fun _ => serialize x06)
+                                 (fun _ => positive_serialize p)
+    | xI (xO p) => Writer.append (fun _ => serialize x05)
+                                 (fun _ => positive_serialize p)
+    | xO (xI p) => Writer.append (fun _ => serialize x04)
+                                 (fun _ => positive_serialize p)
+    | xO (xO p) => Writer.append (fun _ => serialize x03)
+                                 (fun _ => positive_serialize p)
+    | xI p => Writer.append (fun _ => serialize x02)
+                            (fun _ => positive_serialize p)
+    | xO p => Writer.append (fun _ => serialize x01)
+                            (fun _ => positive_serialize p)
     | XH => serialize x00
     end.
 
-  Definition depositive_serialize_step
+  Definition positive_deserialize_step
              (b : byte)
              (s : positive -> positive) := 
     match b with
@@ -203,7 +206,7 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
 
   Definition positive_step_aux p :=
     forall (k : positive -> positive) (bytes : list byte),
-      Reader.unwrap (Reader.fold depositive_serialize_step k)
+      Reader.unwrap (Reader.fold positive_deserialize_step k)
                     (Writer.unwrap (positive_serialize p) ++ bytes)
       = Some(k p, bytes).
 
@@ -223,7 +226,7 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
   Qed.
 
   Definition positive_deserialize :=
-    Reader.fold depositive_serialize_step (fun p => p).
+    Reader.fold positive_deserialize_step (fun p => p).
 
   Theorem positive_serialize_deserialize_id :
     serialize_deserialize_id_spec positive_serialize
@@ -243,17 +246,16 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
   Qed.
 
 
-
   (* This is the first example of a "typical" serializer: it combines more
    primitive serializers (in this case, just for byte and positive) together in
    order to serialize a Z. *)
   Definition Z_serialize (z : Z) : Writer.t :=
     match z with
     | Z0 => serialize x00
-    | Zpos p => Writer.append (fun _ => (serialize x01))
-                              (fun _ => (serialize p))
-    | Zneg p => Writer.append (fun _ => (serialize x02))
-                              (fun _ => (serialize p))
+    | Zpos p => Writer.append (fun _ => serialize x01)
+                              (fun _ => serialize p)
+    | Zneg p => Writer.append (fun _ => serialize x02)
+                              (fun _ => serialize p)
     end.
 
   Definition Z_deserialize : Reader.t Z :=
@@ -286,8 +288,8 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
   Definition N_serialize n :=
     match n with
     | N0 => serialize false
-    | Npos p => Writer.append (fun _ => (serialize true))
-                              (fun _ => (serialize p))
+    | Npos p => Writer.append (fun _ => serialize true)
+                              (fun _ => serialize p)
     end.
 
   Definition N_deserialize : Reader.t N :=
@@ -311,9 +313,6 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
        deserialize := N_deserialize;
        serialize_deserialize_id := N_serialize_deserialize_id
     |}.
-
-
-
 
   (* The other main way to define a serializer is to use an isomorphism to another
    type that is already serializable. *)
@@ -362,7 +361,8 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
       now rewrite IHa.
   Qed.
 
-  Lemma Fin_serialize_deserialize_id n : serialize_deserialize_id_spec Fin_serialize (@Fin_deserialize n).
+  Lemma Fin_serialize_deserialize_id n :
+    serialize_deserialize_id_spec Fin_serialize (@Fin_deserialize n).
   Proof.
     unfold Fin_serialize, Fin_deserialize.
     cheerios_crush.
@@ -387,7 +387,8 @@ Module BasicSerializers (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZE
       | inright _ => Reader.error
       end.
 
-  Lemma fin_serialize_deserialize_id n : serialize_deserialize_id_spec fin_serialize (@fin_deserialize n).
+  Lemma fin_serialize_deserialize_id n :
+    serialize_deserialize_id_spec fin_serialize (@fin_deserialize n).
   Proof.
     unfold fin_serialize, fin_deserialize.
     cheerios_crush.
