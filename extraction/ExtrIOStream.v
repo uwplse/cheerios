@@ -6,7 +6,7 @@ Require Import Cheerios.Types.
 Require Import Cheerios.IOStream.
 
 Module IOStreamSerializer := SerializerClass IOStream ByteListReader.
-Module Basics := BasicSerializers IOStream ByteListReader.
+Module Basics := BasicSerializers IOStream ByteListReader IOStreamSerializer.
 Import Basics.
 
 Extract Constant
@@ -38,7 +38,7 @@ Extract Constant ByteListReader.map => "Serializer_primitives.map".
 Extract Constant ByteListReader.ret => "Serializer_primitives.ret".
 Extract Constant ByteListReader.fold => "Serializer_primitives.fold".
 
-Extract Inlined Constant Basics.RWClass.deserialize_top =>
+Extract Inlined Constant IOStreamSerializer.deserialize_top =>
 "Serializer_primitives.deserialize_top".
 
 Extract Constant IOStream.empty_unwrap => "Obj.magic".
