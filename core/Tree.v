@@ -161,7 +161,6 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       | a :: l => tree_map_loop f l (map f a :: acc)
       end.
 
-  Check @map_rec_spec.
   Lemma tree_map_loop_spec :
     forall {A B} (f : A -> B) l acc,
       tree_map_loop f l acc = rev acc ++ List.map (map f) l.
@@ -619,7 +618,6 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
       End json_rect.
 
       (* Setting P_list := List.Forall P is a reasonable default. *)
-      Check json_rect.
       Section json_ind.
         Variable P : t -> Prop.
 
@@ -628,7 +626,6 @@ Module TreeSerializer (Writer : WRITER) (Reader : READER) (RWClass : SERIALIZERC
         Hypothesis P_arr : forall l, List.Forall P l -> P (Arr l).
         Hypothesis P_obj : forall l, List.Forall (fun s => P (snd s)) l -> P (Obj l).
 
-        Check (fun t l Pt Pl => List.Forall_cons t Pt Pl).
         Definition json_ind (j : t) : P j :=
           json_rect P (List.Forall P)
                     (List.Forall (fun s => P (snd s)))
