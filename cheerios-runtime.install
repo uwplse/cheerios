@@ -8,6 +8,7 @@ lib: [
   "runtime/ocaml/META" {"META"}
   "runtime/_build/ocaml/bit_vector.cmi" {"bit_vector.cmi"}
   "runtime/_build/ocaml/serializer_primitives.cmi" {"serializer_primitives.cmi"}
+  "runtime/_build/ocaml/iostream_primitives.cmi" {"iostream_primitives.cmi"}
   "runtime/_build/ocaml/cheerios_runtime.a" {"cheerios_runtime.a"}
   "runtime/_build/ocaml/cheerios_runtime.cma" {"cheerios_runtime.cma"}
   "runtime/_build/ocaml/cheerios_runtime.cmxa" {"cheerios_runtime.cmxa"}
