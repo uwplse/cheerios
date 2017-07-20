@@ -5,33 +5,53 @@ Require Import Cheerios.Types.
 
 Set Implicit Arguments.
 
-Module ByteListWriter : WRITER.
-  Definition t := list byte.
-  Definition wire := list byte.
-  Axiom wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
-  
-  Definition empty : t := [].
-  Definition putByte (a : byte) : t := [a].
+Module IOStreamWriter : WRITER.
+  Inductive iostream :=
+  | Done : iostream
+  | WriteByte : byte -> iostream
+  | Seq : iostream -> (unit -> iostream) -> iostream.
 
-  Definition append (x y : unit -> t) : t := (x tt) ++ (y tt).
+  Definition t := iostream.
 
-  Definition unwrap (x : t) : list byte := x.
-  Definition wire_wrap (x : t) : wire := x.
-  Definition wire_unwrap (x : wire) : list byte := x.
-  
+  Fixpoint iostreamDenote (i : iostream) : list byte :=
+    match i with
+    | Done => []
+    | WriteByte b => [b]
+    | Seq i1 i2 => iostreamDenote i1 ++ iostreamDenote (i2 tt)
+    end.
+
+  Definition unwrap := iostreamDenote.
+
+  (* serializers *)
+  Definition empty : iostream := Done.
+
+  Definition putByte : byte -> iostream :=
+    WriteByte.
+
+  Definition append : (unit -> iostream) -> (unit -> iostream) -> iostream :=
+    fun t1 t2 => Seq (t1 tt) t2.
+
   Lemma empty_unwrap : unwrap empty = [].
-  Proof. reflexivity. Qed.
-
-  Lemma putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
   Proof. reflexivity. Qed.
 
   Lemma append_unwrap :
     forall x y : unit -> t, unwrap (append x y) = unwrap (x tt) ++ unwrap (y tt).
   Proof. reflexivity. Qed.
 
+  Lemma putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
+  Proof. reflexivity. Qed.
+
+  Definition wire := list byte.
+
+  Axiom wire_eq_dec : forall w w' : wire, {w = w'} + {w <> w'}.
+
+  Definition wire_wrap := unwrap.
+
+  Definition wire_unwrap (x : wire) := x.
+
   Lemma wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
   Proof. reflexivity. Qed.
-End ByteListWriter.
+End IOStreamWriter.
 
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
@@ -63,7 +83,7 @@ Module ByteListReader : READER.
       unwrap getByte l = match l with
                          | [] => None
                          | b :: l => Some (b, l)
-                        end.
+                         end.
   Proof. reflexivity. Qed.
 
   Lemma bind_unwrap : forall A B (m : t A)
@@ -118,4 +138,49 @@ Module ByteListReader : READER.
 End ByteListReader.
 Arguments ByteListReader.error {_}.
 
-Module ByteListSerializer := SerializerClass ByteListWriter ByteListReader.
+Notation serialize_deserialize_id_spec s d :=
+  (forall a bytes,
+      ByteListReader.unwrap d (IOStreamWriter.unwrap (s a) ++ bytes) = Some(a, bytes)).
+
+(* This is the class of serializable types, which is the main entrypoint to
+   Cheerios. Instances are required to show that `deserialize` can correctly
+   recognize a piece of `serialize`d data at the prefix of an arbitrary
+   bitstream. *)
+Class Serializer (A : Type) : Type :=
+  {
+    serialize : A -> IOStreamWriter.t;
+    deserialize : ByteListReader.t A;
+    serialize_deserialize_id : serialize_deserialize_id_spec serialize deserialize
+  }.
+Hint Rewrite @serialize_deserialize_id : cheerios.
+
+(* In panrticular, if there is nothing else in the bitsream, then deserialize and
+   serialize are inverses. *)
+Lemma serialize_deserialize_id_nil :
+  forall A (sA : Serializer A) a,
+    ByteListReader.unwrap deserialize (IOStreamWriter.unwrap (serialize a)) = Some (a, []).
+Proof.
+  intros.
+  pose proof serialize_deserialize_id a [].
+  now rewrite app_nil_r in *.
+Qed.
+
+Definition serialize_top {A: Type} {sA: Serializer A}
+           (s : A -> IOStreamWriter.t) (a : A) : IOStreamWriter.wire :=
+  IOStreamWriter.wire_wrap (s a).
+
+Definition deserialize_top {A: Type} {sA: Serializer A}
+           (d : ByteListReader.t A) (w : IOStreamWriter.wire) : option A :=
+  match ByteListReader.unwrap d (IOStreamWriter.wire_unwrap w) with
+  | None => None
+  | Some (a, _) => Some a
+  end.
+
+Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
+    deserialize_top deserialize (serialize_top serialize a) = Some a.
+Proof.
+  intros.
+  unfold serialize_top, deserialize_top.
+  rewrite IOStreamWriter.wire_wrap_unwrap.
+  now rewrite serialize_deserialize_id_nil.
+Qed.

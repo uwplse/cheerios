@@ -1,26 +1,16 @@
 Require Import Cheerios.ExtractTreeSerializerDeps.
 Require Import Cheerios.BasicSerializers.
-Require Import Cheerios.IOStream.
 
 Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
-Module ByteListTree := TreeSerializer ByteListWriter ByteListReader ByteListSerializer.
-Module IOStreamTree := TreeSerializer IOStream ByteListReader IOStreamSerializer.
+Definition tree_serialize_top : tree bool -> IOStreamWriter.wire :=
+  serialize_top serialize.
 
-Definition tree_serialize_bytelist_top : tree bool -> ByteListWriter.wire :=
-  ByteListSerializer.serialize_top ByteListSerializer.serialize.
-
-Definition tree_deserialize_bytelist_top : ByteListWriter.wire -> option (tree bool) :=
-  ByteListSerializer.deserialize_top ByteListSerializer.deserialize.
-
-Definition tree_serialize_iostream_top : tree bool -> IOStream.wire :=
-  IOStreamSerializer.serialize_top IOStreamSerializer.serialize.
-
-Definition tree_deserialize_iostream_top : IOStream.wire -> option (tree bool) :=
-  IOStreamSerializer.deserialize_top IOStreamSerializer.deserialize.
+Definition tree_deserialize_top : IOStreamWriter.wire -> option (tree bool) :=
+  deserialize_top deserialize.
 
 Extraction "runtime/ocaml/tree_serializer.ml"
-           tree_serialize_bytelist_top tree_deserialize_bytelist_top
-           tree_serialize_iostream_top tree_deserialize_iostream_top.
+           tree_serialize_top tree_deserialize_top.
+

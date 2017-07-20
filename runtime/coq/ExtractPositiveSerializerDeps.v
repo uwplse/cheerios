@@ -3,5 +3,4 @@ Require Export Cheerios.Core.
 Require Export Cheerios.Types.
 Require Export Cheerios.ExtrCheerios.
 Require Export Cheerios.ExtrByteListReader.
-Require Export Cheerios.ExtrByteListWriter.
 Require Export Cheerios.ExtrIOStream.

@@ -9,7 +9,7 @@ Extract Constant ByteListReader.map => "Serializer_primitives.map".
 Extract Constant ByteListReader.ret => "Serializer_primitives.ret".
 Extract Constant ByteListReader.fold => "Serializer_primitives.fold".
 
-Extract Constant ByteListReader.getByte_unwrap => "ayy lmao".
+Extract Constant ByteListReader.getByte_unwrap => "Obj.magic".
 Extract Constant ByteListReader.bind_unwrap => "Obj.magic".
 Extract Constant ByteListReader.ret_unwrap => "Obj.magic".
 Extract Constant ByteListReader.map_unwrap => "Obj.magic".
@@ -17,5 +17,5 @@ Extract Constant ByteListReader.fold_unwrap => "Obj.magic".
 
 Extract Constant ByteListReader.unwrap => "Obj.magic".
 
-Extract Inlined Constant ByteListSerializer.deserialize_top =>
+Extract Inlined Constant deserialize_top =>
 "Serializer_primitives.deserialize_top".
