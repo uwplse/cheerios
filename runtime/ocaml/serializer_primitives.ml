@@ -1,18 +1,22 @@
-type serializer = Bit_vector.writer -> unit
+type iostream = 
+    | Empty
+    | WriteByte of char 
+    | Seq of (unit -> iostream) * (unit -> iostream)
+
+type serializer = iostream
 type 'a deserializer = Bit_vector.reader -> 'a
 type wire = bytes
 
 (* serializer *)
 
-let empty : serializer = fun w -> ()
+let empty : serializer =
+  Empty
 
 let putByte (b : char) : serializer =
-  fun w -> Bit_vector.pushBack w b
+  WriteByte b
 
-let append (m1 : unit -> serializer) (m2 : unit -> serializer) : serializer =
-  fun w ->
-  m1 () w;
-  m2 () w
+let append (s1 : unit -> serializer) (s2 : unit -> serializer) : serializer =
+  Seq (s1, s2)
 
 let putInt (i : int32) : serializer =
   let aux n = putByte (Char.chr ((Int32.to_int i lsr n) land 0xff))
@@ -66,9 +70,16 @@ let rec fold (f : char -> 's -> ('s, 'a) fold_state)
   
 (* wire *)
 
+let rec iostream_interp (s : serializer) (w : Bit_vector.writer) =
+  match s with
+  | Empty -> ()
+  | WriteByte b -> Bit_vector.pushBack w b
+  | Seq (t1, t2) -> (iostream_interp (t1 ()) w;
+                   iostream_interp (t2 ()) w)
+                    
 let wire_wrap (s : serializer) : wire =
   let w = Bit_vector.makeWriter () in
-  (s w;
+  (iostream_interp s w;
    Bit_vector.writerToBytes w)
 
 let size : wire -> int =
@@ -83,4 +94,3 @@ let dump (w : wire) : unit =
     then (Printf.printf "%x %!" (Char.code (Bytes.get w i));
           loop (i + 1)) in
   loop 0; Printf.printf "\n%!"
-           

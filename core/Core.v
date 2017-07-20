@@ -7,7 +7,7 @@ Set Implicit Arguments.
 
 Module IOStreamWriter : WRITER.
   Inductive iostream :=
-  | Done : iostream
+  | Empty : iostream
   | WriteByte : byte -> iostream
   | Seq : iostream -> (unit -> iostream) -> iostream.
 
@@ -15,7 +15,7 @@ Module IOStreamWriter : WRITER.
 
   Fixpoint iostreamDenote (i : iostream) : list byte :=
     match i with
-    | Done => []
+    | Empty => []
     | WriteByte b => [b]
     | Seq i1 i2 => iostreamDenote i1 ++ iostreamDenote (i2 tt)
     end.
@@ -23,7 +23,7 @@ Module IOStreamWriter : WRITER.
   Definition unwrap := iostreamDenote.
 
   (* serializers *)
-  Definition empty : iostream := Done.
+  Definition empty : iostream := Empty.
 
   Definition putByte : byte -> iostream :=
     WriteByte.

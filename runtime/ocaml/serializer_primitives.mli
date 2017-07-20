@@ -1,6 +1,7 @@
 type serializer
 type 'a deserializer
 type wire = bytes
+
 type ('s, 'a) fold_state =
   | Done of 'a
   | More of 's
