@@ -25,7 +25,9 @@ File serialization and filesystem interaction
 
 - use Cheerios to write data types to persistent storage
 
-- lift guarantees from POSIX filesystems or FSCQ to Cheerios?
+- lift guarantees from POSIX filesystems (http://www.tom-ridge.com/resources/doc/sosp_draft.pdf) or FSCQ (http://css.csail.mit.edu/fscq/) to Cheerios?
+
+- There are various issues with file consistency in real-world filesystems (https://danluu.com/file-consistency/)
 
 Verdi network semantics with a persistent store
 -----------------------------------------------
@@ -34,4 +36,4 @@ Verdi network semantics with a persistent store
 
 - integrate Cheerios with system using new network semantics
 
-- previous work on TransActors may be relevant
+- previous work on TransActors may be relevant (http://digitool.rpi.edu:8881/dtl_publish/37/12193.html)
