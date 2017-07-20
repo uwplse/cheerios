@@ -36,29 +36,5 @@ Module DeserializerMonad (Reader : READER).
     Notation "f <*> x" := (@sequence _ _ f x) (at level 42, left associativity).
   End DeserializerNotations.
 
-  Check sequence.
   Import DeserializerNotations.
-
-  (*
-  Section lift.
-    Import ByteListSerializer.
-    Context {A B C D : Type}.
-    Context {sA : Serializer A}.
-    Context {sB : Serializer B}.
-    Context {sC : Serializer C}.
-    Context {sD : Serializer D}.
-    Definition liftD1 {X} (f : D -> X) :=
-      f <$> deserialize.
-
-    Definition liftD2 {X} (f : C -> D -> X) : Reader.t X :=
-      (f <$> deserialize) >>= liftD1.
-
-    Definition liftD3 {X} (f : B -> C -> D -> X) : Reader.t X :=
-      (f <$> deserialize) >>= liftD2.
-
-    Definition liftD4 {X} (f : A -> B -> C -> D -> X) : Reader.t X :=
-      (f <$> deserialize) >>= liftD3.
-
-  End lift.
-   *)
 End DeserializerMonad.

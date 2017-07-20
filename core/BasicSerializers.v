@@ -61,10 +61,12 @@ Module BasicSerializers
       cheerios_crush; simpl; cheerios_crush.
   Qed.
 
-  Global Instance bool_Serializer : Serializer bool :=
-    {| serialize := bool_serialize;
-       deserialize := bool_deserialize;
-       serialize_deserialize_id := bool_serialize_deserialize_id |}.
+  Global Instance bool_Serializer : Serializer bool.
+  Proof.
+    exact {| serialize := bool_serialize;
+             deserialize := bool_deserialize;
+             serialize_deserialize_id := bool_serialize_deserialize_id |}.
+  Qed.
 
   (* this needs to go here because we need the bool_Serializer instance *)
   Lemma fold_append_unwrap :

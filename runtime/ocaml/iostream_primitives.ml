@@ -14,16 +14,13 @@ let putByte (b : char) : serializer =
 let append (s1 : unit -> serializer) (s2 : unit -> serializer) : serializer =
   Seq (s1, s2)
 
-(*
-let rec positive_serialize p =
-  match p with
-  | XI p -> append (fun () -> (byte_Serializer.serialize '\002'))
-                   (fun () -> positive_serialize p)
-  | XO p -> append (fun () -> (byte_Serializer.serialize '\001'))
-                   (fun () -> positive_serialize p)
-  | xH -> putByte '\000'
- *)
-      
+let putInt (i : int32) : serializer =
+  let aux n = putByte (Char.chr ((Int32.to_int i lsr n) land 0xff))
+  in append (fun () -> (aux 24))
+            (fun () -> (append (fun () -> (aux 16))
+                               (fun () -> (append (fun () -> (aux 8))
+                                                  (fun () -> (aux 0))))))
+
 (* wire *)
 let rec iostream_interp (s : serializer) (w : Bit_vector.writer) =
   match s with

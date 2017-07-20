@@ -5,7 +5,6 @@ Require Import ZArith.
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 
-
 Module ByteListBasics := BasicSerializers ByteListWriter ByteListReader ByteListSerializer.
 Module IOStreamBasics := BasicSerializers IOStream ByteListReader IOStreamSerializer.
 

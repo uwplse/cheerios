@@ -21,9 +21,6 @@ Definition tree_serialize_iostream_top : tree bool -> IOStream.wire :=
 Definition tree_deserialize_iostream_top : IOStream.wire -> option (tree bool) :=
   IOStreamSerializer.deserialize_top IOStreamSerializer.deserialize.
 
-Extract Inlined Constant IOStreamSerializer.deserialize_top => "Serializer_primitives.deserialize_top".
-Extract Inlined Constant ByteListSerializer.deserialize_top => "Serializer_primitives.deserialize_top".
-
 Extraction "runtime/ocaml/tree_serializer.ml"
            tree_serialize_bytelist_top tree_deserialize_bytelist_top
            tree_serialize_iostream_top tree_deserialize_iostream_top.

@@ -18,8 +18,8 @@ let make_positive n =
 
 let test_cheerios p print =
   test_serialize_deserialize p
-                             positive_serialize_bytelist_top
-                             (fun w -> match positive_deserialize_bytelist_top w with
+                             positive_serialize_iostream_top
+                             (fun w -> match positive_deserialize_iostream_top w with
                                        | Some p -> p
                                        | None -> failwith "Deserialization failed")
                              print
@@ -36,8 +36,8 @@ let test_main max =
 let bench_main () =
   compare_time_loop make_positive
                     200000 20000 100
-                    positive_serialize_bytelist_top
-                    (fun w -> match positive_deserialize_bytelist_top w with
+                    positive_serialize_iostream_top
+                    (fun w -> match positive_deserialize_iostream_top w with
                               | Some p -> p
                               | None -> failwith "Deserialization failed")
 
