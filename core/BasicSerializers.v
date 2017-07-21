@@ -22,7 +22,6 @@ Instance byte_Serializer : Serializer byte :=
 
 Lemma byte_unwrap : forall b, IOStreamWriter.unwrap (serialize b) = [b].
 Proof.
-  unfold serialize. simpl.
   cheerios_crush.
 Qed.
 
@@ -297,11 +296,13 @@ Proof.
     repeat (cheerios_crush; simpl).
 Qed.
 
-Instance N_Serializer : Serializer N :=
-  {| serialize := N_serialize;
-     deserialize := N_deserialize;
-     serialize_deserialize_id := N_serialize_deserialize_id
-  |}.
+Instance N_Serializer : Serializer N.
+Proof.
+  exact {| serialize := N_serialize;
+           deserialize := N_deserialize;
+           serialize_deserialize_id := N_serialize_deserialize_id
+        |}.
+Qed.
 
 (* The other main way to define a serializer is to use an isomorphism to another
    type that is already serializable. *)
@@ -359,11 +360,13 @@ Proof.
   cheerios_crush.
 Qed.
 
-Instance Fin_Serializer n : Serializer (Fin.t n) :=
-  {| serialize := Fin_serialize;
-     deserialize := Fin_deserialize;
-     serialize_deserialize_id := Fin_serialize_deserialize_id n
-  |}.
+Instance Fin_Serializer n : Serializer (Fin.t n).
+Proof.
+  exact {| serialize := Fin_serialize;
+           deserialize := Fin_deserialize;
+           serialize_deserialize_id := Fin_serialize_deserialize_id n
+        |}.
+Qed.
 
 (* Serializer for StructTact's fin based on converting to nat. *)
 Definition fin_serialize {n} (x : fin n) : IOStreamWriter.t :=
@@ -385,11 +388,13 @@ Proof.
   cheerios_crush.
 Qed.
 
-Instance fin_Serializer n : Serializer (fin n) :=
-  {| serialize := fin_serialize;
-     deserialize := fin_deserialize;
-     serialize_deserialize_id := fin_serialize_deserialize_id n
-  |}.
+Instance fin_Serializer n : Serializer (fin n).
+Proof.
+  exact {| serialize := fin_serialize;
+           deserialize := fin_deserialize;
+           serialize_deserialize_id := fin_serialize_deserialize_id n
+        |}.
+Qed.
 
 Definition ascii_serialize (a : Ascii.ascii) : IOStreamWriter.t :=
   serialize (Ascii.nat_of_ascii a).
@@ -405,9 +410,11 @@ Proof.
   now rewrite Ascii.ascii_nat_embedding.
 Qed.
 
-Instance ascii_Serializer : Serializer Ascii.ascii :=
-  {| serialize := ascii_serialize;
-     deserialize := ascii_deserialize;
-     serialize_deserialize_id := ascii_serialize_deserialize_id
-  |}.
+Instance ascii_Serializer : Serializer Ascii.ascii.
+Proof.
+exact  {| serialize := ascii_serialize;
+          deserialize := ascii_deserialize;
+          serialize_deserialize_id := ascii_serialize_deserialize_id
+       |}.
+Qed.
 
