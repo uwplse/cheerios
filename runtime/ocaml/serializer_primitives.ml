@@ -4,7 +4,7 @@ type iostream =
     | Seq of (unit -> iostream) * (unit -> iostream)
 
 type serializer = iostream
-type 'a deserializer = Bit_vector.reader -> 'a
+type 'a deserializer = Bit_vector.reader -> 'a option
 type wire = bytes
 
 (* serializer *)
@@ -27,15 +27,17 @@ let putInt (i : int32) : serializer =
 
 (* deserializer *)
   
-let getByte =
-  Bit_vector.pop
+let getByte r =
+  Some (Bit_vector.pop r)
 
 let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
   fun r -> let v = d r in
-           (f v) r
-                 
+           match v with
+           | Some v -> (f v) r
+           | None -> None
+
 let ret (v : 'a) : 'a deserializer =
-  fun r -> v
+  fun r -> Some v
 
 let getInt : int32 deserializer =
   let aux b n = Char.code b lsl n in
@@ -50,7 +52,7 @@ let getInt : int32 deserializer =
                                        ret (Int32.of_int i)))))
 
 let fail : 'a deserializer =
-  fun r -> failwith "Deserialization failed"
+  fun r -> None
   
 type ('s, 'a) fold_state =
   | Done of 'a
@@ -62,11 +64,11 @@ let map (f : 'a -> 'b) (d : 'a deserializer) : 'b deserializer =
 
 let rec fold (f : char -> 's -> ('s, 'a) fold_state)
                           (s : 's) : 'a deserializer =
-  fun r -> let b = getByte r
+  fun r -> let b = (Bit_vector.pop r)
            in match f b s with
-              | Done a -> a
+              | Done a -> Some a
               | More s -> fold f s r
-              | Error -> failwith "Fold deserializer error"
+              | Error -> None
   
 (* wire *)
 
@@ -85,8 +87,8 @@ let wire_wrap (s : serializer) : wire =
 let size : wire -> int =
   Bytes.length
 
-let deserialize_top (dummy: 'b) (d : 'a deserializer) (w : wire) : 'a option =
-  Some (d (Bit_vector.bytesToReader w))
+let deserialize_top _ (d : 'a deserializer) (w : wire) : 'a option =
+  d (Bit_vector.bytesToReader w)
 
 let dump (w : wire) : unit =
   let rec loop i =
