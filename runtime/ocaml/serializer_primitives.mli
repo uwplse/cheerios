@@ -11,8 +11,10 @@ type ('s, 'a) fold_state =
 val empty : serializer
 val putByte : char -> serializer
 val putInt : int32 -> serializer
+val putChars : char list -> serializer
 val append : (unit -> serializer) -> (unit -> serializer) -> serializer
 
+  
   (* deserializer *)
 val getByte : char deserializer
 val getInt : int32 deserializer
@@ -21,7 +23,7 @@ val ret : 'a -> 'a deserializer
 val fail : 'a deserializer
 val map : ('a -> 'b) -> 'a deserializer -> 'b deserializer
 val fold : (char -> 's -> ('s, 'a) fold_state) -> 's -> 'a deserializer
-  
+val getChars : int -> (char list) deserializer
 (* wire *)
 val wire_wrap : serializer -> wire
 val size : wire -> int
