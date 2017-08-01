@@ -1,10 +1,4 @@
-Require Import ZArith.
-
-Require Import Cheerios.BasicSerializers.
-Require Import Cheerios.Core.
-Require Import Cheerios.Types.
-
-(* types *)
+Require Import Cheerios.Cheerios.
 
 Extract Constant ByteListReader.t "'a" => "Serializer_primitives.deserializer".
 Extraction Inline ByteListReader.t.
