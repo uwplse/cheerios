@@ -28,7 +28,7 @@ let putInt (i : int32) : serializer =
                                                   (fun () -> (aux 0))))))
 
 let putFloat (f : float) =
-  putInt (Int32.of_float f)
+  putInt (Int32.bits_of_float f)
 
 let rec putChars (s : char list) : serializer =
   match s with
@@ -78,7 +78,7 @@ let rec fold (f : char -> 's -> ('s, 'a) fold_state)
               | Error -> raise (Serialization_error "fold deserialization error")
 
 let getFloat =
-  map Int32.to_float getInt
+  map Int32.float_of_bits getInt
 
 let getChars (n : int) : (char list) deserializer =
   if n = 0
