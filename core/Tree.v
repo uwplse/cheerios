@@ -572,6 +572,7 @@ Module JSON.
   Module json.
     Inductive t :=
     | Null : t
+    | Bool : bool -> t
     | Num : nat -> t
     | Arr : list t -> t
     | Obj : list (String.string * t) -> t.
@@ -589,7 +590,9 @@ Module JSON.
       Hypothesis P_cons' : forall s j l, P j -> P_list' l -> P_list' ((s, j) :: l).
 
       Hypothesis P_null : P Null.
+      Hypothesis P_bool : forall b, P (Bool b).
       Hypothesis P_num : forall n, P (Num n).
+
       Hypothesis P_arr : forall l, P_list l -> P (Arr l).
       Hypothesis P_obj : forall l, P_list' l -> P (Obj l).
 
@@ -606,6 +609,7 @@ Module JSON.
             end in
         match j with
         | Null => P_null
+        | Bool b => P_bool b
         | Num n => P_num n
         | Arr l => P_arr (go_list l)
         | Obj l => P_obj (go_list' l)
@@ -617,6 +621,7 @@ Module JSON.
       Variable P : t -> Prop.
 
       Hypothesis P_null : P Null.
+      Hypothesis P_bool : forall b, P (Bool b).
       Hypothesis P_num : forall n, P (Num n).
       Hypothesis P_arr : forall l, List.Forall P l -> P (Arr l).
       Hypothesis P_obj : forall l, List.Forall (fun s => P (snd s)) l -> P (Obj l).
@@ -628,6 +633,7 @@ Module JSON.
                   (List.Forall_nil _)
                   (fun s j l Pj Pt => List.Forall_cons (s, j) Pj Pt)
                   P_null
+                  P_bool
                   P_num
                   P_arr
                   P_obj
@@ -638,6 +644,7 @@ Module JSON.
   Module tag.
     Inductive t :=
     | Null : t
+    | Bool : bool -> t
     | Num : nat -> t
     | Str : String.string -> t
     | Arr : t
@@ -647,22 +654,25 @@ Module JSON.
     Definition tag_serialize (t : t) : IOStreamWriter.t :=
       match t with
       | Null => serialize x00
-      | Num n => IOStreamWriter.append (fun _ => serialize x01)
+      | Bool b => IOStreamWriter.append (fun _ => serialize x01)
+                                        (fun _ => serialize b)
+      | Num n => IOStreamWriter.append (fun _ => serialize x02)
                                (fun _ => serialize n)
-      | Str s => IOStreamWriter.append (fun _ => serialize x02)
+      | Str s => IOStreamWriter.append (fun _ => serialize x03)
                                (fun _ => serialize s)
-      | Arr => serialize x03
-      | Obj => serialize x04
+      | Arr => serialize x04
+      | Obj => serialize x05
       end.
 
     Definition tag_deserialize : ByteListReader.t t :=
       tag <- deserialize ;;
           match tag with
           | x00 => ByteListReader.ret Null
-          | x01 => Num <$> deserialize
-          | x02 => Str <$> deserialize
-          | x03 => ByteListReader.ret Arr
-          | x04 => ByteListReader.ret Obj
+          | x01 => Bool <$> deserialize
+          | x02 => Num <$> deserialize
+          | x03 => Str <$> deserialize
+          | x04 => ByteListReader.ret Arr
+          | x05 => ByteListReader.ret Obj
           | _ => ByteListReader.error
           end.
 
@@ -694,6 +704,7 @@ Module JSON.
       in
       match j with
       | json.Null => atom tag.Null
+      | json.Bool b => atom (tag.Bool b)
       | json.Num n => atom (tag.Num n)
       | json.Arr l => node (atom tag.Arr :: List.map json_treeify l)
       | json.Obj l => node (atom tag.Obj :: obj_list_to_tree_list l)
@@ -735,6 +746,7 @@ Module JSON.
           end in
       match t with
       | atom (tag.Num n) => Some (json.Num n)
+      | atom (tag.Bool b) => Some (json.Bool b)
       | node (atom tag.Arr :: l) => match untreeify_list l with
                                     | None => None
                                     | Some l => Some (json.Arr l)
@@ -780,7 +792,7 @@ Module JSON.
       json_untreeify (json_treeify j) = Some j.
 
     Lemma treeify_untreeify_id : forall j : json.t,
-        treeify_untreeify_aux j .
+        treeify_untreeify_aux j.
     Proof.
       induction j using json.json_rect with
           (P_list := fun l => untreeify_list (List.map json_treeify l) = Some l)
@@ -860,6 +872,7 @@ Module JSON.
         end in
     match (j, j') with
     | (json.Null, json.Null) => true
+    | (json.Bool b, json.Bool b') => Bool.eqb b b'
     | (json.Num n, json.Num n') => Nat.eqb n n'
     | (json.Arr l, json.Arr l') => loop_arr l l'
     | (json.Obj l, json.Obj l') => loop_obj l l'
@@ -920,6 +933,10 @@ Module JSON.
     - destruct j'; try congruence.
     - destruct j'; try congruence.
       intros.
+      apply Bool.eqb_prop in H.
+      now rewrite H.
+    - destruct j'; try congruence.
+      intros.
       apply EqNat.beq_nat_true in H.
       congruence.
     - fold json_eqb.
@@ -950,6 +967,8 @@ Module JSON.
       rewrite string_eqb_refl, IHj0.
       rewrite IHj; auto.
     - intros. now rewrite <- H.
+    - intros. rewrite <- H. simpl.
+      apply Bool.eqb_reflx.
     - intros.  rewrite <- H. simpl.
       symmetry.
       apply EqNat.beq_nat_refl.
