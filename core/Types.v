@@ -1,6 +1,9 @@
 Require Import List.
 Import ListNotations.
 
+Axiom float : Type.
+Axiom float_eq_dec : forall f f' : float, {f = f'} + {f <> f'}.
+
 Inductive fold_state S A :=
 | Done (a : A)
 | More (s : S)
@@ -100,4 +103,3 @@ Module Type READER.
                   end
       end.
 End READER.
-

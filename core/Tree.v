@@ -573,7 +573,7 @@ Module JSON.
     Inductive t :=
     | Null : t
     | Bool : bool -> t
-    | Num : nat -> t
+    | Num : float -> t
     | Arr : list t -> t
     | Obj : list (String.string * t) -> t.
 
@@ -645,7 +645,7 @@ Module JSON.
     Inductive t :=
     | Null : t
     | Bool : bool -> t
-    | Num : nat -> t
+    | Num : float -> t
     | Str : String.string -> t
     | Arr : t
     | Obj : t.
@@ -873,7 +873,7 @@ Module JSON.
     match (j, j') with
     | (json.Null, json.Null) => true
     | (json.Bool b, json.Bool b') => Bool.eqb b b'
-    | (json.Num n, json.Num n') => Nat.eqb n n'
+    | (json.Num n, json.Num n') => if float_eq_dec n n' then true else false
     | (json.Arr l, json.Arr l') => loop_arr l l'
     | (json.Obj l, json.Obj l') => loop_obj l l'
     | _ => false
@@ -937,8 +937,9 @@ Module JSON.
       now rewrite H.
     - destruct j'; try congruence.
       intros.
-      apply EqNat.beq_nat_true in H.
-      congruence.
+      destruct (float_eq_dec n f).
+      + now rewrite e.
+      + congruence.
     - fold json_eqb.
       fold loop_arr.
       destruct j'; try congruence.
@@ -971,7 +972,9 @@ Module JSON.
       apply Bool.eqb_reflx.
     - intros.  rewrite <- H. simpl.
       symmetry.
-      apply EqNat.beq_nat_refl.
+      destruct (float_eq_dec n n).
+      + reflexivity.
+      + congruence.
     - intros.
       rewrite <- H.
       simpl.
