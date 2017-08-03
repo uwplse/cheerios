@@ -37,3 +37,5 @@ Verdi network semantics with a persistent store
 - integrate Cheerios with system using new network semantics
 
 - previous work on TransActors may be relevant (http://digitool.rpi.edu:8881/dtl_publish/37/12193.html)
+
+- Current plan: extend handlers to also capture writes to disk (also requires changes to reboot function?). First, snapshot on every handler call. Then, log message receives/sends. More possibilities: disk reads, omit certain events from log.
