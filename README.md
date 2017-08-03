@@ -6,10 +6,9 @@ Cheerios
 Cheerios is a formally verified serialization library for Coq. It
 defines a typeclass for serializable types and defines instances for
 many built-in types. The specification of a serializable type requires
-that serializing followed by deserializing is the identity.
-
-By linking extracted code with the Cheerios OCaml runtime support library,
-verified serializable types can be be used in executable programs.
+that serializing followed by deserializing is the identity. By linking
+extracted code with the Cheerios OCaml runtime support library,
+verified serializable types can be used in executable programs.
 
 Requirements
 ------------
@@ -50,3 +49,9 @@ opam install cheerios-runtime
 ```
 
 To compile the runtime library manually, go to the `runtime` directory and run `make`.
+
+Projects using Cheerios
+-----------------------
+
+- [Verdi Raft](https://github.com/uwplse/verdi-raft)
+- [Verdi LockServ](https://github.com/DistributedComponents/verdi-lockserv)

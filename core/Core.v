@@ -2,6 +2,7 @@ Require Import Ascii List ZArith.
 Import ListNotations.
 
 Require Import Cheerios.Types.
+Require Import Cheerios.ByteDecidable.
 
 Set Implicit Arguments.
 
@@ -43,7 +44,7 @@ Module IOStreamWriter : WRITER.
 
   Definition wire := list byte.
 
-  Axiom wire_eq_dec : forall w w' : wire, {w = w'} + {w <> w'}.
+  Definition wire_eq_dec := list_eq_dec byte_eq_dec.
 
   Definition wire_wrap := unwrap.
 
@@ -154,7 +155,7 @@ Class Serializer (A : Type) : Type :=
   }.
 Hint Rewrite @serialize_deserialize_id : cheerios.
 
-(* In panrticular, if there is nothing else in the bitsream, then deserialize and
+(* In particular, if there is nothing else in the bitsream, then deserialize and
    serialize are inverses. *)
 Lemma serialize_deserialize_id_nil :
   forall A (sA : Serializer A) a,
