@@ -17,7 +17,6 @@ Definitions and proofs:
 
 - [`Coq 8.5`](https://coq.inria.fr/coq-85) or [`Coq 8.6`](https://coq.inria.fr/coq-86)
 - [`StructTact`](https://github.com/uwplse/StructTact)
-- [`mathcomp-ssreflect 1.6.1`](http://math-comp.github.io/math-comp/)
 
 Runtime:
 
@@ -40,7 +39,10 @@ Runtime Library
 ---------------
 
 To use serializable types in executable programs, code must be extracted to OCaml and
-linked with the Cheerios runtime library.
+linked with the Cheerios runtime library. Note that if a Coq type is extracted to a custom
+OCaml type (e.g., `string` to `char list`), extraction for serialization functions must be adjusted
+accordingly. We provide several files with such extraction directives for serialization
+in the `extraction` directory.
 
 To install the runtime library via OPAM, make sure the `distributedcomponents-dev`
 repo has been added as above and use the following command:
