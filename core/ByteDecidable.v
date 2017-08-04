@@ -529,19 +529,19 @@ Proof.
 Qed.
 
 Definition byte_eq_dec : forall (a b : byte), {a = b} + {a <> b}.
-  refine
-    (fun a b =>
-       match Nat.eq_dec (byte_to_nat a) (byte_to_nat b) with
-       | left H_dec => left _
-       | right H_dec => right _
-       end).
-  - pose proof (pcancel_byte_nat a) as H_a.
-    pose proof (pcancel_byte_nat b) as H_b.
-    rewrite H_dec in H_a.
-    rewrite H_a in H_b.
-    find_injection.
-    reflexivity.
-  - intro H_eq.
-    rewrite H_eq in H_dec.
-    auto.
+refine
+  (fun a b =>
+     match Nat.eq_dec (byte_to_nat a) (byte_to_nat b) with
+     | left H_dec => left _
+     | right H_dec => right _
+     end).
+- pose proof (pcancel_byte_nat a) as H_a.
+  pose proof (pcancel_byte_nat b) as H_b.
+  rewrite H_dec in H_a.
+  rewrite H_a in H_b.
+  find_injection.
+  reflexivity.
+- intro H_eq.
+  rewrite H_eq in H_dec.
+  auto.
 Defined.

@@ -220,7 +220,7 @@ Section BasicCombinators.
   Fixpoint vector_serialize {n} (v : Vector.t A n) : IOStreamWriter.t :=
     match v with
     | Vector.nil => IOStreamWriter.empty
-    | Vector.cons a _ v' => IOStreamWriter.append (fun _ => serialize a)
+    | Vector.cons a v' => IOStreamWriter.append (fun _ => serialize a)
                                         (fun _ => vector_serialize v')
     end.
 
