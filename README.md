@@ -39,10 +39,14 @@ Runtime Library
 ---------------
 
 To use serializable types in executable programs, code must be extracted to OCaml and
-linked with the Cheerios runtime library. Note that if a Coq type is extracted to a custom
-OCaml type (e.g., `string` to `char list`), extraction for serialization functions must be adjusted
-accordingly. We provide several files with such extraction directives for serialization
-in the `extraction` directory.
+linked with the Cheerios runtime library. The connection between the Coq definitions
+and the runtime library primitives is established in `ExtractOCamlCheeriosBasic.v`
+in the `extraction` directory, which must be imported before extraction of serializable
+types.
+
+Note that if a Coq type is extracted to a custom OCaml type (e.g., `string` to `char list`),
+extraction for serialization functions must be adjusted accordingly. Several files with such
+extraction directives for serialization can be found in the `extraction` directory.
 
 To install the runtime library via OPAM, make sure the `distributedcomponents-dev`
 repo has been added as above and use the following command:

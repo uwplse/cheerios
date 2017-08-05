@@ -2,7 +2,7 @@
 
 DEPS=(StructTact)
 DIRS=(core extraction runtime/coq)
-CANARIES=("mathcomp.ssreflect.ssreflect" "Cheerios requires mathcomp to be installed" "StructTact.StructTactics" "Build StructTact before building Cheerios")
+CANARIES=("StructTact.StructTactics" "Build StructTact before building Cheerios")
 NAMESPACE_core="Cheerios"
 NAMESPACE_extraction="Cheerios"
 NAMESPACE_runtime_coq="Cheerios"
