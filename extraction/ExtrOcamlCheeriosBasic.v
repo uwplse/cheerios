@@ -1,4 +1,5 @@
 Require Import Cheerios.Cheerios.
+Require Extraction.
 
 Extract Constant ByteListReader.t "'a" => "Serializer_primitives.deserializer".
 Extraction Inline ByteListReader.t.
