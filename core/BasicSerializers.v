@@ -11,18 +11,6 @@ Require Import Cheerios.Types.
 
 Import DeserializerNotations.
 
-Axiom float_serialize : float -> IOStreamWriter.t.
-Axiom float_deserialize : ByteListReader.t float.
-Axiom float_serialize_deserialize_id :
-  serialize_deserialize_id_spec float_serialize float_deserialize.
-
-Instance float_Serializer : Serializer float.
-Proof.
-  exact {| serialize := float_serialize;
-           deserialize := float_deserialize;
-           serialize_deserialize_id := float_serialize_deserialize_id |}.
-Qed.
-
 Lemma byte_serialize_deserialize_id :
   serialize_deserialize_id_spec IOStreamWriter.putByte ByteListReader.getByte.
 Proof. cheerios_crush. Qed.
