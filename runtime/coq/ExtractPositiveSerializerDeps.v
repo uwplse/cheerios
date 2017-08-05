@@ -1,2 +1,2 @@
 Require Export Cheerios.Cheerios.
-Require Export Cheerios.ExtrOcamlCheerios.
+Require Export Cheerios.ExtrOcamlCheeriosBasic.
