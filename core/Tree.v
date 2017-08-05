@@ -573,7 +573,8 @@ Module JSON.
     Inductive t :=
     | Null : t
     | Bool : bool -> t
-    | Num : float -> t
+    | Num : nat -> t
+    | String : String.string -> t
     | Arr : list t -> t
     | Obj : list (String.string * t) -> t.
 
@@ -592,6 +593,7 @@ Module JSON.
       Hypothesis P_null : P Null.
       Hypothesis P_bool : forall b, P (Bool b).
       Hypothesis P_num : forall n, P (Num n).
+      Hypothesis P_string : forall s, P (String s).
 
       Hypothesis P_arr : forall l, P_list l -> P (Arr l).
       Hypothesis P_obj : forall l, P_list' l -> P (Obj l).
@@ -611,6 +613,7 @@ Module JSON.
         | Null => P_null
         | Bool b => P_bool b
         | Num n => P_num n
+        | String s => P_string s
         | Arr l => P_arr (go_list l)
         | Obj l => P_obj (go_list' l)
         end.
@@ -623,6 +626,7 @@ Module JSON.
       Hypothesis P_null : P Null.
       Hypothesis P_bool : forall b, P (Bool b).
       Hypothesis P_num : forall n, P (Num n).
+      Hypothesis P_string : forall s, P (String s).
       Hypothesis P_arr : forall l, List.Forall P l -> P (Arr l).
       Hypothesis P_obj : forall l, List.Forall (fun s => P (snd s)) l -> P (Obj l).
 
@@ -635,6 +639,7 @@ Module JSON.
                   P_null
                   P_bool
                   P_num
+                  P_string
                   P_arr
                   P_obj
                   j.
@@ -645,7 +650,7 @@ Module JSON.
     Inductive t :=
     | Null : t
     | Bool : bool -> t
-    | Num : float -> t
+    | Num : nat -> t
     | Str : String.string -> t
     | Arr : t
     | Obj : t.
@@ -706,6 +711,7 @@ Module JSON.
       | json.Null => atom tag.Null
       | json.Bool b => atom (tag.Bool b)
       | json.Num n => atom (tag.Num n)
+      | json.String s => atom (tag.Str s)
       | json.Arr l => node (atom tag.Arr :: List.map json_treeify l)
       | json.Obj l => node (atom tag.Obj :: obj_list_to_tree_list l)
       end.
@@ -747,6 +753,7 @@ Module JSON.
       match t with
       | atom (tag.Num n) => Some (json.Num n)
       | atom (tag.Bool b) => Some (json.Bool b)
+      | atom (tag.Str s) => Some (json.String s)
       | node (atom tag.Arr :: l) => match untreeify_list l with
                                     | None => None
                                     | Some l => Some (json.Arr l)
@@ -873,7 +880,8 @@ Module JSON.
     match (j, j') with
     | (json.Null, json.Null) => true
     | (json.Bool b, json.Bool b') => Bool.eqb b b'
-    | (json.Num n, json.Num n') => if float_eq_dec n n' then true else false
+    | (json.Num n, json.Num n') => Nat.eqb n n'
+    | (json.String s, json.String s') => string_eqb s s'
     | (json.Arr l, json.Arr l') => loop_arr l l'
     | (json.Obj l, json.Obj l') => loop_obj l l'
     | _ => false
@@ -937,9 +945,12 @@ Module JSON.
       now rewrite H.
     - destruct j'; try congruence.
       intros.
-      destruct (float_eq_dec n f).
-      + now rewrite e.
-      + congruence.
+      apply EqNat.beq_nat_true in H.
+      now rewrite H.
+    - destruct j'; try congruence.
+      intros.
+      apply string_eqb_true in H.
+      now rewrite H.
     - fold json_eqb.
       fold loop_arr.
       destruct j'; try congruence.
@@ -970,11 +981,13 @@ Module JSON.
     - intros. now rewrite <- H.
     - intros. rewrite <- H. simpl.
       apply Bool.eqb_reflx.
-    - intros.  rewrite <- H. simpl.
+    - intros. rewrite <- H. simpl.
       symmetry.
-      destruct (float_eq_dec n n).
-      + reflexivity.
-      + congruence.
+      apply EqNat.beq_nat_refl.
+    - intros.
+      rewrite <- H.
+      simpl.
+      apply string_eqb_refl.
     - intros.
       rewrite <- H.
       simpl.
