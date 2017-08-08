@@ -15,6 +15,11 @@ Verdi integration for packet serialization
 
 - figure out a way to integrate input/output serialization and communication with clients (via explicit binary interface definitions?)
 
+  * cheerios has a json serializer that should work well with yojson's json type.
+  * not sure what using another language for clients with verified input/output serialization would look like
+  * using json/input and json/output conversion functions should work best.
+
+
 - instead of serializing messages to an explicit buffer, instead serialize directly to a TCP socket?
 
   * avoids having to send the length of the buffer over the socket in the shim
