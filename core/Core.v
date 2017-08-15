@@ -177,7 +177,7 @@ Definition deserialize_top {A: Type} {sA: Serializer A}
   end.
 
 Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
-    deserialize_top deserialize (serialize_top serialize a) = Some a.
+    deserialize_top deserialize (serialize_top (serialize a)) = Some a.
 Proof.
   intros.
   unfold serialize_top, deserialize_top.
