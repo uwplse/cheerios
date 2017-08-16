@@ -166,9 +166,8 @@ Proof.
   now rewrite app_nil_r in *.
 Qed.
 
-Definition serialize_top {A: Type} {sA: Serializer A}
-           (s : A -> IOStreamWriter.t) (a : A) : IOStreamWriter.wire :=
-  IOStreamWriter.wire_wrap (s a).
+Definition serialize_top (s : IOStreamWriter.t) : IOStreamWriter.wire :=
+  IOStreamWriter.wire_wrap s.
 
 Definition deserialize_top {A: Type} {sA: Serializer A}
            (d : ByteListReader.t A) (w : IOStreamWriter.wire) : option A :=
@@ -178,7 +177,7 @@ Definition deserialize_top {A: Type} {sA: Serializer A}
   end.
 
 Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
-    deserialize_top deserialize (serialize_top serialize a) = Some a.
+    deserialize_top deserialize (serialize_top (serialize a)) = Some a.
 Proof.
   intros.
   unfold serialize_top, deserialize_top.
