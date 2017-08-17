@@ -169,18 +169,27 @@ Qed.
 Definition serialize_top (s : IOStreamWriter.t) : IOStreamWriter.wire :=
   IOStreamWriter.wire_wrap s.
 
-Definition deserialize_top {A: Type} {sA: Serializer A}
+Definition deserialize_top {A: Type}
            (d : ByteListReader.t A) (w : IOStreamWriter.wire) : option A :=
   match ByteListReader.unwrap d (IOStreamWriter.wire_unwrap w) with
   | None => None
   | Some (a, _) => Some a
   end.
 
+Lemma serialize_deserialize_top_id' : forall {A} (d : ByteListReader.t A) s v bytes,
+    ByteListReader.unwrap d (IOStreamWriter.unwrap s) = Some (v, bytes) ->
+    deserialize_top d (serialize_top s) = Some v.
+Proof.
+  intros.
+  unfold serialize_top, deserialize_top.
+  rewrite IOStreamWriter.wire_wrap_unwrap, H.
+  reflexivity.
+Qed.
+
 Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
     deserialize_top deserialize (serialize_top (serialize a)) = Some a.
 Proof.
   intros.
-  unfold serialize_top, deserialize_top.
-  rewrite IOStreamWriter.wire_wrap_unwrap.
-  now rewrite serialize_deserialize_id_nil.
+  apply serialize_deserialize_top_id' with (bytes := []).
+  apply serialize_deserialize_id_nil.
 Qed.
