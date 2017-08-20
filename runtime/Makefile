@@ -13,15 +13,12 @@ $(MLPOSITIVEEXTRACTED) $(MLTREEEXTRACTED):
 	+$(MAKE) -C .. runtime/$@
 
 positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) script/remove_module.pl test/positive_test.ml
-	perl script/remove_module.pl ocaml/positive_serializer
 	$(OCAMLBUILDTEST) positive_test.native
 
 tree_test.native: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
-	perl script/remove_module.pl ocaml/tree_serializer
 	$(OCAMLBUILDTEST) tree_test.native
 
 tree_test.byte: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
-	perl script/remove_module.pl ocaml/tree_serializer
 	$(OCAMLBUILDTEST) tree_test.byte
 
 cheerios-runtime: $(MLFILES) ocaml/cheerios_runtime.mllib
