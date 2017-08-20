@@ -44,4 +44,4 @@ Extract Constant ByteListReader.map_unwrap => "Obj.magic".
 Extract Constant ByteListReader.fold_unwrap => "Obj.magic".
 Extract Constant ByteListReader.unwrap => "Obj.magic".
 
-Extract Inlined Constant deserialize_top => "(Serializer_primitives.deserialize_top __)".
+Extract Inlined Constant deserialize_top => "Serializer_primitives.deserialize_top".
