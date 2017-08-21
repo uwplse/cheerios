@@ -34,7 +34,7 @@ let space_main () =
   let max_height = 10 in
   let rec loop i =
     if i < max_height
-    then (compare_cheerios_marshal_space (fun n -> make false n 2) (Obj.magic tree_serialize_top) i;
+    then (compare_cheerios_marshal_space (fun n -> make false n 2) tree_serialize_top i;
           loop (i + 1))
   in
   print_string "\nSpace usage tests...\n";
