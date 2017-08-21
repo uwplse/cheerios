@@ -13,7 +13,7 @@ Extract Inductive byte =>
 
 (* IOStreamWriter *)
 Extract Constant IOStreamWriter.t => "Serializer_primitives.serializer".
-Extract Inlined Constant IOStreamWriter.wire => "Serializer_primitives.wire".
+Extract Constant IOStreamWriter.wire => "Serializer_primitives.wire".
 
 Extract Constant IOStreamWriter.putByte => "Serializer_primitives.putByte".
 Extract Constant IOStreamWriter.empty => "Serializer_primitives.empty".
