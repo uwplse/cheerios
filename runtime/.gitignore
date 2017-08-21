@@ -1,6 +1,7 @@
 _build
 positive_test.native
 tree_test.native
+tree_test.byte
 ocaml/positive_serializer.ml
 ocaml/positive_serializer.mli
 ocaml/tree_serializer.ml

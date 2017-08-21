@@ -12,16 +12,13 @@ default: cheerios-runtime
 $(MLPOSITIVEEXTRACTED) $(MLTREEEXTRACTED):
 	+$(MAKE) -C .. runtime/$@
 
-positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) script/remove_module.pl test/positive_test.ml
-	perl script/remove_module.pl ocaml/positive_serializer
+positive_test.native: $(MLPOSITIVEEXTRACTED) $(MLFILES) test/positive_test.ml
 	$(OCAMLBUILDTEST) positive_test.native
 
-tree_test.native: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
-	perl script/remove_module.pl ocaml/tree_serializer
+tree_test.native: $(MLTREEXTRACTED) $(MLFILES) test/tree_test.ml
 	$(OCAMLBUILDTEST) tree_test.native
 
-tree_test.byte: $(MLTREEXTRACTED) $(MLFILES) script/remove_module.pl test/tree_test.ml
-	perl script/remove_module.pl ocaml/tree_serializer
+tree_test.byte: $(MLTREEXTRACTED) $(MLFILES) test/tree_test.ml
 	$(OCAMLBUILDTEST) tree_test.byte
 
 cheerios-runtime: $(MLFILES) ocaml/cheerios_runtime.mllib
