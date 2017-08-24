@@ -54,6 +54,10 @@ Module IOStreamWriter : WRITER.
   Proof. reflexivity. Qed.
 End IOStreamWriter.
 
+
+Notation "a +$+ b" := (IOStreamWriter.append (fun _ => a) (fun _ => b))
+                      (at level 60, right associativity).
+
 (* This is the monad used to write deserializers. It is a state monad with
     failure, where the state is the serialized bits. *)
 
