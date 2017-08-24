@@ -107,7 +107,7 @@ let wire_wrap (s : serializer) : wire =
 let size : wire -> int =
   Bytes.length
 
-let deserialize_top _ (d : 'a deserializer) (w : wire) : 'a option =
+let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
   try Some (d (Bit_vector.bytesToReader w))
   with Serialization_error _ -> None
 
