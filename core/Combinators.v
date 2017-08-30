@@ -8,6 +8,7 @@ Require Import Cheerios.DeserializerMonad.
 Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 
+Require Import StructTact.StructTactics.
 Import DeserializerNotations.
 
 (* These functions are either missing obvious implicits, or have
@@ -120,40 +121,9 @@ Section BasicCombinators.
                                (fun _ => list_serialize_rec l')
     end.
 
-  Fixpoint list_serialize_aux (l : list A) (acc : IOStreamWriter.t) : IOStreamWriter.t :=
-    match l with
-    | [] => acc
-    | a :: l' =>  list_serialize_aux l' (IOStreamWriter.append (fun _ => acc)
-                                                       (fun _ => serialize a))
-    end.
-
-  Lemma list_serialize_rec'_aux : forall l acc,
-      IOStreamWriter.unwrap (list_serialize_aux l acc) =
-      IOStreamWriter.unwrap (IOStreamWriter.append (fun _ => acc)
-                                   (fun _ => list_serialize_rec l)).
-  Proof.
-    intros l.
-    induction l; intros.
-    - simpl.
-      cheerios_crush.
-      now rewrite app_nil_r.
-    - unfold list_serialize_aux. fold list_serialize_aux.
-      rewrite IHl.
-      unfold list_serialize_rec at 2.
-      fold list_serialize_rec.
-      cheerios_crush.
-  Qed.
-
-  Definition list_serialize_rec' (l : list A) : IOStreamWriter.t :=
-    list_serialize_aux l IOStreamWriter.empty.
-
   Definition list_serialize (l : list A) : IOStreamWriter.t :=
     IOStreamWriter.append (fun _ => serialize (length l))
                   (fun _ => list_serialize_rec l).
-
-  Definition list_serialize' (l : list A) : IOStreamWriter.t :=
-    IOStreamWriter.append (fun _ => serialize (length l))
-                  (fun _ => list_serialize_rec' l).
 
   Fixpoint list_deserialize_rec (n : nat) : ByteListReader.t (list A) :=
     match n with
@@ -161,8 +131,19 @@ Section BasicCombinators.
     | S n' => cons <$> deserialize <*> list_deserialize_rec n'
     end.
 
+  Fixpoint list_deserialize_rec' (n : nat) : ByteListReader.t (list A) :=
+    match n with
+    | 0 => ByteListReader.ret []
+    | S n' => l <- list_deserialize_rec' n';;
+                a <- deserialize;;
+                ByteListReader.ret (l ++ [a])
+    end.
+
   Definition list_deserialize : ByteListReader.t (list A) :=
     deserialize >>= list_deserialize_rec.
+
+  Definition list_deserialize' : ByteListReader.t (list A) :=
+    deserialize >>= list_deserialize_rec'.
 
   Lemma list_serialize_deserialize_id_rec :
     forall l bin, ByteListReader.unwrap (list_deserialize_rec (length l))
@@ -172,12 +153,34 @@ Section BasicCombinators.
     intros.
     unfold list_serialize_rec.
     cheerios_crush. simpl.
-    induction l;
-      simpl;
+    induction l.
+    - simpl. cheerios_crush.
+    - simpl.
+      rewrite sequence_rewrite.
+      rewrite ByteListReader.bind_unwrap.
+      rewrite ByteListReader.map_unwrap.
+      rewrite IOStreamWriter.append_unwrap.
+      rewrite app_ass.
+      rewrite serialize_deserialize_id.
+      rewrite ByteListReader.bind_unwrap.
+      rewrite IHl.
       cheerios_crush.
-    unfold DeserializerMonad.sequence.
-    rewrite IHl.
-    cheerios_crush.
+  Qed.
+
+  Lemma serialize_snoc : forall (a : A) l,
+      (IOStreamWriter.unwrap
+         (list_serialize_rec (l ++ [a]))) =
+      (IOStreamWriter.unwrap (list_serialize_rec l) ++ IOStreamWriter.unwrap (serialize a)).
+  Proof.
+    intros.
+    induction l.
+    - simpl. cheerios_crush.
+      rewrite app_nil_r.
+      reflexivity.
+    - simpl.
+      cheerios_crush.
+      rewrite IHl.
+      reflexivity.
   Qed.
 
   Lemma list_serialize_deserialize_id :
@@ -188,26 +191,24 @@ Section BasicCombinators.
     now rewrite list_serialize_deserialize_id_rec.
   Qed.
 
-  Lemma list_serialize'_deserialize_id_rec :
-    forall l bin, ByteListReader.unwrap (list_deserialize_rec (length l))
-                                (IOStreamWriter.unwrap (list_serialize_rec' l) ++ bin)
+  Lemma list_serialize_deserialize_id_rec' :
+    forall l bin, ByteListReader.unwrap (list_deserialize_rec' (length l))
+                                (IOStreamWriter.unwrap (list_serialize_rec l) ++ bin)
                   = Some(l, bin).
   Proof.
-    intros.
-    unfold list_serialize_rec'.
-    rewrite list_serialize_rec'_aux.
-    cheerios_crush. simpl.
-    now rewrite list_serialize_deserialize_id_rec.
+    induction l using rev_ind.
+    - simpl. cheerios_crush.
+    - intros.
+      rewrite serialize_snoc.
+      cheerios_crush.
+      unfold list_deserialize_rec'.
+      rewrite app_length.
+      simpl.
+      rewrite PeanoNat.Nat.add_1_r.
+      cheerios_crush.
+      rewrite IHl.
+      cheerios_crush.
   Qed.
-
-  Lemma list_serialize'_deserialize_id :
-    serialize_deserialize_id_spec list_serialize' list_deserialize.
-  Proof.
-    unfold list_serialize', list_deserialize.
-    cheerios_crush.
-    now rewrite list_serialize'_deserialize_id_rec.
-  Qed.
-
 
   Global Instance list_Serializer : Serializer (list A).
   Proof.
