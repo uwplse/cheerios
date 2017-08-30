@@ -176,12 +176,12 @@ Definition serialize_top (s : IOStreamWriter.t) : IOStreamWriter.wire :=
 Definition deserialize_top {A: Type}
            (d : ByteListReader.t A) (w : IOStreamWriter.wire) : option A :=
   match ByteListReader.unwrap d (IOStreamWriter.wire_unwrap w) with
-  | None => None
-  | Some (a, _) => Some a
+  | Some (a, []) => Some a
+  | _ => None
   end.
 
-Lemma serialize_deserialize_top_id' : forall {A} (d : ByteListReader.t A) s v bytes,
-    ByteListReader.unwrap d (IOStreamWriter.unwrap s) = Some (v, bytes) ->
+Lemma serialize_deserialize_top_id' : forall {A} (d : ByteListReader.t A) s v,
+    ByteListReader.unwrap d (IOStreamWriter.unwrap s) = Some (v, []) ->
     deserialize_top d (serialize_top s) = Some v.
 Proof.
   intros.
@@ -190,10 +190,27 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma serialize_deserialize_top_invert : forall {A} (d : ByteListReader.t A) s v,
+    deserialize_top d (serialize_top s) = Some v ->
+    ByteListReader.unwrap d (IOStreamWriter.unwrap s) = Some (v, []).
+
+Proof.
+  intros.
+  unfold serialize_top, deserialize_top.
+  rewrite <-IOStreamWriter.wire_wrap_unwrap.
+  unfold deserialize_top, serialize_top in H.
+  destruct (ByteListReader.unwrap d (IOStreamWriter.wire_unwrap (IOStreamWriter.wire_wrap s))).
+  - destruct p.
+    destruct l;
+      inversion H.
+    reflexivity.
+  - inversion H.
+Qed.
+
 Theorem serialize_deserialize_top_id : forall {A : Type} {sA: Serializer A} a,
     deserialize_top deserialize (serialize_top (serialize a)) = Some a.
 Proof.
   intros.
-  apply serialize_deserialize_top_id' with (bytes := []).
+  apply serialize_deserialize_top_id'.
   apply serialize_deserialize_id_nil.
 Qed.
