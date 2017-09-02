@@ -10,7 +10,6 @@ Definition positive_serialize_top : positive -> IOStreamWriter.wire :=
 Definition positive_deserialize_top : IOStreamWriter.wire -> option positive :=
   deserialize_top deserialize.
 
-Extraction "runtime/ocaml/positive_serializer.ml"
-           positive_serialize_top positive_deserialize_top.
+Extraction "runtime/test/positive_serializer.ml" positive_serialize_top positive_deserialize_top.
 
 
