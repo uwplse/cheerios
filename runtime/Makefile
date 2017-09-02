@@ -22,7 +22,11 @@ tree_test.native: $(MLTREE) $(MLFILES) script/remove_module.pl test/tree_test.ml
 cheerios-runtime: $(MLFILES) ocaml/cheerios_runtime.mllib
 	$(OCAMLBUILD) cheerios_runtime.cma cheerios_runtime.cmxa cheerios_runtime.cmxs
 
-.PHONY: default clean cheerios-runtime $(MLPOSITIVE) $(MLTREE)
+test: positive_test.native tree_test.native
+	./positive_test.native
+	./tree_test.native
+
+.PHONY: default test clean cheerios-runtime $(MLPOSITIVE) $(MLTREE)
 
 clean:
 	ocamlbuild -clean
