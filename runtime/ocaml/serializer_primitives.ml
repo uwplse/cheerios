@@ -4,7 +4,7 @@ type iostream =
     | Seq of (unit -> iostream) * (unit -> iostream)
 
 type serializer = iostream
-type 'a deserializer = Bit_vector.reader -> 'a
+type 'a deserializer = in_channel -> 'a
 type wire = bytes
 
 exception Serialization_error of string
@@ -37,8 +37,9 @@ let rec putChars (s : char list) : serializer =
 
 (* deserializer *)
   
-let getByte r =
-  Bit_vector.pop r
+let getByte : char deserializer =
+  fun r -> try input_char r
+           with End_of_file -> raise (Serialization_error "end of file")
 
 let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
   fun r -> let v = d r in (f v) r
@@ -71,7 +72,7 @@ let map (f : 'a -> 'b) (d : 'a deserializer) : 'b deserializer =
 
 let rec fold (f : char -> 's -> ('s, 'a) fold_state)
                           (s : 's) : 'a deserializer =
-  fun r -> let b = (Bit_vector.pop r)
+  fun r -> let b = getByte r
            in match f b s with
               | Done a -> a
               | More s -> fold f s r
@@ -92,28 +93,15 @@ let getChars (n : int) : (char list) deserializer =
   
 (* wire *)
 
-let rec iostream_interp (s : serializer) (w : Bit_vector.writer) =
-  match s with
-  | Empty -> ()
-  | WriteByte b -> Bit_vector.pushBack w b
-  | Seq (t1, t2) -> (iostream_interp (t1 ()) w;
-                   iostream_interp (t2 ()) w)
-                    
-let wire_wrap (s : serializer) : wire =
-  let w = Bit_vector.makeWriter () in
-  (iostream_interp s w;
-   Bit_vector.writerToBytes w)
+let rec iostream_interp (s : serializer) =
+  fun out -> match s with
+             | Empty -> ()
+             | WriteByte b -> output_char out b
+             | Seq (t1, t2) -> (iostream_interp (t1 ()) out;
+                                iostream_interp (t2 ()) out)
 
-let size : wire -> int =
-  Bytes.length
+let to_channel (s : serializer) : out_channel -> unit =
+  iostream_interp s
 
-let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
-  try Some (d (Bit_vector.bytesToReader w))
-  with Serialization_error _ -> None
-
-let dump (w : wire) : unit =
-  let rec loop i =
-    if i < Bytes.length w
-    then (Printf.printf "%x %!" (Char.code (Bytes.get w i));
-          loop (i + 1)) in
-  loop 0; Printf.printf "\n%!"
+let from_channel (d : 'a deserializer) : in_channel -> 'a =
+  d
