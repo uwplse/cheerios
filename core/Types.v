@@ -35,6 +35,8 @@ Module Type WRITER.
   Parameter t : Type.
   Parameter wire : Type.
   Parameter wire_eq_dec : forall w w' : wire, {w = w'}+{w <> w'}.
+  Parameter out_channel : Type.
+  Parameter in_channel : Type.
 
   Parameter empty : t.
   Parameter append : (unit -> t) -> (unit -> t) -> t.
@@ -44,6 +46,12 @@ Module Type WRITER.
   Parameter unwrap : t -> list byte.
   Parameter wire_wrap : t -> wire.
   Parameter wire_unwrap : wire -> list byte.
+
+  Parameter out_channel_wrap : t -> out_channel.
+  Parameter channel_send : out_channel -> in_channel.
+  Parameter in_channel_unwrap : in_channel -> list byte.
+  Parameter channel_wrap_unwrap : forall x,
+      in_channel_unwrap (channel_send (out_channel_wrap x)) = unwrap x.
 
   Parameter empty_unwrap : unwrap empty = [].
   Parameter append_unwrap :
@@ -55,7 +63,7 @@ End WRITER.
 
 Module Type READER.
   Parameter t : Type -> Type.
-  
+
   Parameter getByte : t byte.
   Parameter unwrap : forall {A}, t A -> list byte -> option (A * list byte).
 
