@@ -1,10 +1,15 @@
-type iostream = 
+type iostream =
     | Empty
-    | WriteByte of char 
+    | WriteByte of char
     | Seq of (unit -> iostream) * (unit -> iostream)
 
+type byte_source =
+  | Vector of Bit_vector.reader
+  | Channel of in_channel
+
 type serializer = iostream
-type 'a deserializer = in_channel -> 'a
+type 'a deserializer = byte_source -> 'a
+
 type wire = bytes
 
 exception Serialization_error of string
@@ -36,10 +41,15 @@ let rec putChars (s : char list) : serializer =
   | c :: s -> append (fun () -> putByte c) (fun () -> putChars s)
 
 (* deserializer *)
-  
+
 let getByte : char deserializer =
-  fun r -> try input_char r
-           with End_of_file -> raise (Serialization_error "end of file")
+  fun src -> match src with
+             | Vector r ->
+                (try Bit_vector.pop r
+                 with Bit_vector.Out_of_bounds -> raise (Serialization_error "end of vector"))
+             | Channel channel ->
+              (try input_char channel
+               with End_of_file -> raise (Serialization_error "end of file"))
 
 let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
   fun r -> let v = d r in (f v) r
@@ -61,7 +71,7 @@ let getInt : int32 deserializer =
 
 let fail : 'a deserializer =
   fun r -> raise (Serialization_error "deserialization failed")
-  
+
 type ('s, 'a) fold_state =
   | Done of 'a
   | More of 's
@@ -89,19 +99,45 @@ let getChars (n : int) : (char list) deserializer =
          in if n = 0
             then Done (List.rev acc')
             else More (n - 1, acc')
-       in fold step (n - 1, [])    
-  
+       in fold step (n - 1, [])
+
 (* wire *)
 
-let rec iostream_interp (s : serializer) =
+let rec to_vector (s : serializer) =
+  fun w -> match s with
+           | Empty -> ()
+           | WriteByte b -> Bit_vector.pushBack w b
+           | Seq (t1, t2) -> (to_vector (t1 ()) w;
+                              to_vector (t2 ()) w)
+
+let wire_wrap (s : serializer) : wire =
+  let w = Bit_vector.makeWriter () in
+  (to_vector s w;
+   Bit_vector.writerToBytes w)
+
+let size : wire -> int =
+  Bytes.length
+
+let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
+  try Some (d (Vector (Bit_vector.bytesToReader w)))
+  with Serialization_error _ -> None
+
+(* channel *)
+
+let rec to_channel (s : serializer) =
   fun out -> match s with
              | Empty -> ()
              | WriteByte b -> output_char out b
-             | Seq (t1, t2) -> (iostream_interp (t1 ()) out;
-                                iostream_interp (t2 ()) out)
-
-let to_channel (s : serializer) : out_channel -> unit =
-  iostream_interp s
+             | Seq (t1, t2) -> (to_channel (t1 ()) out;
+                                to_channel (t2 ()) out)
 
 let from_channel (d : 'a deserializer) : in_channel -> 'a =
-  d
+  fun channel -> d (Channel channel)
+
+(* debug *)
+let dump (w : wire) : unit =
+  let rec loop i =
+    if i < Bytes.length w
+    then (Printf.printf "%x %!" (Char.code (Bytes.get w i));
+          loop (i + 1)) in
+  loop 0; Printf.printf "\n%!"

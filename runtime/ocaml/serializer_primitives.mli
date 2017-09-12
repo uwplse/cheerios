@@ -25,5 +25,11 @@ val fold : (char -> 's -> ('s, 'a) fold_state) -> 's -> 'a deserializer
 val getChars : int -> (char list) deserializer
 
 (* wire *)
+val wire_wrap : serializer -> wire
+val size : wire -> int
+val dump : wire -> unit
+val deserialize_top : 'a deserializer -> wire -> 'a option
+
+(* channel *)
 val to_channel : serializer -> out_channel -> unit
 val from_channel : 'a deserializer -> in_channel -> 'a
