@@ -6,7 +6,7 @@ let rec print_positive p =
   | XI p -> Printf.printf "XI "; print_positive p
   | XO p -> Printf.printf "XO "; print_positive p
   | XH -> Printf.printf "XH"
-  
+
 let make_positive n =
   let rec aux n flag k =
     if n = 0
@@ -16,7 +16,7 @@ let make_positive n =
                                  else fun p -> XO (k p)) in
   aux n true (fun p -> p)
 
-let test_cheerios p print =
+let test_cheerios_top p print =
   test_serialize_deserialize p
                              positive_serialize_top
                              (fun w -> match positive_deserialize_top w with
@@ -24,13 +24,37 @@ let test_cheerios p print =
                                        | None -> failwith "Deserialization failed")
                              print
 
-let test_main max =
+let test_cheerios_channel p print =
+  let out_chan = open_out test_file_path in
+  let write_out (p : positive) : in_channel =
+    Serializer_primitives.to_channel (positive_serialize p) out_chan;
+    flush out_chan; close_out out_chan;
+    open_in test_file_path in
+  let read_in (in_chan : in_channel) : positive =
+    let res = Serializer_primitives.from_channel positive_deserialize in_chan in
+    close_in in_chan;
+    res in
+  test_serialize_deserialize p
+                             write_out
+                             read_in
+                             print
+
+let test_top max =
   let rec loop n =
     if n < max
-    then (test_cheerios (make_positive n)
-                        (fun _ -> Printf.printf "make_positive %d%!" n);
+    then (test_cheerios_top (make_positive n)
+                        (fun _ -> Printf.printf "make_positive %d (vector)%!" n);
           loop (n + 1))
   in loop 0
+
+let test_channel max =
+  let rec loop n =
+    if n < max
+    then (test_cheerios_channel (make_positive n)
+                        (fun _ -> Printf.printf "make_positive %d (file)%!" n);
+          loop (n + 1))
+  in loop 0
+
 
 (* benchmarking *)
 let bench_main () =
@@ -41,5 +65,6 @@ let bench_main () =
                               | Some p -> p
                               | None -> failwith "Deserialization failed")
 
-let _ = test_main 1000;
+let _ = test_top 1000;
+        test_channel 1000;
         bench_main ()

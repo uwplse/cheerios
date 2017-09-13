@@ -95,3 +95,5 @@ let compare_time_loop make max interval num_tries serialize deserialize =
             deserialize;
           loop (n + interval)) in
   loop 0
+
+let test_file_path = "test/test_file"
