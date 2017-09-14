@@ -688,7 +688,9 @@ Module JSON.
       intros.
       destruct a;
         unfold tag_serialize, tag_deserialize;
-        cheerios_crush; simpl; cheerios_crush.
+        cheerios_crush;
+        unfold app;
+        cheerios_crush.
     Qed.
 
     Instance tag_Serializer : Serializer t.
