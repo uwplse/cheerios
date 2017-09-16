@@ -30,6 +30,8 @@ Extract Inlined Constant IOStreamWriter.wire_wrap_unwrap => "__".
 Extract Inlined Constant IOStreamWriter.unwrap => "Obj.magic".
 Extract Inlined Constant IOStreamWriter.wire_unwrap => "Obj.magic".
 
+Extract Inlined Constant IOStreamWriter.in_channel => "in_channel".
+
 (* ByteListReader *)
 Extract Inlined Constant ByteListReader.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant ByteListReader.bind => "Serializer_primitives.bind".
