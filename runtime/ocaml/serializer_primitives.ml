@@ -154,8 +154,9 @@ let rec to_channel (s : serializer) =
              | Seq (t1, t2) -> (to_channel (t1 ()) out;
                                 to_channel (t2 ()) out)
 
-let from_channel (d : 'a deserializer) : in_channel -> 'a =
-  fun channel -> d (Channel channel)
+let from_channel (d : 'a deserializer) : in_channel -> 'a option =
+  fun channel -> try Some (d (Channel channel))
+                 with Serialization_error _ -> None
 
 (* debug *)
 let dump (w : wire) : unit =

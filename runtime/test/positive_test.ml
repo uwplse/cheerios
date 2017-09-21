@@ -33,7 +33,9 @@ let test_cheerios_channel p print =
   let read_in (in_chan : in_channel) : positive =
     let res = Serializer_primitives.from_channel positive_deserialize in_chan in
     close_in in_chan;
-    res in
+    match res with
+    | Some p -> p
+    | None -> failwith "Deserialization failed" in
   test_serialize_deserialize p
                              write_out
                              read_in

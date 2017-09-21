@@ -35,7 +35,9 @@ let test_width_channel max_height width =
       let res = Serializer_primitives.from_channel tree_deserialize0 in_chan in
       close_in in_chan;
       Printf.printf("Closed! ");
-      res in
+      match res with
+      | Some t -> t
+      | None -> failwith "Deserialization failed"  in
     if i < max_height
     then (test_serialize_deserialize (make false i width)
                                      write_out

@@ -34,4 +34,4 @@ val deserialize_top : 'a deserializer -> wire -> 'a option
 
 (* channel *)
 val to_channel : serializer -> out_channel -> unit
-val from_channel : 'a deserializer -> in_channel -> 'a
+val from_channel : 'a deserializer -> in_channel -> 'a option
