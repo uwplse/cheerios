@@ -40,6 +40,16 @@ let rec putChars (s : char list) : serializer =
   | [] -> empty
   | c :: s -> append (fun () -> putByte c) (fun () -> putChars s)
 
+let rec putBytes (b : bytes) : serializer =
+  let b = Bytes.copy b in
+  let rec aux n =
+    if n = Bytes.length b
+    then empty
+    else append (fun () -> putByte (Bytes.get b n))
+                (fun () -> aux (n + 1)) in
+  append (fun () -> putInt (Int32.of_int (Bytes.length b)))
+         (fun () -> aux 0)
+
 (* deserializer *)
 
 let getByte : char deserializer =
@@ -100,6 +110,19 @@ let getChars (n : int) : (char list) deserializer =
             then Done (List.rev acc')
             else More (n - 1, acc')
        in fold step (n - 1, [])
+
+let getBytes : bytes deserializer =
+  bind getInt
+       (fun i -> let i = Int32.to_int i in
+                 if i = 0
+                 then ret Bytes.empty
+                 else let buf = Bytes.make i (Char.chr 0) in
+                      let step b n =
+                        Bytes.set buf n b;
+                        if n + 1 = i
+                        then Done buf
+                        else More (n + 1) in
+                      fold step 0)
 
 (* wire *)
 
