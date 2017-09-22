@@ -231,6 +231,18 @@ Proof.
   apply serialize_deserialize_id_nil.
 Qed.
 
+Axiom wire_serialize : IOStreamWriter.wire -> IOStreamWriter.t.
+Axiom wire_deserialize : ByteListReader.t IOStreamWriter.wire.
+Axiom wire_serialize_deserialize_id :
+  serialize_deserialize_id_spec wire_serialize wire_deserialize.
+
+Instance wire_Serializer : Serializer IOStreamWriter.wire.
+Proof.
+  exact {| serialize := wire_serialize;
+           deserialize := wire_deserialize;
+           serialize_deserialize_id := wire_serialize_deserialize_id |}.
+Qed.
+
 (* top-level interface for output and input channels *)
 
 Definition to_channel : IOStreamWriter.t -> IOStreamWriter.out_channel :=
