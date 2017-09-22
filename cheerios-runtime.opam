@@ -10,11 +10,9 @@ license: "BSD"
 build: [
   [ make "-j%{jobs}%" "-C" "runtime" ]
 ]
-build-test: [ make "-C" "runtime" "test" ]
 available: [ ocaml-version >= "4.02.3" ]
 depends: [
   "ocamlbuild" {build}
-  "ounit" {test & >= "2.0.0"}
 ]
 
 authors: [
