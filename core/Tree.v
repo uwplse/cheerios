@@ -5,6 +5,7 @@ Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 
 Require Import List.
+Require Import FMapPositive.
 
 Import ListNotations.
 Import DeserializerNotations.
@@ -687,7 +688,9 @@ Module JSON.
       intros.
       destruct a;
         unfold tag_serialize, tag_deserialize;
-        cheerios_crush; simpl; cheerios_crush.
+        cheerios_crush;
+        unfold app;
+        cheerios_crush.
     Qed.
 
     Instance tag_Serializer : Serializer t.
@@ -1008,3 +1011,60 @@ Module JSON.
         congruence.
   Qed.
 End JSON.
+
+Section Ptree.
+  Context {A : Type} {sA : Serializer A}.
+
+  Fixpoint tree_of_ptree (t : PositiveMap.t A) : tree (option A) :=
+    match t with
+    | PositiveMap.Leaf _ => atom None
+    | PositiveMap.Node t1 v t2 =>
+      node [tree_of_ptree t1; atom v; tree_of_ptree t2]
+    end.
+
+  Fixpoint ptree_of_tree (t : tree (option A)) : option (PositiveMap.t A) :=
+    match t with
+    | atom None => Some (PositiveMap.Leaf A)
+    | node [t1; atom v; t2] =>
+      match ptree_of_tree t1, ptree_of_tree t2 with
+      | Some pt1, Some pt2 =>
+        Some (PositiveMap.Node pt1 v pt2)
+      | _, _ => None
+      end
+    | _ => None
+    end.
+
+  Lemma tree_of_ptree_ptree_of_tree :
+    forall t, ptree_of_tree (tree_of_ptree t) = Some t.
+  Proof.
+    induction t using PositiveMap.tree_ind; auto.
+    simpl.
+    rewrite IHt1.
+    rewrite IHt2.
+    reflexivity.
+  Qed.
+
+  Definition ptree_serialize (t : PositiveMap.t A) : IOStreamWriter.t :=
+    serialize (tree_of_ptree t).
+
+  Definition ptree_deserialize : ByteListReader.t (PositiveMap.t A) :=
+    t <- deserialize;;
+    match ptree_of_tree t with
+    | Some pt => ByteListReader.ret pt
+    | None => ByteListReader.error
+    end.
+
+  Lemma ptree_serialize_deserialize_id :
+    serialize_deserialize_id_spec ptree_serialize ptree_deserialize.
+  Proof.
+    unfold ptree_serialize, ptree_deserialize. cheerios_crush.
+    rewrite tree_of_ptree_ptree_of_tree.
+    cheerios_crush.
+  Qed.
+
+  Global Instance ptree_Serializer : Serializer (PositiveMap.t A) :=
+    {| serialize := ptree_serialize;
+       deserialize := ptree_deserialize;
+       serialize_deserialize_id := ptree_serialize_deserialize_id
+    |}.
+End Ptree.

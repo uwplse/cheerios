@@ -1,10 +1,15 @@
-type iostream = 
+type iostream =
     | Empty
-    | WriteByte of char 
+    | WriteByte of char
     | Seq of (unit -> iostream) * (unit -> iostream)
 
+type byte_source =
+  | Vector of Bit_vector.reader
+  | Channel of in_channel
+
 type serializer = iostream
-type 'a deserializer = Bit_vector.reader -> 'a
+type 'a deserializer = byte_source -> 'a
+
 type wire = bytes
 
 exception Serialization_error of string
@@ -35,10 +40,26 @@ let rec putChars (s : char list) : serializer =
   | [] -> empty
   | c :: s -> append (fun () -> putByte c) (fun () -> putChars s)
 
+let rec putBytes (b : bytes) : serializer =
+  let b = Bytes.copy b in
+  let rec aux n =
+    if n = Bytes.length b
+    then empty
+    else append (fun () -> putByte (Bytes.get b n))
+                (fun () -> aux (n + 1)) in
+  append (fun () -> putInt (Int32.of_int (Bytes.length b)))
+         (fun () -> aux 0)
+
 (* deserializer *)
-  
-let getByte r =
-  Bit_vector.pop r
+
+let getByte : char deserializer =
+  fun src -> match src with
+             | Vector r ->
+                (try Bit_vector.pop r
+                 with Bit_vector.Out_of_bounds -> raise (Serialization_error "end of vector"))
+             | Channel channel ->
+              (try input_char channel
+               with End_of_file -> raise (Serialization_error "end of file"))
 
 let bind (d : 'a deserializer) (f : 'a -> 'b deserializer) : 'b deserializer =
   fun r -> let v = d r in (f v) r
@@ -60,7 +81,7 @@ let getInt : int32 deserializer =
 
 let fail : 'a deserializer =
   fun r -> raise (Serialization_error "deserialization failed")
-  
+
 type ('s, 'a) fold_state =
   | Done of 'a
   | More of 's
@@ -71,7 +92,7 @@ let map (f : 'a -> 'b) (d : 'a deserializer) : 'b deserializer =
 
 let rec fold (f : char -> 's -> ('s, 'a) fold_state)
                           (s : 's) : 'a deserializer =
-  fun r -> let b = (Bit_vector.pop r)
+  fun r -> let b = getByte r
            in match f b s with
               | Done a -> a
               | More s -> fold f s r
@@ -88,29 +109,56 @@ let getChars (n : int) : (char list) deserializer =
          in if n = 0
             then Done (List.rev acc')
             else More (n - 1, acc')
-       in fold step (n - 1, [])    
-  
+       in fold step (n - 1, [])
+
+let getBytes : bytes deserializer =
+  bind getInt
+       (fun i -> let i = Int32.to_int i in
+                 if i = 0
+                 then ret Bytes.empty
+                 else let buf = Bytes.make i (Char.chr 0) in
+                      let step b n =
+                        Bytes.set buf n b;
+                        if n + 1 = i
+                        then Done buf
+                        else More (n + 1) in
+                      fold step 0)
+
 (* wire *)
 
-let rec iostream_interp (s : serializer) (w : Bit_vector.writer) =
-  match s with
-  | Empty -> ()
-  | WriteByte b -> Bit_vector.pushBack w b
-  | Seq (t1, t2) -> (iostream_interp (t1 ()) w;
-                   iostream_interp (t2 ()) w)
-                    
+let rec to_vector (s : serializer) =
+  fun w -> match s with
+           | Empty -> ()
+           | WriteByte b -> Bit_vector.pushBack w b
+           | Seq (t1, t2) -> (to_vector (t1 ()) w;
+                              to_vector (t2 ()) w)
+
 let wire_wrap (s : serializer) : wire =
   let w = Bit_vector.makeWriter () in
-  (iostream_interp s w;
+  (to_vector s w;
    Bit_vector.writerToBytes w)
 
 let size : wire -> int =
   Bytes.length
 
 let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
-  try Some (d (Bit_vector.bytesToReader w))
+  try Some (d (Vector (Bit_vector.bytesToReader w)))
   with Serialization_error _ -> None
 
+(* channel *)
+
+let rec to_channel (s : serializer) =
+  fun out -> match s with
+             | Empty -> ()
+             | WriteByte b -> output_char out b
+             | Seq (t1, t2) -> (to_channel (t1 ()) out;
+                                to_channel (t2 ()) out)
+
+let from_channel (d : 'a deserializer) : in_channel -> 'a option =
+  fun channel -> try Some (d (Channel channel))
+                 with Serialization_error _ -> None
+
+(* debug *)
 let dump (w : wire) : unit =
   let rec loop i =
     if i < Bytes.length w

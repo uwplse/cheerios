@@ -1,7 +1,8 @@
 _build
 positive_test.native
 tree_test.native
-ocaml/positive_serializer.ml
-ocaml/positive_serializer.mli
-ocaml/tree_serializer.ml
-ocaml/tree_serializer.mli
+test/positive_serializer.ml
+test/positive_serializer.mli
+test/tree_serializer.ml
+test/tree_serializer.mli
+test/test_file

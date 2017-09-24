@@ -16,22 +16,22 @@ $(info $(CHECKPATH))
 $(warning checkpath reported an error)
 endif
 
-MLPOSITIVEFILES = runtime/ocaml/positive_serializer.ml runtime/ocaml/positive_serializer.mli
-MLTREEFILES = runtime/ocaml/tree_serializer.ml runtime/ocaml/tree_serializer.mli
+MLPOSITIVE = runtime/test/positive_serializer.ml runtime/test/positive_serializer.mli
+MLTREE = runtime/test/tree_serializer.ml runtime/test/tree_serializer.mli
 
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: _CoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq \
-	  -extra '$(MLPOSITIVEFILES)' \
+	  -extra '$(MLPOSITIVE)' \
 	    'runtime/coq/ExtractPositiveSerializer.v runtime/coq/ExtractPositiveSerializerDeps.vo' \
 	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v' \
-	  -extra '$(MLTREEFILES)' \
+	  -extra '$(MLTREE)' \
 	    'runtime/coq/ExtractTreeSerializer.v runtime/coq/ExtractTreeSerializerDeps.vo' \
 	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractTreeSerializer.v'	
 
-$(MLPOSITIVEFILES) $(MLTREEFILES): Makefile.coq
+$(MLPOSITIVE) $(MLTREE): Makefile.coq
 	$(MAKE) -f Makefile.coq $@
 
 install: Makefile.coq
@@ -48,5 +48,5 @@ distclean: clean
 
 .PHONY: default clean install distclean
 
-.NOTPARALLEL: $(MLPOSITIVEFILES)
-.NOTPARALLEL: $(MLTREEFILES)
+.NOTPARALLEL: $(MLPOSITIVE)
+.NOTPARALLEL: $(MLTREE)
