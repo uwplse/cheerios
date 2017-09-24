@@ -42,6 +42,7 @@ Module IOStreamWriter : WRITER.
   Lemma putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
   Proof. reflexivity. Qed.
 
+  (* wire *)
   Definition wire := list byte.
 
   Definition wire_eq_dec := list_eq_dec byte_eq_dec.
@@ -52,8 +53,21 @@ Module IOStreamWriter : WRITER.
 
   Lemma wire_wrap_unwrap : forall x, wire_unwrap (wire_wrap x) = unwrap x.
   Proof. reflexivity. Qed.
-End IOStreamWriter.
 
+  (* channel *)
+  Definition out_channel := list byte.
+  Definition in_channel := list byte.
+
+  Definition out_channel_wrap s := unwrap s.
+  Definition channel_send (o : out_channel) : in_channel := o.
+  Definition in_channel_unwrap (i : in_channel) : list byte := i.
+
+  Theorem channel_wrap_unwrap : forall x,
+      in_channel_unwrap (channel_send (out_channel_wrap x)) = unwrap x.
+  Proof.
+    reflexivity.
+  Qed.
+End IOStreamWriter.
 
 Notation "a +$+ b" := (IOStreamWriter.append (fun _ => a) (fun _ => b))
                       (at level 60, right associativity).
@@ -170,6 +184,8 @@ Proof.
   now rewrite app_nil_r in *.
 Qed.
 
+(* top-level interface for wire type *)
+
 Definition serialize_top (s : IOStreamWriter.t) : IOStreamWriter.wire :=
   IOStreamWriter.wire_wrap s.
 
@@ -213,4 +229,37 @@ Proof.
   intros.
   apply serialize_deserialize_top_id'.
   apply serialize_deserialize_id_nil.
+Qed.
+
+Axiom wire_serialize : IOStreamWriter.wire -> IOStreamWriter.t.
+Axiom wire_deserialize : ByteListReader.t IOStreamWriter.wire.
+Axiom wire_serialize_deserialize_id :
+  serialize_deserialize_id_spec wire_serialize wire_deserialize.
+
+Instance wire_Serializer : Serializer IOStreamWriter.wire.
+Proof.
+  exact {| serialize := wire_serialize;
+           deserialize := wire_deserialize;
+           serialize_deserialize_id := wire_serialize_deserialize_id |}.
+Qed.
+
+(* top-level interface for output and input channels *)
+
+Definition to_channel : IOStreamWriter.t -> IOStreamWriter.out_channel :=
+  IOStreamWriter.out_channel_wrap.
+
+Definition from_channel {A} (d : ByteListReader.t A) (i : IOStreamWriter.in_channel) :=
+  match ByteListReader.unwrap d (IOStreamWriter.in_channel_unwrap i) with
+  | Some (a, []) => Some a
+  | _ => None
+  end.
+
+Theorem serialize_deserialize_channel_id : forall {A} {sA : Serializer A} a,
+    from_channel deserialize (IOStreamWriter.channel_send (to_channel (serialize a))) = Some a.
+Proof.
+  intros.
+  unfold to_channel, from_channel.
+  rewrite IOStreamWriter.channel_wrap_unwrap.
+  rewrite serialize_deserialize_id_nil.
+  reflexivity.
 Qed.

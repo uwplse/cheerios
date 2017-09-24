@@ -11,6 +11,7 @@ env:
   matrix:
     - COQ_VERSION=8.5.3
     - COQ_VERSION=8.6
+    - COQ_VERSION=8.6.1
 script: bash -ex .travis-ci.sh
 sudo: false
 notifications:

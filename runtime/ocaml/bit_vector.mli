@@ -1,6 +1,8 @@
 type writer
 type reader
              
+exception Out_of_bounds
+
 val makeWriter : unit -> writer
 
 val pushBack : writer -> char -> unit

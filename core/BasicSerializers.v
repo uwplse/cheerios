@@ -323,13 +323,11 @@ Proof.
   now rewrite Nnat.Nat2N.id.
 Qed.
 
-Instance nat_Serializer : Serializer nat.
-Proof.
-  exact {| serialize := nat_serialize;
-           deserialize := nat_deserialize;
-           serialize_deserialize_id := nat_serialize_deserialize_id
-        |}.
-Qed.
+Instance nat_Serializer : Serializer nat :=
+  {| serialize := nat_serialize;
+     deserialize := nat_deserialize;
+     serialize_deserialize_id := nat_serialize_deserialize_id
+  |}.
 
 (* Serializer for the standard library's Fin.t based on converting to nat. *)
 Definition Fin_serialize {n} (x : Fin.t n) : IOStreamWriter.t :=
@@ -417,4 +415,3 @@ exact  {| serialize := ascii_serialize;
           serialize_deserialize_id := ascii_serialize_deserialize_id
        |}.
 Qed.
-

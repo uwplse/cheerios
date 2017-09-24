@@ -30,6 +30,8 @@ Extract Inlined Constant IOStreamWriter.wire_wrap_unwrap => "__".
 Extract Inlined Constant IOStreamWriter.unwrap => "Obj.magic".
 Extract Inlined Constant IOStreamWriter.wire_unwrap => "Obj.magic".
 
+Extract Inlined Constant IOStreamWriter.in_channel => "in_channel".
+
 (* ByteListReader *)
 Extract Inlined Constant ByteListReader.getByte => "Serializer_primitives.getByte".
 Extract Inlined Constant ByteListReader.bind => "Serializer_primitives.bind".
@@ -46,4 +48,9 @@ Extract Inlined Constant ByteListReader.fold_unwrap => "__".
 
 Extract Inlined Constant ByteListReader.unwrap => "Obj.magic".
 
+Extract Inlined Constant wire_serialize => "Serializer_primitives.putBytes".
+Extract Inlined Constant wire_deserialize => "Serializer_primitives.getBytes".
 Extract Inlined Constant deserialize_top => "Serializer_primitives.deserialize_top".
+
+Extract Inlined Constant to_channel => "Serializer_primitives.from_channel".
+Extract Inlined Constant from_channel => "Serializer_primitives.from_channel".
