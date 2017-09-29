@@ -106,7 +106,7 @@ Section PositiveInductionPrinciple.
     (forall q, ((forall p, le_pos p q -> P p) -> P (xI q)) /\
                ((forall p, le_pos p q -> P p) -> P (xO q))) ->
     (forall q, (forall p, le_pos p q -> P p)).
-  Proof.
+  Proof using.
     induction q;
       intros;
       inversion H1;
@@ -117,7 +117,7 @@ Section PositiveInductionPrinciple.
 
   Lemma weaken_pos :
     (forall q, (forall p, le_pos p q -> P p)) -> forall p, P p.
-  Proof.
+  Proof using.
     intros.
     apply (H p p).
     constructor.
@@ -128,7 +128,7 @@ Section PositiveInductionPrinciple.
     (forall q, ((forall p, le_pos p q -> P p) -> P (xI q)) /\
                ((forall p, le_pos p q -> P p) -> P (xO q))) ->
     forall p, P p.
-  Proof.
+  Proof using.
     intros.
     apply weaken_pos.
     now apply strongind_pos_aux.

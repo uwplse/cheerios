@@ -44,7 +44,7 @@ Section BasicCombinators.
 
   Lemma option_serialize_deserialize_id :
     serialize_deserialize_id_spec option_serialize option_deserialize.
-  Proof.
+  Proof using.
     intros.
     unfold option_serialize, option_deserialize.
     destruct a;
@@ -70,7 +70,7 @@ Section BasicCombinators.
 
   Lemma pair_serialize_deserialize_id :
     serialize_deserialize_id_spec pair_serialize pair_deserialize.
-  Proof.
+  Proof using.
     intros.
     unfold pair_serialize, pair_deserialize.
     destruct a.
@@ -101,7 +101,7 @@ Section BasicCombinators.
 
   Lemma sum_serialize_deserialize_id :
     serialize_deserialize_id_spec sum_serialize sum_deserialize.
-  Proof.
+  Proof using.
     unfold sum_serialize, sum_deserialize.
     destruct a; cheerios_crush.
   Qed.
@@ -149,7 +149,7 @@ Section BasicCombinators.
     forall l bin, ByteListReader.unwrap (list_deserialize_rec (length l))
                                 (IOStreamWriter.unwrap (list_serialize_rec l) ++ bin)
                   = Some(l, bin).
-  Proof.
+  Proof using.
     intros.
     unfold list_serialize_rec.
     cheerios_crush. simpl.
@@ -171,7 +171,7 @@ Section BasicCombinators.
       (IOStreamWriter.unwrap
          (list_serialize_rec (l ++ [a]))) =
       (IOStreamWriter.unwrap (list_serialize_rec l) ++ IOStreamWriter.unwrap (serialize a)).
-  Proof.
+  Proof using.
     intros.
     induction l.
     - simpl. cheerios_crush.
@@ -185,7 +185,7 @@ Section BasicCombinators.
 
   Lemma list_serialize_deserialize_id :
     serialize_deserialize_id_spec list_serialize list_deserialize.
-  Proof.
+  Proof using.
     unfold list_serialize, list_deserialize.
     cheerios_crush.
     now rewrite list_serialize_deserialize_id_rec.
@@ -195,7 +195,7 @@ Section BasicCombinators.
     forall l bin, ByteListReader.unwrap (list_deserialize_rec' (length l))
                                 (IOStreamWriter.unwrap (list_serialize_rec l) ++ bin)
                   = Some(l, bin).
-  Proof.
+  Proof using.
     induction l using rev_ind.
     - simpl. cheerios_crush.
     - intros.
@@ -235,7 +235,7 @@ Section BasicCombinators.
 
   Lemma vector_serialize_deserialize_id :
     forall n, serialize_deserialize_id_spec vector_serialize (@vector_deserialize n).
-  Proof.
+  Proof using.
     induction n; intros.
     - destruct a using Vector.case0. auto. unfold vector_serialize,  vector_deserialize.
       cheerios_crush.

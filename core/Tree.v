@@ -371,7 +371,7 @@ Section serializer.
                      (ByteListReader.fold deserialize_tree_shape_step
                                   ((shape t :: j) :: js)) bytes
       end.
-  Proof.
+  Proof using.
     induction t using tree_rect with
         (P_list := fun l =>
                      (* We need to extend the statement to a list of subtrees for the mutual induction
@@ -423,7 +423,7 @@ Section serializer.
       ByteListReader.unwrap deserialize_tree_shape
                     (IOStreamWriter.unwrap (serialize_tree_shape t) ++ bytes)
       = Some (shape t, bytes).
-  Proof.
+  Proof using.
     intros.
     unfold deserialize_tree_shape.
     now rewrite shape_aux.
@@ -474,7 +474,7 @@ Section serializer.
       ByteListReader.unwrap (deserialize_tree_elements (shape t))
                     (IOStreamWriter.unwrap (serialize_tree_elements t) ++ bytes) =
       Some (t, bytes).
-  Proof.
+  Proof using.
     induction t using tree_rect with
         (P_list := fun l => forall bytes,
                        ByteListReader.unwrap (deserialize_tree_elements_list (List.map shape l))
@@ -521,7 +521,7 @@ Section serializer.
    *)
   Lemma tree_serialize_deserialize_id :
     serialize_deserialize_id_spec tree_serialize tree_deserialize.
-  Proof.
+  Proof using.
     unfold tree_serialize, tree_deserialize. cheerios_crush.
     rewrite serialize_deserialize_shape_id.
     now rewrite serialize_deserialize_tree_elements_id.
@@ -549,7 +549,7 @@ Module sexp.
     Lemma foo:
       ByteListReader.unwrap deserialize
                     (IOStreamWriter.unwrap (serialize id)) = Some (id, []).
-    Proof.
+    Proof using.
       now rewrite serialize_deserialize_id_nil.
     Qed.
     (*
@@ -563,7 +563,7 @@ Module sexp.
            %string.
 
     Lemma foo' : ByteListReader.unwrap deserialize (IOStreamWriter.unwrap (serialize Y)) = Some (Y, []).
-    Proof.
+    Proof using.
       now rewrite serialize_deserialize_id_nil.
     Qed.
   End examples.
@@ -684,7 +684,7 @@ Module JSON.
 
     Lemma tag_serialize_deserialize_id :
       serialize_deserialize_id_spec tag_serialize tag_deserialize.
-    Proof.
+    Proof using.
       intros.
       destruct a;
         unfold tag_serialize, tag_deserialize;
@@ -803,7 +803,7 @@ Module JSON.
 
     Lemma treeify_untreeify_id : forall j : json.t,
         treeify_untreeify_aux j.
-    Proof.
+    Proof using.
       induction j using json.json_rect with
           (P_list := fun l => untreeify_list (List.map json_treeify l) = Some l)
           (P_list' := fun l => untreeify_obj_list (obj_list_to_tree_list l) = Some l);
@@ -830,7 +830,7 @@ Module JSON.
 
     Lemma json_serialize_deserialize_id :
       serialize_deserialize_id_spec json_serialize json_deserialize.
-    Proof.
+    Proof using.
       intros.
       unfold json_serialize, json_deserialize.
       cheerios_crush.
@@ -850,7 +850,7 @@ Module JSON.
     if (String.string_dec s s') then true else false.
 
   Lemma string_eqb_true : forall s s', string_eqb s s' = true -> s = s'.
-  Proof.
+  Proof using.
     intros.
     unfold string_eqb in H.
     destruct (String.string_dec s s').
@@ -859,7 +859,7 @@ Module JSON.
   Qed.
 
   Lemma string_eqb_refl : forall s, string_eqb s s = true.
-  Proof.
+  Proof using.
     intros.
     unfold string_eqb.
     destruct (String.string_dec s s); congruence.
@@ -906,8 +906,7 @@ Module JSON.
       end.
 
   Lemma json_eqb_eq : forall j j', json_eqb j j' = true -> j = j'.
-  Proof.
-
+  Proof using.
     induction j using json.json_rect with (P_list := fun l =>
                                                        forall l', loop_arr l l' = true -> l = l')
                                           (P_list' := fun l =>
@@ -969,7 +968,7 @@ Module JSON.
   Qed.
 
   Lemma json_eq_eqb : forall j j', j = j' -> json_eqb j j' = true.
-  Proof.
+  Proof using.
     induction j using json.json_rect with (P_list := fun l => loop_arr l l = true)
                                           (P_list' := fun l => loop_obj l l = true).
     - reflexivity.
@@ -1002,7 +1001,7 @@ Module JSON.
   Qed.
 
   Lemma json_eq_dec : forall j j' : json.t, {j = j'} + {j <> j'}.
-  Proof.
+  Proof using.
     intros.
     destruct (json_eqb j j') eqn:H.
     + left. now apply json_eqb_eq.
@@ -1036,7 +1035,7 @@ Section Ptree.
 
   Lemma tree_of_ptree_ptree_of_tree :
     forall t, ptree_of_tree (tree_of_ptree t) = Some t.
-  Proof.
+  Proof using.
     induction t using PositiveMap.tree_ind; auto.
     simpl.
     rewrite IHt1.
@@ -1056,7 +1055,7 @@ Section Ptree.
 
   Lemma ptree_serialize_deserialize_id :
     serialize_deserialize_id_spec ptree_serialize ptree_deserialize.
-  Proof.
+  Proof using.
     unfold ptree_serialize, ptree_deserialize. cheerios_crush.
     rewrite tree_of_ptree_ptree_of_tree.
     cheerios_crush.
