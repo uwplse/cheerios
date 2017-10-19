@@ -14,14 +14,16 @@ Module IOStreamWriter : WRITER.
 
   Definition t := iostream.
 
-  Fixpoint iostreamDenote (i : iostream) : list byte :=
+  Fixpoint iostreamDenote (i : iostream) : list byte * nat :=
     match i with
-    | Empty => []
-    | WriteByte b => [b]
-    | Seq i1 i2 => iostreamDenote i1 ++ iostreamDenote (i2 tt)
+    | Empty => ([], 0)
+    | WriteByte b => ([b], 1)
+    | Seq i1 i2 => match iostreamDenote i1, iostreamDenote (i2 tt) with
+                   | (l1, n1), (l2, n2) => (l1 ++ l2, n1 + n2)
+                   end
     end.
 
-  Definition unwrap := iostreamDenote.
+  Definition unwrap i := fst (iostreamDenote i).
 
   (* serializers *)
   Definition empty : iostream := Empty.
@@ -37,7 +39,14 @@ Module IOStreamWriter : WRITER.
 
   Lemma append_unwrap :
     forall x y : unit -> t, unwrap (append x y) = unwrap (x tt) ++ unwrap (y tt).
-  Proof. reflexivity. Qed.
+  Proof.
+    intros.
+    unfold unwrap.
+    simpl.
+    destruct (iostreamDenote (x tt)).
+    destruct (iostreamDenote (y tt)).
+    reflexivity.
+  Qed.
 
   Lemma putByte_unwrap : forall (a : byte), unwrap (putByte a) = [a].
   Proof. reflexivity. Qed.
@@ -127,6 +136,24 @@ Module ByteListReader : READER.
                 | Error => None
                 end
     end.
+
+  Fixpoint fold_fuel {S A}
+           (f : byte -> S -> fold_state S A)
+           (g : S -> option A)
+           (s : S) (l : list byte) (fuel : nat) :=
+    match fuel with
+    | O => option_map (fun v => (v, l)) (g s)
+    | S n =>
+      match l with
+      | [] => None
+      | b :: l => match f b s with
+                  | Done a => Some (a, l)
+                  | More s => fold_fuel f g s l n
+                  | Error => None
+                  end
+      end
+    end.
+
 
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
