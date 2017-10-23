@@ -1,7 +1,7 @@
 include Makefile.detect-coq-version
 
-ifeq (,$(filter $(COQVERSION),8.5 8.6 8.7 trunk))
-$(error "Cheerios is only compatible with Coq version 8.5 or later")
+ifeq (,$(filter $(COQVERSION),8.6 8.7 trunk))
+$(error "Cheerios is only compatible with Coq version 8.6.1 or later")
 endif
 
 COQPROJECT_EXISTS := $(wildcard _CoqProject)
