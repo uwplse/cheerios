@@ -126,8 +126,10 @@ Module ByteListReader : READER.
     reflexivity.
   Qed.
 
+  Definition state_machine (S A : Type) := byte -> S -> fold_state S A.
+
   Fixpoint fold {S A}
-           (f : byte -> S -> fold_state S A) (s : S) (l : list byte) :=
+           (f : state_machine S A) (s : S) (l : list byte) :=
     match l with
     | [] => None
     | b :: l => match f b s with
@@ -137,22 +139,104 @@ Module ByteListReader : READER.
                 end
     end.
 
-  Fixpoint fold_fuel {S A}
-           (f : byte -> S -> fold_state S A)
-           (g : S -> option A)
-           (s : S) (l : list byte) (fuel : nat) :=
-    match fuel with
-    | O => option_map (fun v => (v, l)) (g s)
-    | S n =>
-      match l with
-      | [] => None
-      | b :: l => match f b s with
-                  | Done a => Some (a, l)
-                  | More s => fold_fuel f g s l n
-                  | Error => None
-                  end
-      end
-    end.
+  Definition one : state_machine unit byte :=
+    fun b _ => Done b.
+
+  Lemma fold_one : forall (bytes : list byte),
+      unwrap (fold one tt) bytes = match bytes with
+                                   | [] => None
+                                   | b :: l => Some (b, l)
+                                   end.
+  Proof.
+    destruct bytes;
+      reflexivity.
+  Qed.
+
+  Definition pair {S1 A S2 B}
+             (a : state_machine S1 A)
+             (b : state_machine S2 B) : state_machine (S1 * S2 + A * S2) (A * B) :=
+    fun byte s =>
+      match s with
+      | inl (s1, s2) =>
+        match a byte s1 with
+        | Done x => More (inr (x, s2))
+        | More s1 => More (inl (s1, s2))
+        | Error => Error
+        end
+      | inr (x, s2) =>
+        match b byte s2 with
+        | Done b => Done (x, b)
+        | More s2 => More (inr (x, s2))
+        | Error => Error
+        end
+      end.
+
+  Lemma fold_pair_inr : forall S1 A S2 B
+                               (a : state_machine S1 A) (b : state_machine S2 B)
+                               x bytes s,
+      (fold (pair a b) (inr (x, s))) bytes =
+      match fold b s bytes with
+      | Some (y, l) => Some ((x, y), l)
+      | Nones => None
+      end.
+  Proof.
+    intros until bytes.
+    induction bytes.
+    - reflexivity.
+    - simpl.
+      intros s.
+      destruct b;
+        auto.
+  Qed.
+
+  Lemma fold_pair_inl : forall S1 A S2 B
+                               (a : state_machine S1 A) (b : state_machine S2 B)
+                               bytes s1 s2,
+      (fold (pair a b) (inl (s1, s2))) bytes =
+      match fold a s1 bytes with
+      | Some (x, l) => fold (pair a b) (inr (x, s2)) l
+      | None => None
+      end.
+  Proof.
+    intros until bytes.
+    induction bytes.
+    - reflexivity.
+    - intros.
+      simpl.
+      destruct a; auto.
+  Qed.
+
+  Definition sequence {S1 A S2 B}
+             (a : state_machine S1 A)
+             (b : state_machine S2 B) : state_machine (S1 * (A -> S2) + S2) B :=
+    fun byte s =>
+      match s with
+      | inl (s1, f) =>
+        match a byte s1 with
+        | Done x => More (inr (f x))
+        | More s1 => More (inl (s1, f))
+        | Error => Error
+        end
+      | inr s2 =>
+        match b byte s2 with
+        | Done b => Done b
+        | More s2 => More (inr s2)
+        | Error => Error
+        end
+      end.
+
+  Definition countdown {S A}
+             (f : S -> A)
+             (a : state_machine S A) : state_machine (S * nat) A :=
+    fun byte s =>
+      match s with
+      | (s, O) => Done (f s)
+      | (s, S n) => match a byte s with
+                    | Done a => Done a
+                    | More s => More (s, n)
+                    | Error => Error
+                    end
+      end.
 
 
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
