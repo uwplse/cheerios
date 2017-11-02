@@ -206,6 +206,7 @@ Module ByteListReader : READER.
       destruct a; auto.
   Qed.
 
+
   Definition sequence {S1 A S2 B}
              (a : state_machine S1 A)
              (b : state_machine S2 B) : state_machine (S1 * (A -> S2) + S2) B :=
@@ -225,6 +226,44 @@ Module ByteListReader : READER.
         end
       end.
 
+  Lemma run_sequence_inl : forall S1 A S2 B
+                                  (a : state_machine S1 A)
+                                  (b : state_machine S2 B)
+                                  bytes f s,
+      (fold (sequence a b) (inl (s, f))) bytes =
+      match fold a s bytes with
+      | Some (x, bytes) => fold (sequence a b) (inr (f x)) bytes
+      | None => None
+      end.
+  Proof.
+    induction bytes.
+    - reflexivity.
+    - intros.
+      simpl.
+      destruct a;
+        auto.
+  Qed.
+
+  Lemma run_sequence_inr : forall S1 A S2 B
+                                  (a : state_machine S1 A)
+                                  (b : state_machine S2 B)
+                                  bytes s,
+      fold (sequence a b) (inr s) bytes = fold b s bytes.
+  Proof.
+    induction bytes; simpl; intros.
+    - reflexivity.
+    - destruct b; auto.
+  Qed.
+
+  Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S * list A) (list A) :=
+    fun byte s => match s with
+                  | (s, l) => match a byte s with
+                              | Done x => More (init, x :: l)
+                              | More s => More (s, l)
+                              | Error => Error
+                              end
+                  end.
+  
   Definition countdown {S A}
              (f : S -> A)
              (a : state_machine S A) : state_machine (S * nat) A :=
@@ -238,6 +277,7 @@ Module ByteListReader : READER.
                     end
       end.
 
+  Definition list {S A} (a : state_machine S A) (init : S) := countdown snd (list_acc a init).
 
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
