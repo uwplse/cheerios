@@ -299,3 +299,43 @@ Proof.
            serialize_deserialize_id := string_serialize_deserialize_id
         |}.
 Qed.
+
+
+(* state machines *)
+
+Lemma pair_spec : forall {S1 A S2 B : Type}
+                         (sA : A -> IOStreamWriter.t) (sB : B -> IOStreamWriter.t)
+                         (mA : state_machine S1 A) (mB : state_machine S2 B)
+                         (init1 : S1) (init2 : S2),
+    (serialize_deserialize_id_spec sA (ByteListReader.fold mA init1)) ->
+    (serialize_deserialize_id_spec sB (ByteListReader.fold mB init2)) ->
+    (serialize_deserialize_id_spec (fun (x : A * B) =>
+                                      match x with
+                                      | (a, b) => sA a +$+ sB b
+                                      end)
+                                   (ByteListReader.fold (ByteListReader.pair mA mB)
+                                                        (inl (init1, init2)))).
+Proof.
+  intros.
+  destruct a.
+  rewrite ByteListReader.fold_pair_inl.
+  rewrite IOStreamWriter.append_unwrap, app_ass.
+  rewrite H.
+  rewrite ByteListReader.fold_pair_inr.
+  rewrite H0.
+  reflexivity.
+Qed.
+
+Lemma countdown_exact :
+  forall {S A : Type}
+         (sA : A -> IOStreamWriter.t) (a : A)
+         (m : state_machine S A) (init : S) (f : S -> option A)
+         (bin bin' : list byte),
+    ByteListReader.unwrap (ByteListReader.fold m init)
+                          (IOStreamWriter.unwrap (sA a) ++ bin) = Some (a, bin) ->
+
+    ByteListReader.unwrap (ByteListReader.fold (ByteListReader.countdown f m)
+                                               (init, length (IOStreamWriter.unwrap (sA a))))
+                          (IOStreamWriter.unwrap (sA a) ++ bin) = Some (a, bin).
+Proof.
+Admitted.

@@ -1,14 +1,6 @@
 Require Import List.
 Import ListNotations.
 
-Inductive fold_state S A :=
-| Done (a : A)
-| More (s : S)
-| Error.
-Arguments Done {_} {_} _.
-Arguments More {_} {_} _.
-Arguments Error {_} {_}.
-
 Inductive byte :=
 | x00 | x01 | x02 | x03 | x04 | x05 | x06 | x07 | x08 | x09 | x0a | x0b | x0c
 | x0d | x0e | x0f | x10 | x11 | x12 | x13 | x14 | x15 | x16 | x17 | x18 | x19
@@ -30,6 +22,16 @@ Inductive byte :=
 | xdd | xde | xdf | xe0 | xe1 | xe2 | xe3 | xe4 | xe5 | xe6 | xe7 | xe8 | xe9
 | xea | xeb | xec | xed | xee | xef | xf0 | xf1 | xf2 | xf3 | xf4 | xf5 | xf6
 | xf7 | xf8 | xf9 | xfa | xfb | xfc | xfd | xfe | xff.
+
+Inductive fold_state S A :=
+| Done (a : A)
+| More (s : S)
+| Error.
+Arguments Done {_} {_} _.
+Arguments More {_} {_} _.
+Arguments Error {_} {_}.
+
+Definition state_machine (S A : Type) := byte -> S -> fold_state S A.
 
 Module Type WRITER.
   Parameter t : Type.
@@ -80,6 +82,32 @@ Module Type READER.
 
   Parameter fold : forall {S A},
       (byte -> S -> fold_state S A) -> S -> t A.
+
+
+  Parameter pair : forall {S1 A S2 B},
+      state_machine S1 A ->
+      state_machine S2 B -> state_machine (S1 * S2 + A * S2) (A * B).
+
+  Parameter fold_pair_inr : forall S1 A S2 B
+                               (a : state_machine S1 A) (b : state_machine S2 B)
+                               x bytes s,
+      unwrap (fold (pair a b) (inr (x, s))) bytes =
+      match unwrap (fold b s) bytes with
+      | Some (y, l) => Some ((x, y), l)
+      | Nones => None
+      end.
+
+  Parameter fold_pair_inl : forall S1 A S2 B
+                                   (a : state_machine S1 A) (b : state_machine S2 B)
+                                   bytes s1 s2,
+      unwrap (fold (pair a b) (inl (s1, s2))) bytes =
+      match unwrap (fold a s1) bytes with
+      | Some (x, l) => unwrap (fold (pair a b) (inr (x, s2))) l
+      | None => None
+      end.
+
+  Parameter countdown : forall {S A},
+      (S -> option A) -> state_machine S A -> state_machine (S * nat) A.
 
   Parameter bind_unwrap : forall A B (m : t A)
                              (f : A -> t B) bytes,
