@@ -49,7 +49,7 @@ clean:
 distclean: clean
 	rm -f _CoqProject
 
-.PHONY: default clean install distclean
+.PHONY: default clean install distclean quick
 
 .NOTPARALLEL: $(MLPOSITIVE)
 .NOTPARALLEL: $(MLTREE)
