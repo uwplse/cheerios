@@ -137,6 +137,65 @@ Module ByteListReader : READER.
                 end
     end.
 
+  Fixpoint run {S A}
+           (f : state_machine S A) (s : S) (l : list byte) : fold_state S (A * list byte) :=
+    match l with
+    | [] => More s
+    | b :: l => match f b s with
+                | Done a => Done (a, l)
+                | More s => run f s l
+                | Error => Error
+                end
+    end.
+
+  Definition fold' {S A} (f : state_machine S A) (s : S) (l : list byte) :=
+    match run f s l with
+    | Done (a, l) => Some (a, l)
+    | _ => None
+    end.
+
+  Lemma run_append :
+    forall {S A : Type}  l1 l2 f (s : S),
+      @run S A f s (l1 ++ l2) =
+      match @run S A f s l1 with
+      | More s' => @run S A f s' l2
+      | Done (a, l1) => Done (a, l1 ++ l2)
+      | Error => Error
+      end.
+  Proof.
+    induction l1.
+    - intros.
+      reflexivity.
+    - intros.
+      simpl.
+      destruct (f a s); try reflexivity.
+      rewrite IHl1.
+      reflexivity.
+  Qed.
+
+  Lemma fold'_unwrap : forall {S A : Type}
+                             (f : byte -> S -> fold_state S A) (s : S) l,
+      unwrap (fold' f s) l =
+      match l with
+      | [] => None
+      | b :: l => match f b s with
+                  | Done a => Some (a, l)
+                  | More s => unwrap (fold' f s) l
+                  | Error => None
+                  end
+      end.
+  Proof.
+    intros.
+    unfold fold'.
+    destruct l.
+    - unfold unwrap.
+      simpl.
+      reflexivity.
+    - unfold unwrap.
+      simpl.
+      now destruct (f b s).
+  Qed.
+
   Definition one : state_machine unit byte :=
     fun b _ => Done b.
 
@@ -206,7 +265,6 @@ Module ByteListReader : READER.
       destruct a; auto.
   Qed.
 
-
   Definition sequence {S1 A S2 B}
              (a : state_machine S1 A)
              (b : state_machine S2 B) : state_machine (S1 * (A -> S2) + S2) B :=
@@ -265,7 +323,7 @@ Module ByteListReader : READER.
                               | Error => Error
                               end
                   end.
-  
+
   Definition countdown {S A}
              (f : S -> option A)
              (a : state_machine S A) : state_machine (S * nat) A :=
