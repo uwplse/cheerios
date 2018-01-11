@@ -89,12 +89,12 @@ Module Type READER.
       state_machine S2 B -> state_machine (S1 * S2 + A * S2) (A * B).
 
   Parameter fold_pair_inr : forall S1 A S2 B
-                               (a : state_machine S1 A) (b : state_machine S2 B)
-                               x bytes s,
+                                   (a : state_machine S1 A) (b : state_machine S2 B)
+                                   x bytes s,
       unwrap (fold (pair a b) (inr (x, s))) bytes =
       match unwrap (fold b s) bytes with
       | Some (y, l) => Some ((x, y), l)
-      | Nones => None
+      | None => None
       end.
 
   Parameter fold_pair_inl : forall S1 A S2 B
@@ -102,19 +102,20 @@ Module Type READER.
                                    bytes s1 s2,
       unwrap (fold (pair a b) (inl (s1, s2))) bytes =
       match unwrap (fold a s1) bytes with
-      | Some (x, l) => unwrap (fold (pair a b) (inr (x, s2))) l
+      | Some (x, bytes) => unwrap (fold (pair a b) (inr (x, s2))) bytes
       | None => None
       end.
+
 
   Parameter countdown : forall {S A},
       (S -> option A) -> state_machine S A -> state_machine (S * nat) A.
 
   Parameter bind_unwrap : forall A B (m : t A)
-                             (f : A -> t B) bytes,
+                                 (f : A -> t B) bytes,
       unwrap (bind m f) bytes = match unwrap m bytes with
                                 | None => None
                                 | Some (v, bytes) => unwrap (f v) bytes
-                              end.
+                                end.
   Parameter ret_unwrap : forall A (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
 
   Parameter map_unwrap: forall A B (f: A -> B) (d: t A) bin,
@@ -125,7 +126,7 @@ Module Type READER.
       end.
 
   Parameter fold_unwrap : forall {S A : Type}
-                             (f : byte -> S -> fold_state S A) (s : S) l,
+                                 (f : byte -> S -> fold_state S A) (s : S) l,
       unwrap (fold f s) l =
       match l with
       | [] => None
