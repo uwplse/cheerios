@@ -303,6 +303,34 @@ Qed.
 
 (* state machines *)
 
+  Definition countdown {S A}
+             (f : S -> option A)
+             (a : state_machine S A) : state_machine (S * nat) A :=
+    fun byte s =>
+      match s with
+      | (s, O) => match f s with
+                  | Some v => Done v
+                  | None => Error
+                  end
+      | (s, S n) => match a byte s with
+                    | Done a => Done a
+                    | More s => More (s, n)
+                    | Error => Error
+                    end
+      end.
+
+  Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S * list A) (list A) :=
+    fun byte s => match s with
+                  | (s, l) => match a byte s with
+                              | Done x => More (init, x :: l)
+                              | More s => More (s, l)
+                              | Error => Error
+                              end
+                  end.
+
+Definition list_state_machine {S A} (a : state_machine S A) (init : S) := countdown (fun x => Some (snd x)) (list_acc a init).
+
+
 Lemma pair_spec : forall {S1 A S2 B : Type}
                          (sA : A -> IOStreamWriter.t) (sB : B -> IOStreamWriter.t)
                          (mA : state_machine S1 A) (mB : state_machine S2 B)
@@ -328,14 +356,26 @@ Qed.
 
 Lemma countdown_exact :
   forall {S A : Type}
-         (sA : A -> IOStreamWriter.t) (a : A)
-         (m : state_machine S A) (init : S) (f : S -> option A)
-         (bin bin' : list byte),
+         (m : state_machine S A) (init : S) (f : S -> option A) (a : A)
+         (l bin bin' : list byte) n,
+    length l = n ->
     ByteListReader.unwrap (ByteListReader.fold m init)
-                          (IOStreamWriter.unwrap (sA a) ++ bin) = Some (a, bin) ->
+                          (l ++ bin) = Some (a, bin) ->
 
-    ByteListReader.unwrap (ByteListReader.fold (ByteListReader.countdown f m)
-                                               (init, length (IOStreamWriter.unwrap (sA a))))
-                          (IOStreamWriter.unwrap (sA a) ++ bin) = Some (a, bin).
+    ByteListReader.unwrap (ByteListReader.fold (countdown f m)
+                                               (init, length l))
+                          (l ++ bin) = Some (a, bin).
 Proof.
+  induction l.
+  - intros.
+    simpl.
+    unfold countdown.
+
+
+    cheerios_crush.
+    destruct bin.
+    + simpl in H0.
+      rewrite ByteListReader.fold_unwrap in H0.
+      congruence.
+    + simpl in H0.
 Admitted.

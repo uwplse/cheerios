@@ -324,33 +324,6 @@ Module ByteListReader : READER.
     - destruct b; auto.
   Qed.
 
-  Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S * list A) (list A) :=
-    fun byte s => match s with
-                  | (s, l) => match a byte s with
-                              | Done x => More (init, x :: l)
-                              | More s => More (s, l)
-                              | Error => Error
-                              end
-                  end.
-
-  Definition countdown {S A}
-             (f : S -> option A)
-             (a : state_machine S A) : state_machine (S * nat) A :=
-    fun byte s =>
-      match s with
-      | (s, O) => match f s with
-                  | Some v => Done v
-                  | None => Error
-                  end
-      | (s, S n) => match a byte s with
-                    | Done a => Done a
-                    | More s => More (s, n)
-                    | Error => Error
-                    end
-      end.
-
-  Definition list {S A} (a : state_machine S A) (init : S) := countdown (fun x => Some (snd x)) (list_acc a init).
-
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
 
