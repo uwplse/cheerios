@@ -126,6 +126,8 @@ Module ByteListReader : READER.
     reflexivity.
   Qed.
 
+  (* state machines *)
+
   Fixpoint run {S A}
            (f : state_machine S A) (s : S) (l : list byte) : fold_state S (A * list byte) :=
     match l with
@@ -323,6 +325,43 @@ Module ByteListReader : READER.
     - reflexivity.
     - destruct b; auto.
   Qed.
+
+  Definition choice {S1 A S2 B} (a : state_machine S1 A) (b : state_machine S2 B) : state_machine (S1 + S2) (A + B) :=
+    fun byte s =>
+      match s with
+      | inl s =>
+        match a byte s with
+        | Done a => Done (inl a)
+        | More s => More (inl s)
+        | Error => Error
+        end
+      | inr s =>
+        match b byte s with
+        | Done b => Done (inr b)
+        | More s => More (inr s)
+        | Error => Error
+        end
+      end.
+
+  Definition bind_sm {S1 A S2 B} (a : state_machine S1 A) (b : A -> state_machine S2 B) :
+    state_machine (S1 * S2 + A * S2) B :=
+    fun byte s =>
+      match s with
+      | inl (s1, s2) =>
+        match a byte s1 with
+        | Done x => More (inr (x, s2))
+        | More s1 => More (inl (s1, s2))
+        | Error => Error
+        end
+      | inr (x, s2) =>
+        match b x byte s2 with
+        | Done y => Done y
+        | More s2 => More (inr (x, s2))
+        | Error => Error
+        end
+      end.
+
+  (* lemmas not about state machines *)
 
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.

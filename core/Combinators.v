@@ -379,3 +379,30 @@ Proof.
       congruence.
     + simpl in H0.
 Admitted.
+
+Definition tag_value {S1 T S2 V}
+           (a : state_machine S1 T) (b : T -> state_machine S2 V)
+           (f : T -> S2) :
+  state_machine (S1 + T * S2) V :=
+  fun byte s =>
+    match s with
+    | inl s1 =>
+        match a byte s1 with
+        | Done t => More (inr (t, f t))
+        | More s1 => More (inl s1)
+        | Error => Error
+        end
+    | inr (t, s2) =>
+      match b t byte s2 with
+      | Done v => Done v
+      | More s2 => More (inr (t, s2))
+      | Error => Error
+      end
+    end.
+
+Definition tags_values {S1 T S2 V}
+           (a : state_machine S1 T) (b : T -> state_machine S2 V)
+           (f : T -> S2) (init: S1) :=
+  n <- deserialize;;
+  ByteListReader.fold (list_state_machine (tag_value a b f) (inl init))
+                      (inl init, [], n).
