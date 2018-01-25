@@ -303,30 +303,30 @@ Qed.
 
 (* state machines *)
 
-  Definition countdown {S A}
-             (f : S -> option A)
-             (a : state_machine S A) : state_machine (S * nat) A :=
-    fun byte s =>
-      match s with
-      | (s, O) => match f s with
-                  | Some v => Done v
-                  | None => Error
+Definition countdown {S A}
+           (f : S -> option A)
+           (a : state_machine S A) : state_machine (S * nat) A :=
+  fun byte s =>
+    match s with
+    | (s, O) => match f s with
+                | Some v => Done v
+                | None => Error
+                end
+    | (s, S n) => match a byte s with
+                  | Done a => Done a
+                  | More s => More (s, n)
+                  | Error => Error
                   end
-      | (s, S n) => match a byte s with
-                    | Done a => Done a
-                    | More s => More (s, n)
-                    | Error => Error
-                    end
-      end.
+    end.
 
-  Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S * list A) (list A) :=
-    fun byte s => match s with
-                  | (s, l) => match a byte s with
-                              | Done x => More (init, x :: l)
-                              | More s => More (s, l)
-                              | Error => Error
-                              end
-                  end.
+Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S * list A) (list A) :=
+  fun byte s => match s with
+                | (s, l) => match a byte s with
+                            | Done x => More (init, x :: l)
+                            | More s => More (s, l)
+                            | Error => Error
+                            end
+                end.
 
 Definition list_state_machine {S A} (a : state_machine S A) (init : S) := countdown (fun x => Some (snd x)) (list_acc a init).
 
@@ -354,55 +354,57 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma countdown_rewrite :
+  forall {S A : Type}
+         (m : state_machine S A) (s : S) (f : S -> option A) (n : nat)
+         (b : byte) (bin : list byte),
+    ByteListReader.unwrap (ByteListReader.fold (countdown f m) (s, Datatypes.S n))
+                          (b :: bin) =
+    match m b s with
+    | Done a => Some (a, bin)
+    | More s => ByteListReader.unwrap (ByteListReader.fold (countdown f m) (s, n)) bin
+    | Error => None
+    end.
+Proof.
+  intros.
+  cheerios_crush.
+  simpl.
+  now destruct (m b s).
+Qed.
+
 Lemma countdown_exact :
   forall {S A : Type}
-         (m : state_machine S A) (init : S) (f : S -> option A) (a : A)
-         (l bin bin' : list byte) n,
-    length l = n ->
-    ByteListReader.unwrap (ByteListReader.fold m init)
-                          (l ++ bin) = Some (a, bin) ->
+         (l  : list byte)
+         (m : state_machine S A) (init : S) (f : S -> option A) (a : A),
+    (forall bin, ByteListReader.unwrap (ByteListReader.fold m init)
+                                       (l ++ bin) = Some (a, bin)) ->
 
-    ByteListReader.unwrap (ByteListReader.fold (countdown f m)
-                                               (init, length l))
-                          (l ++ bin) = Some (a, bin).
+    (forall bin, ByteListReader.unwrap (ByteListReader.fold (countdown f m)
+                                                            (init, length l))
+                                       (l ++ bin) = Some (a, bin)).
 Proof.
   induction l.
   - intros.
+    simpl in *.
+    specialize H with [].
+    rewrite ByteListReader.fold_unwrap in H.
+    congruence.
+  - intros.
     simpl.
-    unfold countdown.
-
-
-    cheerios_crush.
-    destruct bin.
-    + simpl in H0.
-      rewrite ByteListReader.fold_unwrap in H0.
-      congruence.
-    + simpl in H0.
+    rewrite countdown_rewrite.
+    destruct (m a init).
+    + rewrite <- H.
+      simpl.
+      admit.
+    + apply IHl.
+      admit.
+    + admit.
 Admitted.
 
-Definition tag_value {S1 T S2 V}
-           (a : state_machine S1 T) (b : T -> state_machine S2 V)
-           (f : T -> S2) :
-  state_machine (S1 + T * S2) V :=
-  fun byte s =>
-    match s with
-    | inl s1 =>
-        match a byte s1 with
-        | Done t => More (inr (t, f t))
-        | More s1 => More (inl s1)
-        | Error => Error
-        end
-    | inr (t, s2) =>
-      match b t byte s2 with
-      | Done v => Done v
-      | More s2 => More (inr (t, s2))
-      | Error => Error
-      end
-    end.
 
 Definition tags_values {S1 T S2 V}
            (a : state_machine S1 T) (b : T -> state_machine S2 V)
            (f : T -> S2) (init: S1) :=
   n <- deserialize;;
-  ByteListReader.fold (list_state_machine (tag_value a b f) (inl init))
+  ByteListReader.fold (list_state_machine (ByteListReader.bind_sm a b f) (inl init))
                       (inl init, [], n).

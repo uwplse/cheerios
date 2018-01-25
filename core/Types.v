@@ -106,8 +106,8 @@ Module Type READER.
       | None => None
       end.
 
-Parameter bind_sm : forall {S1 A S2 B}, state_machine S1 A -> (A -> state_machine S2 B) ->
-    state_machine (S1 * S2 + A * S2) B.
+  Parameter bind_sm : forall {S1 A S2 B}, state_machine S1 A -> (A -> state_machine S2 B) ->
+                                          (A -> S2) -> state_machine (S1 + A * S2) B.
 
   Parameter bind_unwrap : forall A B (m : t A)
                                  (f : A -> t B) bytes,
