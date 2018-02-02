@@ -1,11 +1,19 @@
+#!/usr/bin/env bash
+
 set -ev
 
-opam init --yes --no-setup
+export MODE=$1
+export OPAMBUILDTEST=$2
+
 eval $(opam config env)
 
-opam repo add coq-released https://coq.inria.fr/opam/released
-opam repo add distributedcomponents-dev http://opam-dev.distributedcomponents.net
+opam update
 
-opam pin add coq $COQ_VERSION --yes --verbose
-
-opam pin add cheerios . --yes --verbose
+case ${MODE} in
+  cheerios-runtime)
+    opam pin add cheerios-runtime . --yes --verbose
+    ;;
+  *)
+    opam pin add cheerios . --yes --verbose
+    ;;
+esac
