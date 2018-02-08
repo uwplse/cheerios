@@ -43,11 +43,30 @@ Definition LockservMsg_deserialize_tag : state_machine unit LockservTag :=
     | _ => Error
     end.
 
-Definition LockservMsg_deserialize_tag_value :=
-  ByteListReader.bind_sm LockservMsg_deserialize_tag
-                         (fun tag => match tag with
-                                     | LockTag => fun b _ => Done (Lock (byte_to_nat b))
-                                     | UnlockTag => fun _ _ => Done Unlock
-                                     | LockedTag => fun b _ => Done (Locked (byte_to_nat b))
-                                     end)
-                         (fun _ => tt).
+Parameter nat_sm_t : Type.
+Parameter nat_sm_step : byte -> nat_sm_t -> fold_state nat_sm_t nat.
+Parameter nat_sm_init : nat_sm_t.
+
+Inductive lockserv_sm_t :=
+| Tag
+| Body : LockservTag * nat_sm_t -> lockserv_sm_t.
+
+Definition LocskervMsg_deserialize (b : byte) (s: lockserv_sm_t) : fold_state lockserv_sm_t LockservMsg :=
+  match s with
+  | Tag => match b with
+           | x00 => More (Body (LockTag, nat_sm_init))
+           | x01 => Done Unlock
+           | x02 => More (Body (LockedTag, nat_sm_init))
+           | _ => Error
+           end
+  | Body (t, ns) => match nat_sm_step b ns with
+                    | Done n => match t with
+                                | LockTag => Done (Lock n)
+                                | UnlockTag => Error
+                                | LockedTag => Done (Locked n)
+                                end
+                    | More ns => More (Body (t, ns))
+                    | Error => Error
+                    end
+  end.
+

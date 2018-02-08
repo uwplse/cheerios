@@ -400,11 +400,3 @@ Proof.
       admit.
     + admit.
 Admitted.
-
-
-Definition tags_values {S1 T S2 V}
-           (a : state_machine S1 T) (b : T -> state_machine S2 V)
-           (f : T -> S2) (init: S1) :=
-  n <- deserialize;;
-  ByteListReader.fold (list_state_machine (ByteListReader.bind_sm a b f) (inl init))
-                      (inl init, [], n).
