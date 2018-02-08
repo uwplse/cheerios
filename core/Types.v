@@ -83,6 +83,8 @@ Module Type READER.
   Parameter fold : forall {S A},
       (byte -> S -> fold_state S A) -> S -> t A.
 
+  Parameter fold_general : forall {S A},
+      (S -> state_machine S A + A) -> S -> t A.
 
   Parameter pair : forall {S1 A S2 B},
       state_machine S1 A ->
@@ -134,5 +136,20 @@ Module Type READER.
                   | More s => unwrap (fold f s) l
                   | Error => None
                   end
+      end.
+
+  Parameter fold_general_unwrap : forall {S A : Type}
+                                     (f : S -> state_machine S A + A) (s : S) l,
+      unwrap (fold_general f s) l =
+      match l with
+      | [] => None
+      | b :: l => match f s with
+                | inl m => match m b s with
+                           | Done a => Some (a, l)
+                           | More s => unwrap (fold_general f s) l
+                           | Error => None
+                           end
+                | inr a => Some (a, b :: l)
+                end
       end.
 End READER.
