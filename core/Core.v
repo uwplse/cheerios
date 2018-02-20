@@ -129,57 +129,21 @@ Module ByteListReader : READER.
   (* state machines *)
 
   Fixpoint run {S A}
-           (f : S -> (byte -> fold_state S A) + A) (s : S) (l : list byte) : fold_state S (A * list byte) :=
+           (f : state_machine S A) (s : S) (l : list byte) : fold_state S (A * list byte) :=
     match l with
     | [] => More s
-    | b :: l => match f s with
-                | inl m => match m b with
-                           | Done a => Done (a, l)
-                           | More s => run f s l
-                           | Error => Error
-                           end
-                | inr a => Done (a, b :: l)
+    | b :: l => match f b s with
+                | Done a => Done (a, l)
+                | More s => run f s l
+                | Error => Error
                 end
     end.
 
   Definition fold {S A} (f : state_machine S A) (s : S) (l : list byte) :=
-    match run (fun s => inl (fun b => f b s)) s l with
-    | Done (a, l) => Some (a, l)
-    | _ => None
-    end.
-
-  Definition fold_general {S A} (f : S -> (byte -> fold_state S A) + A) (s : S) (l : list byte) :=
     match run f s l with
     | Done (a, l) => Some (a, l)
     | _ => None
     end.
-
-  Lemma fold_general_unwrap : forall {S A : Type}
-                                     (f : S -> (byte -> fold_state S A) + A) (s : S) l,
-      unwrap (fold_general f s) l =
-      match l with
-      | [] => None
-      | b :: l => match f s with
-                | inl m => match m b with
-                           | Done a => Some (a, l)
-                           | More s => unwrap (fold_general f s) l
-                           | Error => None
-                           end
-                | inr a => Some (a, b :: l)
-                end
-      end.
-  Proof.
-    intros.
-    unfold fold_general.
-    destruct l;
-      unfold unwrap.
-    - reflexivity.
-    - simpl.
-      destruct (f s).
-      + destruct (f0 b);
-        reflexivity.
-      + reflexivity.
-  Qed.
 
   Lemma run_append :
     forall {S A : Type}  l1 l2 f (s : S),
@@ -195,11 +159,9 @@ Module ByteListReader : READER.
       reflexivity.
     - intros.
       simpl.
-      destruct (f s).
-      + destruct (f0 a); try reflexivity.
-        rewrite IHl1.
-        reflexivity.
-      + reflexivity.
+      destruct (f a s); try reflexivity.
+      rewrite IHl1.
+      reflexivity.
   Qed.
 
   Definition one : state_machine unit byte :=
@@ -237,8 +199,8 @@ Module ByteListReader : READER.
   Lemma run_pair_inr : forall S1 A S2 B
                                (a : state_machine S1 A) (b : state_machine S2 B)
                                x bytes s,
-       run (fun s => inl (fun byte => (pair a b) byte s)) (inr (x, s)) bytes =
-      match run (fun s => inl (fun byte => b byte s)) s bytes with
+       run (pair a b) (inr (x, s)) bytes =
+      match run b s bytes with
       | Done (y, l)  => Done ((x, y), l)
       | More s => More (inr (x, s))
       | Error => Error
@@ -276,9 +238,9 @@ Module ByteListReader : READER.
   Lemma run_pair_inl : forall S1 A S2 B
                                (a : state_machine S1 A) (b : state_machine S2 B)
                                bytes s1 s2,
-      run (fun s => inl (fun byte => (pair a b) byte s)) (inl (s1, s2)) bytes =
-      match run (fun s => inl (fun byte => a byte s)) s1 bytes with
-      | Done (x, l) => run (fun s => inl (fun byte => (pair a b) byte s)) (inr (x, s2)) l
+      run (pair a b) (inl (s1, s2)) bytes =
+      match run a s1 bytes with
+      | Done (x, l) => run (pair a b) (inr (x, s2)) l
       | More s1 => More (inl (s1, s2))
       | Error => Error
       end.
@@ -332,9 +294,9 @@ Module ByteListReader : READER.
                                   (a : state_machine S1 A)
                                   (b : state_machine S2 B)
                                   bytes f s,
-      run (fun s => inl (fun byte => (sequence a b) byte s)) (inl (s, f)) bytes =
-      match run (fun s => inl (fun byte => a byte s)) s bytes with
-      | Done (x, bytes) => run (fun s => inl (fun byte => (sequence a b) byte s)) (inr (f x)) bytes
+      run (sequence a b) (inl (s, f)) bytes =
+      match run a s bytes with
+      | Done (x, bytes) => run (sequence a b) (inr (f x)) bytes
       | More s1 => More (inl (s1, f))
       | Error => Error
       end.
@@ -352,12 +314,11 @@ Module ByteListReader : READER.
                                   (a : state_machine S1 A)
                                   (b : state_machine S2 B)
                                   bytes s,
-      run (fun s => inl (fun byte => (sequence a b) byte s)) (inr s) bytes =
-      match (run (fun s => inl (fun byte => b byte s)) s) bytes with
-      | Done (x, l) => Done (x, l)
-      | More s2 => More (inr s2)
-      | Error => Error
-      end.
+      run (sequence a b) (inr s) bytes = match (run b s) bytes with
+                                         | Done (x, l) => Done (x, l)
+                                         | More s2 => More (inr s2)
+                                         | Error => Error
+                                         end.
   Proof.
     unfold unwrap.
     induction bytes; simpl; intros.
@@ -383,29 +344,24 @@ Module ByteListReader : READER.
       end.
 
   Definition bind_sm {S1 A S2 B}
-             (a : S1 -> (byte -> fold_state S1 A) + A)
-             (b : A -> S2 -> (byte -> fold_state S2 B) + B)
+             (a : state_machine S1 A) (b : A -> state_machine S2 B)
              (f : A -> S2) :
-    (S1 + A * S2) -> (byte -> fold_state (S1 + A * S2) B) + B :=
-    fun s =>
-      match s with
-      | inl s1 => inl (fun byte => match a s1 with
-                                   | inl m => match m byte with
-                                              | Done t => More (inr (t, f t))
-                                              | More s1 => More (inl s1)
-                                              | Error => Error
-                                              end
-                                   | inr t => More (inr (t, f t))
-                                   end)
-      | inr (t, s2) => inl (fun byte => match b t s2 with
-                                        | inl m => match m byte with
-                                                   | Done v => Done v
-                                                   | More s2 => More (inr (t, s2))
-                                                   | Error => Error
-                                                   end
-                                        | inr v => Done v
-                                        end)
-      end.
+  state_machine (S1 + A * S2) B :=
+  fun byte s =>
+    match s with
+    | inl s1 =>
+        match a byte s1 with
+        | Done t => More (inr (t, f t))
+        | More s1 => More (inl s1)
+        | Error => Error
+        end
+    | inr (t, s2) =>
+      match b t byte s2 with
+      | Done v => Done v
+      | More s2 => More (inr (t, s2))
+      | Error => Error
+      end
+    end.
 
   (* lemmas not about state machines *)
 
@@ -442,6 +398,8 @@ Module ByteListReader : READER.
       simpl.
       now destruct (f b s).
   Qed.
+
+
 End ByteListReader.
 Arguments ByteListReader.error {_}.
 
