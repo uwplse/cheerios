@@ -33,38 +33,37 @@ Parameter nat_sm_t : Type.
 Parameter nat_sm : state_machine nat_sm_t nat.
 Parameter nat_sm_init : nat_sm_t.
 
-Inductive LockservTag :=
-| LockTag
-| UnlockTag
-| LockedTag.
+Inductive Lockserv_sm_t :=
+| LockTag : nat_sm_t -> Lockserv_sm_t
+| UnlockTag : Lockserv_sm_t
+| LockedTag : nat_sm_t -> Lockserv_sm_t.
 
-Definition LockservMsg_deserialize_tag : state_machine unit LockservTag :=
+Definition LockservMsg_deserialize_tag : state_machine unit Lockserv_sm_t :=
   fun (byte : byte) _ =>
     match byte with
-    | x00 => Done LockTag
+    | x00 => Done (LockTag nat_sm_init)
     | x01 => Done UnlockTag
-    | x02 => Done LockedTag
+    | x02 => Done (LockedTag nat_sm_init)
     | _ => Error
     end.
 
-Definition a :=
-  @ByteListReader.map_sm _ _ _ (fun (t : LockservTag) => (t, nat_sm_init))
-                         LockservMsg_deserialize_tag.
-
 Definition LockservMsg_deserialize_tag_value :=
-  ByteListReader.compose (@ByteListReader.map_sm _ _ _
-                                                 (fun (t : LockservTag) => (t, nat_sm_init))
-                                                 LockservMsg_deserialize_tag)
+  ByteListReader.compose LockservMsg_deserialize_tag
                          (fun b s => match s with
-                                     | (LockTag, s) => match nat_sm b s with
-                                                       | Done n => Done (Lock n)
-                                                       | More s => More (LockTag, s)
-                                                       | Error => Error
-                                                       end
-                                     | (UnlockTag, _) => Error
-                                     | (LockedTag, s) => match nat_sm b s with
+                                     | LockTag s => match nat_sm b s with
+                                                    | Done n => Done (Lock n)
+                                                    | More s => More (LockTag s)
+                                                    | Error => Error
+                                                    end
+                                     | UnlockTag => Error
+                                     | LockedTag s => match nat_sm b s with
                                                        | Done n => Done (Locked n)
-                                                       | More s => More (LockedTag, s)
+                                                       | More s => More (LockedTag s)
                                                        | Error => Error
                                                        end
-                                     end).
+                                     end)
+                         (fun t => match t with
+                                   | LockTag s => More (LockTag s)
+                                   | UnlockTag => Done Unlock
+                                   | LockedTag s => More (LockedTag s)
+                                   end).
