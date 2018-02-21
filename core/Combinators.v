@@ -401,10 +401,15 @@ Proof.
     + admit.
 Admitted.
 
+Definition tag_value {S1 T S2 V}
+           (m1 : state_machine S1 T) (m2 : state_machine S2 V)
+           (f : T -> S2) :=
+  ByteListReader.compose m1 m2 (fun t => More (f t)).
 
 Definition tags_values {S1 T S2 V}
-           (a : state_machine S1 T) (b : T -> state_machine S2 V)
+           (m1 : state_machine S1 T) (m2 : state_machine S2 V)
            (f : T -> S2) (init: S1) :=
   n <- deserialize;;
-  ByteListReader.fold (list_state_machine (ByteListReader.bind_sm a b f) (inl init))
-                      (inl init, [], n).
+    ByteListReader.fold
+    (list_state_machine (ByteListReader.compose m1 m2 (fun t => More (f t))) (inl init))
+    (inl init, [], n).

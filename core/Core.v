@@ -343,25 +343,35 @@ Module ByteListReader : READER.
         end
       end.
 
-  Definition bind_sm {S1 A S2 B}
-             (a : state_machine S1 A) (b : A -> state_machine S2 B)
-             (f : A -> S2) :
-  state_machine (S1 + A * S2) B :=
-  fun byte s =>
-    match s with
-    | inl s1 =>
-        match a byte s1 with
-        | Done t => More (inr (t, f t))
-        | More s1 => More (inl s1)
-        | Error => Error
-        end
-    | inr (t, s2) =>
-      match b t byte s2 with
-      | Done v => Done v
-      | More s2 => More (inr (t, s2))
+  Definition compose {S1 A S2 B}
+             (m1 : state_machine S1 A)
+             (m2 : state_machine S2 B)
+             (f : A -> fold_state S2 B) : state_machine (S1 + S2) B :=
+    fun b s =>
+      match s with
+      | inl s1 => match m1 b s1 with
+                  | Done a => match f a with
+                              | Done b => Done b
+                              | More s2 => More (inr s2)
+                              | Error => Error
+                              end
+                  | More s1 => More (inl s1)
+                  | Error => Error
+                  end
+      | inr s2 => match m2 b s2 with
+                  | Done b => Done b
+                  | More s2 => More (inr s2)
+                  | Error => Error
+                  end
+      end.
+
+  Definition map_sm {S A B} (f : A -> B) (m1: state_machine S A) : state_machine S B :=
+    fun b s =>
+      match m1 b s with
+      | Done a => Done (f a)
+      | More s => More s
       | Error => Error
-      end
-    end.
+      end.
 
   (* lemmas not about state machines *)
 

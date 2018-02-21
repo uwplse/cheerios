@@ -106,8 +106,10 @@ Module Type READER.
       | None => None
       end.
 
-  Parameter bind_sm : forall {S1 A S2 B}, state_machine S1 A -> (A -> state_machine S2 B) ->
-                                          (A -> S2) -> state_machine (S1 + A * S2) B.
+  Parameter compose : forall {S1 A S2 B}, state_machine S1 A -> (state_machine S2 B) ->
+                                          (A -> fold_state S2 B) -> state_machine (S1 + S2) B.
+
+  Parameter map_sm : forall S A B, (A -> B) -> state_machine S A -> state_machine S B.
 
   Parameter bind_unwrap : forall A B (m : t A)
                                  (f : A -> t B) bytes,
