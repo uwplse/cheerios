@@ -5,6 +5,7 @@ Require Vector String.
 Require Import Cheerios.BasicSerializers.
 Require Import Cheerios.Core.
 Require Import Cheerios.DeserializerMonad.
+Require Import Cheerios.StateMachines.
 Require Import Cheerios.Tactics.
 Require Import Cheerios.Types.
 
@@ -331,29 +332,6 @@ Definition list_acc {S A} (a : state_machine S A) (init : S) : state_machine (S 
 Definition list_state_machine {S A} (a : state_machine S A) (init : S) := countdown (fun x => Some (snd x)) (list_acc a init).
 
 
-Lemma pair_spec : forall {S1 A S2 B : Type}
-                         (sA : A -> IOStreamWriter.t) (sB : B -> IOStreamWriter.t)
-                         (mA : state_machine S1 A) (mB : state_machine S2 B)
-                         (init1 : S1) (init2 : S2),
-    (serialize_deserialize_id_spec sA (ByteListReader.fold mA init1)) ->
-    (serialize_deserialize_id_spec sB (ByteListReader.fold mB init2)) ->
-    (serialize_deserialize_id_spec (fun (x : A * B) =>
-                                      match x with
-                                      | (a, b) => sA a +$+ sB b
-                                      end)
-                                   (ByteListReader.fold (ByteListReader.pair mA mB)
-                                                        (inl (init1, init2)))).
-Proof.
-  intros.
-  destruct a.
-  rewrite ByteListReader.fold_pair_inl.
-  rewrite IOStreamWriter.append_unwrap, app_ass.
-  rewrite H.
-  rewrite ByteListReader.fold_pair_inr.
-  rewrite H0.
-  reflexivity.
-Qed.
-
 Lemma countdown_rewrite :
   forall {S A : Type}
          (m : state_machine S A) (s : S) (f : S -> option A) (n : nat)
@@ -404,12 +382,12 @@ Admitted.
 Definition tag_value {S1 T S2 V}
            (m1 : state_machine S1 T) (m2 : state_machine S2 V)
            (f : T -> S2) :=
-  ByteListReader.compose m1 m2 (fun t => More (f t)).
+  StateMachine.compose m1 m2 (fun t => More (f t)).
 
 Definition tags_values {S1 T S2 V}
            (m1 : state_machine S1 T) (m2 : state_machine S2 V)
            (f : T -> S2) (init: S1) :=
   n <- deserialize;;
     ByteListReader.fold
-    (list_state_machine (ByteListReader.compose m1 m2 (fun t => More (f t))) (inl init))
+    (list_state_machine (StateMachine.compose m1 m2 (fun t => More (f t))) (inl init))
     (inl init, [], n).

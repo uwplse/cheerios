@@ -3,6 +3,7 @@ Import ListNotations.
 
 Require Import Cheerios.Types.
 Require Import Cheerios.ByteDecidable.
+Require Import Cheerios.StateMachines.
 
 Set Implicit Arguments.
 
@@ -127,253 +128,11 @@ Module ByteListReader : READER.
   Qed.
 
   (* state machines *)
-
-  Fixpoint run {S A}
-           (f : state_machine S A) (s : S) (l : list byte) : fold_state S (A * list byte) :=
-    match l with
-    | [] => More s
-    | b :: l => match f b s with
-                | Done a => Done (a, l)
-                | More s => run f s l
-                | Error => Error
-                end
-    end.
-
   Definition fold {S A} (f : state_machine S A) (s : S) (l : list byte) :=
-    match run f s l with
+    match StateMachine.run f s l with
     | Done (a, l) => Some (a, l)
     | _ => None
     end.
-
-  Lemma run_append :
-    forall {S A : Type}  l1 l2 f (s : S),
-      @run S A f s (l1 ++ l2) =
-      match @run S A f s l1 with
-      | More s' => @run S A f s' l2
-      | Done (a, l1) => Done (a, l1 ++ l2)
-      | Error => Error
-      end.
-  Proof.
-    induction l1.
-    - intros.
-      reflexivity.
-    - intros.
-      simpl.
-      destruct (f a s); try reflexivity.
-      rewrite IHl1.
-      reflexivity.
-  Qed.
-
-  Definition one : state_machine unit byte :=
-    fun b _ => Done b.
-
-  Lemma fold_one : forall (bytes : list byte),
-      unwrap (fold one tt) bytes = match bytes with
-                                   | [] => None
-                                   | b :: l => Some (b, l)
-                                   end.
-  Proof.
-    destruct bytes;
-      reflexivity.
-  Qed.
-
-  Definition pair {S1 A S2 B}
-             (a : state_machine S1 A)
-             (b : state_machine S2 B) : state_machine (S1 * S2 + A * S2) (A * B) :=
-    fun byte s =>
-      match s with
-      | inl (s1, s2) =>
-        match a byte s1 with
-        | Done x => More (inr (x, s2))
-        | More s1 => More (inl (s1, s2))
-        | Error => Error
-        end
-      | inr (x, s2) =>
-        match b byte s2 with
-        | Done b => Done (x, b)
-        | More s2 => More (inr (x, s2))
-        | Error => Error
-        end
-      end.
-
-  Lemma run_pair_inr : forall S1 A S2 B
-                               (a : state_machine S1 A) (b : state_machine S2 B)
-                               x bytes s,
-       run (pair a b) (inr (x, s)) bytes =
-      match run b s bytes with
-      | Done (y, l)  => Done ((x, y), l)
-      | More s => More (inr (x, s))
-      | Error => Error
-      end.
-  Proof.
-    unfold unwrap.
-    intros until bytes.
-    induction bytes.
-    - reflexivity.
-    - intros s.
-      unfold run.
-      simpl.
-      destruct (b _ _);
-        auto.
-  Qed.
-
-  Lemma fold_pair_inr : forall S1 A S2 B
-                               (a : state_machine S1 A) (b : state_machine S2 B)
-                               x bytes s,
-      unwrap (fold (pair a b) (inr (x, s))) bytes =
-      match unwrap (fold b s) bytes with
-      | Some (y, l) => Some ((x, y), l)
-      | None => None
-      end.
-  Proof.
-    intros.
-    unfold unwrap, fold.
-    rewrite run_pair_inr.
-    destruct (run _ _ _);
-      auto.
-    destruct a0.
-    reflexivity.
-  Qed.
-
-  Lemma run_pair_inl : forall S1 A S2 B
-                               (a : state_machine S1 A) (b : state_machine S2 B)
-                               bytes s1 s2,
-      run (pair a b) (inl (s1, s2)) bytes =
-      match run a s1 bytes with
-      | Done (x, l) => run (pair a b) (inr (x, s2)) l
-      | More s1 => More (inl (s1, s2))
-      | Error => Error
-      end.
-  Proof.
-    unfold unwrap.
-    intros until bytes.
-    induction bytes.
-    - reflexivity.
-    - intros.
-      simpl.
-      destruct a; auto.
-  Qed.
-
-  Lemma fold_pair_inl : forall S1 A S2 B
-                               (a : state_machine S1 A) (b : state_machine S2 B)
-                               bytes s1 s2,
-      unwrap (fold (pair a b) (inl (s1, s2))) bytes =
-      match unwrap (fold a s1) bytes with
-      | Some (x, l) => unwrap (fold (pair a b) (inr (x, s2))) l
-      | None => None
-      end.
-  Proof.
-    intros.
-    unfold unwrap, fold.
-    rewrite run_pair_inl.
-    destruct (run _ _ _); auto.
-    destruct a0.
-    reflexivity.
-  Qed.
-
-  Definition sequence {S1 A S2 B}
-             (a : state_machine S1 A)
-             (b : state_machine S2 B) : state_machine (S1 * (A -> S2) + S2) B :=
-    fun byte s =>
-      match s with
-      | inl (s1, f) =>
-        match a byte s1 with
-        | Done x => More (inr (f x))
-        | More s1 => More (inl (s1, f))
-        | Error => Error
-        end
-      | inr s2 =>
-        match b byte s2 with
-        | Done b => Done b
-        | More s2 => More (inr s2)
-        | Error => Error
-        end
-      end.
-
-  Lemma run_sequence_inl : forall S1 A S2 B
-                                  (a : state_machine S1 A)
-                                  (b : state_machine S2 B)
-                                  bytes f s,
-      run (sequence a b) (inl (s, f)) bytes =
-      match run a s bytes with
-      | Done (x, bytes) => run (sequence a b) (inr (f x)) bytes
-      | More s1 => More (inl (s1, f))
-      | Error => Error
-      end.
-  Proof.
-    unfold unwrap.
-    induction bytes.
-    - reflexivity.
-    - intros.
-      simpl.
-      destruct a;
-        auto.
-  Qed.
-
-  Lemma run_sequence_inr : forall S1 A S2 B
-                                  (a : state_machine S1 A)
-                                  (b : state_machine S2 B)
-                                  bytes s,
-      run (sequence a b) (inr s) bytes = match (run b s) bytes with
-                                         | Done (x, l) => Done (x, l)
-                                         | More s2 => More (inr s2)
-                                         | Error => Error
-                                         end.
-  Proof.
-    unfold unwrap.
-    induction bytes; simpl; intros.
-    - reflexivity.
-    - destruct b; auto.
-  Qed.
-
-  Definition choice {S1 A S2 B} (a : state_machine S1 A) (b : state_machine S2 B) : state_machine (S1 + S2) (A + B) :=
-    fun byte s =>
-      match s with
-      | inl s =>
-        match a byte s with
-        | Done a => Done (inl a)
-        | More s => More (inl s)
-        | Error => Error
-        end
-      | inr s =>
-        match b byte s with
-        | Done b => Done (inr b)
-        | More s => More (inr s)
-        | Error => Error
-        end
-      end.
-
-  Definition compose {S1 A S2 B}
-             (m1 : state_machine S1 A)
-             (m2 : state_machine S2 B)
-             (f : A -> fold_state S2 B) : state_machine (S1 + S2) B :=
-    fun b s =>
-      match s with
-      | inl s1 => match m1 b s1 with
-                  | Done a => match f a with
-                              | Done b => Done b
-                              | More s2 => More (inr s2)
-                              | Error => Error
-                              end
-                  | More s1 => More (inl s1)
-                  | Error => Error
-                  end
-      | inr s2 => match m2 b s2 with
-                  | Done b => Done b
-                  | More s2 => More (inr s2)
-                  | Error => Error
-                  end
-      end.
-
-  Definition map_sm {S A B} (f : A -> B) (m1: state_machine S A) : state_machine S B :=
-    fun b s =>
-      match m1 b s with
-      | Done a => Done (f a)
-      | More s => More s
-      | Error => Error
-      end.
-
-  (* lemmas not about state machines *)
 
   Lemma ret_unwrap : forall {A} (x: A) bytes, unwrap (ret x) bytes = Some (x, bytes).
   Proof. reflexivity. Qed.
@@ -403,13 +162,13 @@ Module ByteListReader : READER.
     destruct l.
     - unfold unwrap.
       simpl.
+      rewrite StateMachine.run_spec.
       reflexivity.
     - unfold unwrap.
       simpl.
+      rewrite StateMachine.run_spec.
       now destruct (f b s).
   Qed.
-
-
 End ByteListReader.
 Arguments ByteListReader.error {_}.
 

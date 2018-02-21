@@ -1,8 +1,9 @@
-Require Import Cheerios.BasicSerializers.
-Require Import Cheerios.ByteDecidable.
 Require Import Cheerios.Core.
-Require Import Strings.String.
+Require Import Cheerios.StateMachines.
 Require Import Cheerios.Types.
+
+Require Import Strings.String.
+
 
 Definition int32 := nat.
 Definition ident := string.
@@ -48,7 +49,7 @@ Definition LockservMsg_deserialize_tag : state_machine unit Lockserv_sm_t :=
     end.
 
 Definition LockservMsg_deserialize_tag_value :=
-  ByteListReader.compose LockservMsg_deserialize_tag
+  StateMachine.compose LockservMsg_deserialize_tag
                          (fun b s => match s with
                                      | LockTag s => match nat_sm b s with
                                                     | Done n => Done (Lock n)

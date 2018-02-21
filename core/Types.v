@@ -83,34 +83,6 @@ Module Type READER.
   Parameter fold : forall {S A},
       (byte -> S -> fold_state S A) -> S -> t A.
 
-
-  Parameter pair : forall {S1 A S2 B},
-      state_machine S1 A ->
-      state_machine S2 B -> state_machine (S1 * S2 + A * S2) (A * B).
-
-  Parameter fold_pair_inr : forall S1 A S2 B
-                                   (a : state_machine S1 A) (b : state_machine S2 B)
-                                   x bytes s,
-      unwrap (fold (pair a b) (inr (x, s))) bytes =
-      match unwrap (fold b s) bytes with
-      | Some (y, l) => Some ((x, y), l)
-      | None => None
-      end.
-
-  Parameter fold_pair_inl : forall S1 A S2 B
-                                   (a : state_machine S1 A) (b : state_machine S2 B)
-                                   bytes s1 s2,
-      unwrap (fold (pair a b) (inl (s1, s2))) bytes =
-      match unwrap (fold a s1) bytes with
-      | Some (x, bytes) => unwrap (fold (pair a b) (inr (x, s2))) bytes
-      | None => None
-      end.
-
-  Parameter compose : forall {S1 A S2 B}, state_machine S1 A -> (state_machine S2 B) ->
-                                          (A -> fold_state S2 B) -> state_machine (S1 + S2) B.
-
-  Parameter map_sm : forall S A B, (A -> B) -> state_machine S A -> state_machine S B.
-
   Parameter bind_unwrap : forall A B (m : t A)
                                  (f : A -> t B) bytes,
       unwrap (bind m f) bytes = match unwrap m bytes with
