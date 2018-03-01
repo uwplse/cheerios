@@ -1,11 +1,16 @@
 Require Import String.
+Require Import Bvector.
 
 Section Chord.
 
-Variable id : Type.
-Variable name : Type.
+Parameter N : nat.
 
-Record pointer := mkPointer { ptrId : id; ptrAddr : name }.
+Definition bit_len := 8 * N.
+
+Definition id := Bvector.Bvector bit_len.
+Definition addr := String.string.
+
+Record pointer := mkPointer { ptrId : id; ptrAddr : addr }.
 
 Inductive payload :=
 | Busy : payload
@@ -18,8 +23,6 @@ Inductive payload :=
 | Notify : payload
 | Ping : payload
 | Pong : payload.
-
-Definition addr := String.string.
 
 Inductive timeout :=
 | Tick : timeout
