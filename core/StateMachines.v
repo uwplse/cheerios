@@ -70,14 +70,13 @@ Module Type STATE_MACHINE.
       | Error => Error
       end.
 
-  
-
-  Parameter compose : forall {S1 A S2 B}, state_machine S1 A -> (state_machine S2 B) ->
+  Parameter compose : forall {S1 A S2 B}, state_machine S1 A -> state_machine S2 B ->
                                           (A -> fold_state S2 B) -> state_machine (S1 + S2) B.
 
+  Parameter map : forall {S A B}, (A -> B) -> state_machine S A -> state_machine S B.
 
-  Parameter map_sm : forall S A B, (A -> B) -> state_machine S A -> state_machine S B.
-
+  Parameter choice : forall {S1 A S2 B}, (state_machine S1 A) -> (state_machine S2 B) ->
+                                         state_machine (S1 + S2) (A + B).
 End STATE_MACHINE.
 
 Module StateMachine : STATE_MACHINE.
@@ -129,7 +128,8 @@ Module StateMachine : STATE_MACHINE.
       reflexivity.
   Qed.
 
-  
+
+  (* pair *)
   Definition pair {S1 A S2 B}
              (a : state_machine S1 A)
              (b : state_machine S2 B) : state_machine (S1 * S2 + A * S2) (A * B) :=
@@ -245,6 +245,7 @@ Module StateMachine : STATE_MACHINE.
     - destruct b; auto.
   Qed.
 
+  (* compose *)
   Definition compose {S1 A S2 B}
              (m1 : state_machine S1 A)
              (m2 : state_machine S2 B)
@@ -267,11 +268,107 @@ Module StateMachine : STATE_MACHINE.
                   end
       end.
 
-  Definition map_sm {S A B} (f : A -> B) (m1: state_machine S A) : state_machine S B :=
+    Lemma compose_run_inl :
+    forall S1 A S2 B
+           (a : state_machine S1 A) (b : state_machine S2 B) (f : A -> fold_state S2 B) l s1,
+      run (compose a b f) (inl s1) l =
+      match run a s1 l with
+      | Done (x, l) =>
+        match f x with
+        | Done y => Done (y, l)
+        | More s2 => run (compose a b f) (inr s2) l
+        | Error => Error
+        end
+      | More s => More (inl s)
+      | Error => Error
+      end.
+  Proof.
+    induction l; simpl; intros.
+    - auto.
+    - destruct a; auto.
+      destruct f; auto.
+  Qed.
+
+  Lemma compose_run_inr :
+    forall S1 A S2 B
+           (a : state_machine S1 A) (b : state_machine S2 B) (f : A -> fold_state S2 B) l s2,
+      run (compose a b f) (inr s2) l =
+      match run b s2 l with
+      | Done (y, l) => Done (y, l)
+      | More s => More (inr s)
+      | Error => Error
+      end.
+  Proof.
+    induction l; simpl; intros.
+    - auto.
+    - destruct b; auto.
+  Qed.
+
+  (* map *)
+  Definition map {S A B} (f : A -> B) (m1: state_machine S A) : state_machine S B :=
     fun b s =>
       match m1 b s with
       | Done a => Done (f a)
       | More s => More s
       | Error => Error
       end.
+
+  Lemma map_run :
+    forall S A B (m : state_machine S A) (f : A -> B) l s,
+      run (map f m) s l =
+      match (run m s l) with
+      | Done (x, l) => Done (f x, l)
+      | More s => More s
+      | Error => Error
+      end.
+  Proof.
+    unfold map.
+    induction l.
+    - auto.
+    - simpl. intros.
+      destruct m; auto.
+  Qed.
+
+  (* choice *)
+  Definition choice {S1 A S2 B} (m1 : state_machine S1 A) (m2 : state_machine S2 B) : state_machine (S1 + S2) (A + B) :=
+    fun b s =>
+      match s with
+      | inl s1 => match m1 b s1 with
+                  | Done x => Done (inl x)
+                  | More s1 => More (inl s1)
+                  | Error => Error
+                  end
+
+      | inr s2 => match m2 b s2 with
+                  | Done y => Done (inr y)
+                  | More s2 => More (inr s2)
+                  | Error => Error
+                  end
+      end.
+
+  Lemma run_choice_inl : forall S1 S2 A B (a : state_machine S1 A) (b : state_machine S2 B) l s,
+      run (choice a b) (inl s) l =
+      match run a s l with
+      | Done (y, l) => Done (inl y, l)
+      | More s => More (inl s)
+      | Error => Error
+      end.
+  Proof.
+    induction l; simpl; intros.
+    - auto.
+    - destruct a; auto.
+  Qed.
+
+  Lemma run_choice_inr : forall S1 S2 A B (a : state_machine S1 A) (b : state_machine S2 B) l s,
+      run (choice a b) (inr s) l =
+      match run b s l with
+      | Done (y, l) => Done (inr y, l)
+      | More s => More (inr s)
+      | Error => Error
+      end.
+  Proof.
+    induction l; simpl; intros.
+    - auto.
+    - destruct b; auto.
+  Qed.
 End StateMachine.

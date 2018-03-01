@@ -26,8 +26,8 @@ with msg_body :=
      | Cons : msg -> msg_body.
 
 Inductive LockservMsg :=
-| Lock : nat -> LockservMsg
 | Unlock : LockservMsg
+| Lock : nat -> LockservMsg
 | Locked : nat -> LockservMsg.
 
 Parameter nat_sm_t : Type.
@@ -35,36 +35,39 @@ Parameter nat_sm : state_machine nat_sm_t nat.
 Parameter nat_sm_init : nat_sm_t.
 
 Inductive Lockserv_sm_t :=
-| LockTag : nat_sm_t -> Lockserv_sm_t
-| UnlockTag : Lockserv_sm_t
-| LockedTag : nat_sm_t -> Lockserv_sm_t.
+| UnlockTag
+| LockTag
+| LockedTag.
 
 Definition LockservMsg_deserialize_tag : state_machine unit Lockserv_sm_t :=
   fun (byte : byte) _ =>
     match byte with
-    | x00 => Done (LockTag nat_sm_init)
-    | x01 => Done UnlockTag
-    | x02 => Done (LockedTag nat_sm_init)
+    | x00 => Done UnlockTag
+    | x01 => Done LockTag
+    | x02 => Done LockedTag
     | _ => Error
     end.
 
-Definition LockservMsg_deserialize_tag_value :=
+Definition a (x : nat + nat + nat) : nat :=
+  match x with
+  | inl (inl x) => x
+  | inl (inr x) => x
+  | inr x => x
+  end.
+
+Definition intermediate_sm :=
+  StateMachine.map
+    (fun x => match x with
+              | inl n => Lock n
+              | inr n => Locked n
+              end)
+    (StateMachine.choice nat_sm nat_sm).
+
+Definition LockservMsg_msg_sm :=
   StateMachine.compose LockservMsg_deserialize_tag
-                         (fun b s => match s with
-                                     | LockTag s => match nat_sm b s with
-                                                    | Done n => Done (Lock n)
-                                                    | More s => More (LockTag s)
-                                                    | Error => Error
-                                                    end
-                                     | UnlockTag => Error
-                                     | LockedTag s => match nat_sm b s with
-                                                       | Done n => Done (Locked n)
-                                                       | More s => More (LockedTag s)
-                                                       | Error => Error
-                                                       end
-                                     end)
-                         (fun t => match t with
-                                   | LockTag s => More (LockTag s)
+                       intermediate_sm
+                       (fun tag => match tag with
                                    | UnlockTag => Done Unlock
-                                   | LockedTag s => More (LockedTag s)
+                                   | LockTag => More (inl nat_sm_init)
+                                   | LockedTag => More (inr nat_sm_init)
                                    end).
