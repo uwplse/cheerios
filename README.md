@@ -63,3 +63,4 @@ Projects using Cheerios
 
 - [Verdi Raft](https://github.com/uwplse/verdi-raft)
 - [Verdi LockServ](https://github.com/DistributedComponents/verdi-lockserv)
+- [Verdi Chord](https://github.com/DistributedComponents/verdi-chord)
