@@ -51,6 +51,9 @@ let read iter =
      in (iter.i <- iter.i + 1;
          c)  
 
+let hasNext iter =
+  iter.i < iter.count
+
 let pushBack = insert
 
 let writerToReader (iter : iterator) : reader =

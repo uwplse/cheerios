@@ -7,7 +7,8 @@ val makeWriter : unit -> writer
 
 val pushBack : writer -> char -> unit
 val pop : reader -> char
-
+val hasNext : reader -> bool
+  
 val writerToBytes : writer -> bytes
 val bytesToReader : bytes -> reader
 

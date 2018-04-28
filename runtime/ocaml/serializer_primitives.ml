@@ -142,7 +142,11 @@ let size : wire -> int =
   Bytes.length
 
 let deserialize_top (d : 'a deserializer) (w : wire) : 'a option =
-  try Some (d (Vector (Bit_vector.bytesToReader w)))
+  try let r = Bit_vector.bytesToReader w in
+      let v = d (Vector r) in
+      if Bit_vector.hasNext r
+      then None
+      else Some v
   with Serialization_error _ -> None
 
 (* channel *)
