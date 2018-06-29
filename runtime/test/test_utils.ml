@@ -78,12 +78,13 @@ let compare_cheerios_marshal_time make size n
   Printf.printf " || deserialize: cheerios %f, marshal %f\n"
                 cheerios_deserialize_avg marshal_deserialize_avg
 
+(* outputs <val size> <cheerios size> <marshal size> *)
 let compare_cheerios_marshal_space make serialize_top size =
   let v = make size in
   let cheerios_size =
     Serializer_primitives.size (serialize_top v) in
   let marshal_size = Marshal.total_size (Marshal.to_bytes v []) 0
-  in Printf.printf "size: %d - cheerios: %d bytes, marshal: %d bytes\n"
+  in Printf.printf "%d %d %d\n"
                    size cheerios_size marshal_size
 
 let compare_time_loop make max interval num_tries serialize deserialize =

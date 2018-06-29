@@ -67,6 +67,12 @@ let bench_main () =
                               | Some p -> p
                               | None -> failwith "Deserialization failed")
 
-let _ = test_top 1000;
-        test_channel 1000;
-        bench_main ()
+let space_main () =
+  let max_length = 200000 in
+  let rec loop i =
+    if i < max_length
+    then (compare_cheerios_marshal_space make_positive (positive_serialize_top) i;
+          loop (i + 10000))
+  in
+  Printf.printf "height cheerios marshal\n";
+  loop 0   

@@ -1,6 +1,7 @@
 _build
-positive_test.native
-tree_test.native
+*.native
+*.dat
+*.png
 test/positive_serializer.ml
 test/positive_serializer.mli
 test/tree_serializer.ml
