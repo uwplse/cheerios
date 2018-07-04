@@ -131,19 +131,8 @@ Section BasicCombinators.
     | S n' => cons <$> deserialize <*> list_deserialize_rec n'
     end.
 
-  Fixpoint list_deserialize_rec' (n : nat) : ByteListReader.t (list A) :=
-    match n with
-    | 0 => ByteListReader.ret []
-    | S n' => l <- list_deserialize_rec' n';;
-                a <- deserialize;;
-                ByteListReader.ret (l ++ [a])
-    end.
-
   Definition list_deserialize : ByteListReader.t (list A) :=
     deserialize >>= list_deserialize_rec.
-
-  Definition list_deserialize' : ByteListReader.t (list A) :=
-    deserialize >>= list_deserialize_rec'.
 
   Lemma list_serialize_deserialize_id_rec :
     forall l bin, ByteListReader.unwrap (list_deserialize_rec (length l))
@@ -189,25 +178,6 @@ Section BasicCombinators.
     unfold list_serialize, list_deserialize.
     cheerios_crush.
     now rewrite list_serialize_deserialize_id_rec.
-  Qed.
-
-  Lemma list_serialize_deserialize_id_rec' :
-    forall l bin, ByteListReader.unwrap (list_deserialize_rec' (length l))
-                                (IOStreamWriter.unwrap (list_serialize_rec l) ++ bin)
-                  = Some(l, bin).
-  Proof using.
-    induction l using rev_ind.
-    - simpl. cheerios_crush.
-    - intros.
-      rewrite serialize_snoc.
-      cheerios_crush.
-      unfold list_deserialize_rec'.
-      rewrite app_length.
-      simpl.
-      rewrite PeanoNat.Nat.add_1_r.
-      cheerios_crush.
-      rewrite IHl.
-      cheerios_crush.
   Qed.
 
   Global Instance list_Serializer : Serializer (list A).

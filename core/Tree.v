@@ -315,24 +315,6 @@ Section serializer.
                                            (fun _ => serialize x02)))
     end.
 
-  Fixpoint serialize_tree_shape' (t : tree A) : IOStreamWriter.t :=
-    let fix serialize_list_tree_shape (l : list (tree A)) acc : IOStreamWriter.t :=
-        match l with
-        | [] => acc
-        | x :: xs =>
-          serialize_list_tree_shape xs
-                                    (IOStreamWriter.append (fun _ => acc)
-                                                   (fun _ => serialize_tree_shape x))
-        end
-    in
-    match t with
-    | atom _ => serialize x00 (* ignore the data, since we're just focused on the shape *)
-    | node l => IOStreamWriter.append (fun _ => serialize x01)
-                              (fun _ => (IOStreamWriter.append
-                                           (fun _ => serialize_list_tree_shape l IOStreamWriter.empty)
-                                           (fun _ => serialize x02)))
-    end.
-
   Definition serialize_list_tree_shape :=
     fix serialize_list_tree_shape (l : list (tree A)) : IOStreamWriter.t :=
       match l with
@@ -502,10 +484,6 @@ Section serializer.
      preorder traversal of the elements. *)
   Definition tree_serialize (t : tree A) : IOStreamWriter.t :=
     IOStreamWriter.append (fun _ => serialize_tree_shape t)
-                  (fun _ => serialize_tree_elements t).
-
-  Definition tree_serialize' (t : tree A) : IOStreamWriter.t :=
-    IOStreamWriter.append (fun _ => serialize_tree_shape' t)
                   (fun _ => serialize_tree_elements t).
 
   (* To deserialize, we deserialize the shape and the elements, and then fill out
