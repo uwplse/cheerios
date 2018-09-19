@@ -6,4 +6,5 @@
 *.aux
 _CoqProject
 Makefile.coq*
+.coqdeps.d
 *~
