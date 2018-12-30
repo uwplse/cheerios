@@ -1,4 +1,8 @@
+# sets COQVERSION
 include Makefile.detect-coq-version
+
+# sets MLTREE, etc.
+include Makefile.ml-files
 
 ifeq (,$(filter $(COQVERSION),8.6 8.7 8.8 8.9 trunk))
 $(error "Cheerios is only compatible with Coq version 8.6.1 or later")
@@ -16,9 +20,6 @@ $(info $(CHECKPATH))
 $(warning checkpath reported an error)
 endif
 
-MLPOSITIVE = runtime/test/positive_serializer.ml runtime/test/positive_serializer.mli
-MLTREE = runtime/test/tree_serializer.ml runtime/test/tree_serializer.mli
-
 default: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
@@ -26,13 +27,7 @@ quick: Makefile.coq
 	$(MAKE) -f Makefile.coq quick
 
 Makefile.coq: _CoqProject
-	coq_makefile -f _CoqProject -o Makefile.coq \
-	  -extra '$(MLPOSITIVE)' \
-	    'runtime/coq/ExtractPositiveSerializer.v runtime/coq/ExtractPositiveSerializerDeps.vo' \
-	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractPositiveSerializer.v' \
-	  -extra '$(MLTREE)' \
-	    'runtime/coq/ExtractTreeSerializer.v runtime/coq/ExtractTreeSerializerDeps.vo' \
-	    '$$(COQC) $$(COQDEBUG) $$(COQFLAGS) runtime/coq/ExtractTreeSerializer.v'	
+	coq_makefile -f _CoqProject -o Makefile.coq
 
 $(MLPOSITIVE) $(MLTREE): Makefile.coq
 	$(MAKE) -f Makefile.coq $@
@@ -40,10 +35,9 @@ $(MLPOSITIVE) $(MLTREE): Makefile.coq
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install
 
-clean:
-	if [ -f Makefile.coq ]; then \
-	  $(MAKE) -f Makefile.coq cleanall; fi
-	rm -f Makefile.coq
+clean: Makefile.coq
+	$(MAKE) -f Makefile.coq cleanall
+	rm -f Makefile.coq Makefile.coq.conf
 	$(MAKE) -C runtime clean
 
 distclean: clean
