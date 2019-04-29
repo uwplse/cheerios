@@ -1,0 +1,38 @@
+opam-version: "2.0"
+version: "dev"
+maintainer: "palmskog@gmail.com"
+
+homepage: "https://github.com/uwplse/cheerios"
+dev-repo: "git+https://github.com/uwplse/cheerios.git"
+bug-reports: "https://github.com/uwplse/cheerios/issues"
+license: "BSD-2-Clause"
+synopsis: "Coq library for serialization"
+description: """
+Cheerios is a formally verified serialization library for Coq,
+which defines a typeclass for serializable types and defines instances
+for many built-in types.
+"""
+
+build: [
+  [ "./configure" ]
+  [ make "-j%{jobs}%" ]
+]
+install: [ make "install" ]
+depends: [
+  "ocaml"
+  "coq" {(>= "8.6.1" & < "8.10~") | (= "dev")}
+  "coq-struct-tact" {= "dev"}
+]
+
+tags: [
+  "category:Computer Science/Data Types and Data Structures"
+  "keyword:serialization"
+  "logpath:Cheerios"
+]
+authors: [
+  "Keith Simmons"
+  "Doug Woos"
+  "James R. Wilcox"
+  "Justin Adsuara"
+  "Karl Palmskog"
+]

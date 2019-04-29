@@ -16,7 +16,7 @@ Requirements
 
 Definitions and proofs:
 
-- [`Coq`](https://coq.inria.fr) (8.6.1, 8.7, 8.8, or 8.9)
+- [`Coq`](https://coq.inria.fr) (8.6.1 or later)
 - [`StructTact`](https://github.com/uwplse/StructTact)
 
 Runtime:
@@ -28,10 +28,9 @@ Building
 --------
 
 The easiest way to install Cheerios is via [OPAM](http://opam.ocaml.org/doc/Install.html):
-
 ```
-opam repo add distributedcomponents-dev http://opam-dev.distributedcomponents.net
-opam install cheerios
+opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
+opam install coq-cheerios
 ```
 
 To build Cheerios manually, first run `./configure` in the root directory, and then run `make`.
@@ -49,10 +48,9 @@ Note that if a Coq type is extracted to a custom OCaml type (e.g., `string` to `
 extraction for serialization functions must be adjusted accordingly. Several files with such
 extraction directives for serialization can be found in the `extraction` directory.
 
-To install the runtime library via OPAM, make sure the `distributedcomponents-dev`
-repo has been added as above and use the following command:
-
+To install the runtime library via OPAM, use the following commands:
 ```
+opam repo add distributedcomponents-dev http://opam-dev.distributedcomponents.net
 opam install cheerios-runtime
 ```
 
