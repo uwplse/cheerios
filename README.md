@@ -27,7 +27,7 @@ Runtime:
 Building
 --------
 
-The easiest way to install Cheerios is via [OPAM](http://opam.ocaml.org/doc/Install.html):
+The easiest way to build and install Cheerios is via [OPAM](http://opam.ocaml.org/doc/Install.html):
 ```
 opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
 opam install coq-cheerios

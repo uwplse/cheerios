@@ -7,17 +7,21 @@ dev-repo: "git+https://github.com/uwplse/cheerios.git"
 bug-reports: "https://github.com/uwplse/cheerios/issues"
 license: "BSD-2-Clause"
 synopsis: "Cheerios serialization framework runtime library"
+description: """
+OCaml support library for the Coq library Cheerios,
+enabling running extracted verified serialization code.
+"""
 
-build: [ make "-j%{jobs}%" "-C" "runtime" ]
+build: [make "-j%{jobs}%" "-C" "runtime"]
 depends: [
   "ocaml" {>= "4.02.3"}
   "ocamlbuild" {build}
 ]
 
 authors: [
-  "Keith Simmons"
-  "Doug Woos"
-  "James R. Wilcox"
   "Justin Adsuara"
   "Karl Palmskog"
+  "Keith Simmons"
+  "James R. Wilcox"
+  "Doug Woos"
 ]
