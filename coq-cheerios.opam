@@ -19,8 +19,7 @@ build: [
 ]
 install: [make "install"]
 depends: [
-  "ocaml"
-  "coq" {(>= "8.6.1" & < "8.11~") | (= "dev")}
+  "coq" {(>= "8.6.1" & < "8.12~") | (= "dev")}
   "coq-struct-tact" {= "dev"}
 ]
 
