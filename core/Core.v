@@ -171,7 +171,7 @@ Class Serializer (A : Type) : Type :=
     deserialize : ByteListReader.t A;
     serialize_deserialize_id : serialize_deserialize_id_spec serialize deserialize
   }.
-Hint Rewrite @serialize_deserialize_id : cheerios.
+#[global] Hint Rewrite @serialize_deserialize_id : cheerios.
 
 (* In particular, if there is nothing else in the bitsream, then deserialize and
    serialize are inverses. *)
@@ -236,7 +236,7 @@ Axiom wire_deserialize : ByteListReader.t IOStreamWriter.wire.
 Axiom wire_serialize_deserialize_id :
   serialize_deserialize_id_spec wire_serialize wire_deserialize.
 
-Instance wire_Serializer : Serializer IOStreamWriter.wire.
+#[global] Instance wire_Serializer : Serializer IOStreamWriter.wire.
 Proof.
   exact {| serialize := wire_serialize;
            deserialize := wire_deserialize;

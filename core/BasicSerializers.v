@@ -15,7 +15,7 @@ Lemma byte_serialize_deserialize_id :
   serialize_deserialize_id_spec IOStreamWriter.putByte ByteListReader.getByte.
 Proof. cheerios_crush. Qed.
 
-Instance byte_Serializer : Serializer byte :=
+#[global] Instance byte_Serializer : Serializer byte :=
   {| serialize := IOStreamWriter.putByte;
      deserialize := ByteListReader.getByte;
      serialize_deserialize_id := byte_serialize_deserialize_id |}.
@@ -25,7 +25,7 @@ Proof.
   cheerios_crush.
 Qed.
 
-Hint Rewrite byte_unwrap : cheerios.
+#[global] Hint Rewrite byte_unwrap : cheerios.
 
 Definition bool_serialize (b : bool) : IOStreamWriter.t :=
   if b then serialize x01 else serialize x00.
@@ -47,7 +47,7 @@ Proof.
     cheerios_crush; simpl; cheerios_crush.
 Qed.
 
-Instance bool_Serializer : Serializer bool.
+#[global] Instance bool_Serializer : Serializer bool.
 Proof.
   exact {| serialize := bool_serialize;
            deserialize := bool_deserialize;
@@ -90,7 +90,7 @@ Lemma fold_append_unwrap' :
 Proof.
   cheerios_crush.
 Qed.
-Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
+#[global] Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
 
 
 Inductive le_pos (p : positive) : positive -> Prop :=
@@ -225,7 +225,7 @@ Proof.
   apply positive_step.
 Qed.
 
-Instance positive_Serializer : Serializer positive.
+#[global] Instance positive_Serializer : Serializer positive.
 Proof.
   exact ({| serialize := positive_serialize;
             deserialize := positive_deserialize;
@@ -267,7 +267,7 @@ Proof.
     repeat (cheerios_crush; simpl).
 Qed.
 
-Instance Z_Serializer : Serializer Z :=
+#[global] Instance Z_Serializer : Serializer Z :=
   {| serialize := Z_serialize;
      deserialize := Z_deserialize;
      serialize_deserialize_id := Z_serialize_deserialize_id
@@ -296,7 +296,7 @@ Proof.
     repeat (cheerios_crush; simpl).
 Qed.
 
-Instance N_Serializer : Serializer N.
+#[global] Instance N_Serializer : Serializer N.
 Proof.
   exact {| serialize := N_serialize;
            deserialize := N_deserialize;
@@ -323,7 +323,7 @@ Proof.
   now rewrite Nnat.Nat2N.id.
 Qed.
 
-Instance nat_Serializer : Serializer nat :=
+#[global] Instance nat_Serializer : Serializer nat :=
   {| serialize := nat_serialize;
      deserialize := nat_deserialize;
      serialize_deserialize_id := nat_serialize_deserialize_id
@@ -358,7 +358,7 @@ Proof.
   cheerios_crush.
 Qed.
 
-Instance Fin_Serializer n : Serializer (Fin.t n).
+#[global] Instance Fin_Serializer n : Serializer (Fin.t n).
 Proof.
   exact {| serialize := Fin_serialize;
            deserialize := Fin_deserialize;
@@ -386,7 +386,7 @@ Proof.
   cheerios_crush.
 Qed.
 
-Instance fin_Serializer n : Serializer (fin n).
+#[global] Instance fin_Serializer n : Serializer (fin n).
 Proof.
   exact {| serialize := fin_serialize;
            deserialize := fin_deserialize;
@@ -408,7 +408,7 @@ Proof.
   now rewrite Ascii.ascii_nat_embedding.
 Qed.
 
-Instance ascii_Serializer : Serializer Ascii.ascii.
+#[global] Instance ascii_Serializer : Serializer Ascii.ascii.
 Proof.
 exact  {| serialize := ascii_serialize;
           deserialize := ascii_deserialize;

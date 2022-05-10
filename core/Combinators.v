@@ -262,7 +262,7 @@ Proof.
   now rewrite string_to_list_to_string.
 Qed.
 
-Instance string_Serializer : Serializer String.string.
+Global Instance string_Serializer : Serializer String.string.
 Proof.
   exact {| serialize := string_serialize;
            deserialize := string_deserialize;

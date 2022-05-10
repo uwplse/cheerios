@@ -671,7 +671,7 @@ Module JSON.
         cheerios_crush.
     Qed.
 
-    Instance tag_Serializer : Serializer t.
+    #[global] Instance tag_Serializer : Serializer t.
     Proof.
       exact {| serialize := tag_serialize;
                deserialize := tag_deserialize;
@@ -816,7 +816,7 @@ Module JSON.
       cheerios_crush.
     Qed.
 
-    Instance json_Serializer : Serializer json.t.
+    #[global] Instance json_Serializer : Serializer json.t.
     Proof.
       exact {| serialize := json_serialize;
                deserialize := json_deserialize;

@@ -21,7 +21,7 @@ Lemma sequence_rewrite : forall {A B : Type}
 Proof.
   reflexivity.
 Qed.
-Hint Rewrite @sequence_rewrite : cheerios.
+#[global] Hint Rewrite @sequence_rewrite : cheerios.
 
 Module DeserializerNotations.
   Notation "m >>= f" := (@ByteListReader.bind _ _ m f) (at level 42, left associativity).
