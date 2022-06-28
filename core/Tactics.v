@@ -6,6 +6,7 @@ Require Import Cheerios.Types.
 
 Ltac cheerios_crush := intros; autorewrite with cheerios; auto.
 
+#[global]
 Hint Rewrite app_ass
      IOStreamWriter.empty_unwrap IOStreamWriter.putByte_unwrap
      IOStreamWriter.append_unwrap

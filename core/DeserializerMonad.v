@@ -21,6 +21,7 @@ Lemma sequence_rewrite : forall {A B : Type}
 Proof.
   reflexivity.
 Qed.
+#[global]
 Hint Rewrite @sequence_rewrite : cheerios.
 
 Module DeserializerNotations.
