@@ -15,6 +15,7 @@ Lemma byte_serialize_deserialize_id :
   serialize_deserialize_id_spec IOStreamWriter.putByte ByteListReader.getByte.
 Proof. cheerios_crush. Qed.
 
+#[global]
 Instance byte_Serializer : Serializer byte :=
   {| serialize := IOStreamWriter.putByte;
      deserialize := ByteListReader.getByte;
@@ -25,6 +26,7 @@ Proof.
   cheerios_crush.
 Qed.
 
+#[global]
 Hint Rewrite byte_unwrap : cheerios.
 
 Definition bool_serialize (b : bool) : IOStreamWriter.t :=
@@ -47,6 +49,7 @@ Proof.
     cheerios_crush; simpl; cheerios_crush.
 Qed.
 
+#[global]
 Instance bool_Serializer : Serializer bool.
 Proof.
   exact {| serialize := bool_serialize;
@@ -90,6 +93,7 @@ Lemma fold_append_unwrap' :
 Proof.
   cheerios_crush.
 Qed.
+#[global]
 Hint Rewrite @fold_append_unwrap @fold_append_unwrap' : cheerios.
 
 
@@ -225,6 +229,7 @@ Proof.
   apply positive_step.
 Qed.
 
+#[global]
 Instance positive_Serializer : Serializer positive.
 Proof.
   exact ({| serialize := positive_serialize;
@@ -267,6 +272,7 @@ Proof.
     repeat (cheerios_crush; simpl).
 Qed.
 
+#[global]
 Instance Z_Serializer : Serializer Z :=
   {| serialize := Z_serialize;
      deserialize := Z_deserialize;
@@ -296,6 +302,7 @@ Proof.
     repeat (cheerios_crush; simpl).
 Qed.
 
+#[global]
 Instance N_Serializer : Serializer N.
 Proof.
   exact {| serialize := N_serialize;
@@ -323,6 +330,7 @@ Proof.
   now rewrite Nnat.Nat2N.id.
 Qed.
 
+#[global]
 Instance nat_Serializer : Serializer nat :=
   {| serialize := nat_serialize;
      deserialize := nat_deserialize;
@@ -358,6 +366,7 @@ Proof.
   cheerios_crush.
 Qed.
 
+#[global]
 Instance Fin_Serializer n : Serializer (Fin.t n).
 Proof.
   exact {| serialize := Fin_serialize;
@@ -386,6 +395,7 @@ Proof.
   cheerios_crush.
 Qed.
 
+#[global]
 Instance fin_Serializer n : Serializer (fin n).
 Proof.
   exact {| serialize := fin_serialize;
@@ -408,6 +418,7 @@ Proof.
   now rewrite Ascii.ascii_nat_embedding.
 Qed.
 
+#[global]
 Instance ascii_Serializer : Serializer Ascii.ascii.
 Proof.
 exact  {| serialize := ascii_serialize;
