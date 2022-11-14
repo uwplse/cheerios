@@ -1,0 +1,100 @@
+---
+fullname: Cheerios
+shortname: cheerios
+opam_name: coq-cheerios
+organization: uwplse
+community: false
+action: true
+dune: false
+coqdoc: false
+
+synopsis: Coq library for verified serialization
+
+description: |-
+  A formally verified serialization library for Coq
+  which defines a typeclass for serializable types and instances
+  for many standard library types.
+
+authors:
+- name: Justin Adsuara
+  initial: false
+- name: Karl Palmskog
+  initial: false
+- name: Keith Simmons
+  initial: true
+- name: James R. Wilcox
+  initial: true
+- name: Doug Woos
+  initial: true
+
+maintainers:
+- name: Karl Palmskog
+  nickname: palmskog
+
+opam-file-maintainer: palmskog@gmail.com
+
+opam-file-version: dev
+
+license:
+  fullname: BSD 2-Clause "Simplified" license
+  identifier: BSD-2-Clause
+
+supported_coq_versions:
+  text: 8.14 or later
+  opam: '{>= "8.14"}'
+
+tested_coq_opam_versions:
+- version: dev
+- version: '8.16'
+- version: '8.15'
+- version: '8.14'
+
+dependencies:
+- opam:
+    name: coq-struct-tact
+    version: '{= "dev"}'
+  description: |-
+    [StructTact](https://github.com/uwplse/StructTact)
+
+ci_extra_dev: true
+
+namespace: Cheerios
+
+keywords:
+- name: serialization
+- name: deserialization
+
+categories:
+- name: Computer Science/Data Types and Data Structures
+
+build: |-
+  ## Building and installation instructions
+
+  The easiest way to build and install the Cheerios Coq library is via [opam](http://opam.ocaml.org/doc/Install.html):
+  ```shell
+  opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
+  opam install coq-cheerios
+  ```
+
+  To instead build and install manually, do:
+  ```shell
+  git clone https://github.com/uwplse/cheerios.git
+  cd huffman
+  make   # or make -j <number-of-cores-on-your-machine> 
+  make install
+  ```
+
+  To use serializable types in executable programs, code must be extracted
+  to OCaml and linked with the Cheerios runtime library. The connection between
+  the Coq definitions and the runtime library primitives is established in
+  `ExtractOCamlCheeriosBasic.v` in the `extraction` directory, which must be
+  imported before extraction of serializable types.
+
+  To build and install the OCaml runtime library:
+  ```shell
+  opam pin add cheerios-runtime -k git https://github.com/uwplse/cheerios.git
+  ```
+
+  To compile the runtime library manually, go to the `runtime` directory
+  and run `make` (requires [OCamlbuild](https://github.com/ocaml/ocamlbuild)).
+---
