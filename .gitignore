@@ -6,10 +6,10 @@
 *.aux
 *.vos
 *.vok
-_CoqProject
 Makefile.coq
 Makefile.coq.conf
 Makefile.coq.bak
 .Makefile.coq.d
 .coqdeps.d
 *~
+.lia.cache
