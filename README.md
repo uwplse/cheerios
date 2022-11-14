@@ -38,7 +38,7 @@ opam install coq-cheerios
 To instead build and install manually, do:
 ```shell
 git clone https://github.com/uwplse/cheerios.git
-cd huffman
+cd cheerios
 make   # or make -j <number-of-cores-on-your-machine> 
 make install
 ```
