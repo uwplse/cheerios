@@ -1,17 +1,10 @@
-Require Import Cheerios.Combinators.
-Require Import Cheerios.Core.
-Require Import Cheerios.DeserializerMonad.
-Require Import Cheerios.Tactics.
-Require Import Cheerios.Types.
-
-Require Import List.
-Require Import FMapPositive.
-
+From Cheerios Require Import Combinators Core DeserializerMonad.
+From Cheerios Require Import Tactics Types.
+From Coq Require Import Arith List FMapPositive.
 Import ListNotations.
 Import DeserializerNotations.
 
 Set Implicit Arguments.
-
 
 (*
    Most user-defined datatypes are tree-like, which are typically nontrivial to
@@ -144,7 +137,7 @@ Fixpoint map {A B} (f : A -> B) (t : tree A) : tree B :=
 Definition shape {A} (t : tree A) : tree unit :=
   map (fun _ => tt) t.
 
-Fixpoint tree_map' {A B} (f : A -> B) (t : tree A) : tree B :=
+Definition tree_map' {A B} (f : A -> B) (t : tree A) : tree B :=
   let fix tree_map_loop {A B} (f : A -> B) (l : list (tree A)) acc :=
       match l with
       | [] => rev_rec acc []
@@ -249,7 +242,7 @@ Definition preorder_list {A} :=
     | x :: l => preorder x ++ preorder_list l
     end.
 
-Fixpoint preorder' {A} (x : tree A) : list A :=
+Definition preorder' {A} (x : tree A) : list A :=
   let fix preorder_list (l : list (tree A)) acc : list A :=
       match l with
       | [] => acc
@@ -927,7 +920,7 @@ Module JSON.
       now rewrite H.
     - destruct j'; try congruence.
       intros.
-      apply EqNat.beq_nat_true in H.
+      apply Nat.eqb_eq in H.
       now rewrite H.
     - destruct j'; try congruence.
       intros.
@@ -964,8 +957,7 @@ Module JSON.
     - intros. rewrite <- H. simpl.
       apply Bool.eqb_reflx.
     - intros. rewrite <- H. simpl.
-      symmetry.
-      apply EqNat.beq_nat_refl.
+      apply Nat.eqb_refl.
     - intros.
       rewrite <- H.
       simpl.
