@@ -1,8 +1,8 @@
-Require Import Ascii List ZArith.
-Import ListNotations.
+From Coq Require Import Ascii List ZArith.
+From Cheerios Require Import Types.
+From Cheerios Require Import ByteDecidable.
 
-Require Import Cheerios.Types.
-Require Import Cheerios.ByteDecidable.
+Import ListNotations.
 
 Set Implicit Arguments.
 

@@ -1,8 +1,7 @@
-Require Import Cheerios.ExtractPositiveSerializerDeps.
-
-Require Import ZArith.
-Require Import ExtrOcamlBasic.
-Require Import ExtrOcamlString.
+From Cheerios Require Import ExtractPositiveSerializerDeps.
+From Coq Require Import ZArith.
+From Coq Require Import ExtrOcamlBasic.
+From Coq Require Import ExtrOcamlString.
 
 Definition positive_serialize : positive -> IOStreamWriter.t := serialize.
 

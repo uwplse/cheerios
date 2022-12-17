@@ -1,3 +1,3 @@
-Require Export Cheerios.Cheerios.
-Require Export Cheerios.Tree.
-Require Export Cheerios.ExtrOcamlCheeriosBasic.
+From Cheerios Require Export Cheerios.
+From Cheerios Require Export Tree.
+From Cheerios Require Export ExtrOcamlCheeriosBasic.

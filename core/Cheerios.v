@@ -1,7 +1,7 @@
-Require Export Cheerios.Core.
-Require Export Cheerios.DeserializerMonad.
-Require Export Cheerios.Tactics.
-Require Export Cheerios.BasicSerializers.
-Require Export Cheerios.Combinators.
-Require Export Cheerios.Tactics.
-Require Export Cheerios.Types.
+From Cheerios Require Export Core.
+From Cheerios Require Export DeserializerMonad.
+From Cheerios Require Export Tactics.
+From Cheerios Require Export BasicSerializers.
+From Cheerios Require Export Combinators.
+From Cheerios Require Export Tactics.
+From Cheerios Require Export Types.

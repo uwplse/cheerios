@@ -1,14 +1,13 @@
-Require Import List.
+From Coq Require Import List.
+From Coq Require Vector String.
+From Cheerios Require Import BasicSerializers.
+From Cheerios Require Import Core.
+From Cheerios Require Import DeserializerMonad.
+From Cheerios Require Import Tactics.
+From Cheerios Require Import Types.
+From StructTact Require Import StructTactics.
+
 Import ListNotations.
-Require Vector String.
-
-Require Import Cheerios.BasicSerializers.
-Require Import Cheerios.Core.
-Require Import Cheerios.DeserializerMonad.
-Require Import Cheerios.Tactics.
-Require Import Cheerios.Types.
-
-Require Import StructTact.StructTactics.
 Import DeserializerNotations.
 
 (* These functions are either missing obvious implicits, or have

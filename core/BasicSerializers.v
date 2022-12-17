@@ -1,14 +1,13 @@
-Require Import List ZArith.
-Import ListNotations.
-
+From Coq Require Import List ZArith.
 From StructTact Require Import StructTactics Fin.
-Require Fin Ascii.
+From Coq Require Fin Ascii.
 
-Require Import Cheerios.Core.
-Require Import Cheerios.DeserializerMonad.
-Require Import Cheerios.Tactics.
-Require Import Cheerios.Types.
+From Cheerios Require Import Core.
+From Cheerios Require Import DeserializerMonad.
+From Cheerios Require Import Tactics.
+From Cheerios Require Import Types.
 
+Import ListNotations.
 Import DeserializerNotations.
 
 Lemma byte_serialize_deserialize_id :
@@ -171,7 +170,7 @@ Fixpoint positive_serialize p :=
                                   (fun _ => positive_serialize p)
   | xO p => IOStreamWriter.append (fun _ => serialize x01)
                                   (fun _ => positive_serialize p)
-  | XH => serialize x00
+  | xH => serialize x00
   end.
 
 Definition positive_deserialize_step
