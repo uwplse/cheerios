@@ -1,6 +1,6 @@
-Require Import Arith.
-Require Import Cheerios.Types.
-Require Import StructTact.StructTactics.
+From Coq Require Import Arith.
+From Cheerios Require Import Types.
+From StructTact Require Import StructTactics.
 
 Definition byte_to_nat (b : byte) : nat :=
   match b with

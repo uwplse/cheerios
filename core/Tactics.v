@@ -1,8 +1,7 @@
-Require Import List.
-
-Require Import Cheerios.Core.
-Require Import Cheerios.DeserializerMonad.
-Require Import Cheerios.Types.
+From Coq Require Import List.
+From Cheerios Require Import Core.
+From Cheerios Require Import DeserializerMonad.
+From Cheerios Require Import Types.
 
 Ltac cheerios_crush := intros; autorewrite with cheerios; auto.
 

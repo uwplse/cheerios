@@ -1,9 +1,8 @@
-Require Import Cheerios.ExtractTreeSerializerDeps.
-Require Import Cheerios.BasicSerializers.
-
-Require Import ZArith.
-Require Import ExtrOcamlBasic.
-Require Import ExtrOcamlString.
+From Cheerios Require Import ExtractTreeSerializerDeps.
+From Cheerios Require Import BasicSerializers.
+From Coq Require Import ZArith.
+From Coq Require Import ExtrOcamlBasic.
+From Coq Require Import ExtrOcamlString.
 
 Definition tree_serialize : tree bool -> IOStreamWriter.t := serialize.
 

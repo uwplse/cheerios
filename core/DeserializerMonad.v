@@ -1,6 +1,5 @@
-Require Import Cheerios.Core.
-Require Import Cheerios.Types.
-Require Import List.
+From Cheerios Require Import Core Types.
+From Coq Require Import List.
 Import ListNotations.
 
 Definition sequence {A B} (df : ByteListReader.t (A -> B))

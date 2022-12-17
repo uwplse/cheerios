@@ -1,4 +1,4 @@
-Require Import List.
+From Coq Require Import List.
 Import ListNotations.
 
 Inductive fold_state S A :=
