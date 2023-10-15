@@ -269,7 +269,7 @@ Proof.
                         fill'_list (List.map (map f) l) (preorder_list l ++ bs) = Some (l, bs)); intros.
   - auto.
   - simpl.
-    rewrite app_ass. rewrite  IHt. rewrite IHt0. auto.
+    rewrite <- app_assoc. rewrite  IHt. rewrite IHt0. auto.
   - auto.
   - simpl.
     fold (@preorder_list B).
@@ -366,9 +366,9 @@ Section serializer.
                             ((rev (List.map shape l) ++ ts) :: acc)) bytes);
       intros;
       try (unfold serialize_list_tree_shape;
-           rewrite IOStreamWriter.append_unwrap, app_ass, IHt, IHt0;
+           rewrite IOStreamWriter.append_unwrap, <- app_assoc, IHt, IHt0;
            simpl;
-           now rewrite app_ass).
+           now rewrite <- app_assoc).
     (cheerios_crush; simpl; cheerios_crush; simpl).
     -  destruct acc;
          repeat (cheerios_crush;
@@ -381,7 +381,7 @@ Section serializer.
         IOStreamWriter.putByte_unwrap;
         simpl;
         fold serialize_list_tree_shape;
-        rewrite app_ass, IHt, ByteListReader.fold_unwrap,
+        rewrite <- app_assoc, IHt, ByteListReader.fold_unwrap,
         IOStreamWriter.putByte_unwrap;
         simpl;
         rewrite app_nil_r, rev'_spec, rev_involutive;

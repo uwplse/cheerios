@@ -148,7 +148,7 @@ Section BasicCombinators.
       rewrite ByteListReader.bind_unwrap.
       rewrite ByteListReader.map_unwrap.
       rewrite IOStreamWriter.append_unwrap.
-      rewrite app_ass.
+      rewrite <- app_assoc.
       rewrite serialize_deserialize_id.
       rewrite ByteListReader.bind_unwrap.
       rewrite IHl.
