@@ -1,21 +1,20 @@
--Q core Cheerios
--Q extraction Cheerios
+-Q theories Cheerios
 -Q runtime/coq Cheerios
 
-core/Types.v
-core/Tree.v
-core/ByteDecidable.v
-core/BasicSerializers.v
-core/Core.v
-core/Cheerios.v
-core/Tactics.v
-core/DeserializerMonad.v
-core/Combinators.v
+theories/Core/Types.v
+theories/Core/Tree.v
+theories/Core/ByteDecidable.v
+theories/Core/BasicSerializers.v
+theories/Core/Core.v
+theories/Core/Cheerios.v
+theories/Core/Tactics.v
+theories/Core/DeserializerMonad.v
+theories/Core/Combinators.v
 
-extraction/ExtrOcamlCheeriosFinInt.v
-extraction/ExtrOcamlCheeriosString.v
-extraction/ExtrOcamlCheeriosBasic.v
-extraction/ExtrOcamlCheeriosNatInt.v
+theories/Extraction/ExtrOcamlCheeriosFinInt.v
+theories/Extraction/ExtrOcamlCheeriosString.v
+theories/Extraction/ExtrOcamlCheeriosBasic.v
+theories/Extraction/ExtrOcamlCheeriosNatInt.v
 
 runtime/coq/ExtractPositiveSerializer.v
 runtime/coq/ExtractPositiveSerializerDeps.v
