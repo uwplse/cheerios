@@ -1,0 +1,6 @@
+(coq.theory
+ (name Cheerios)
+ (package coq-cheerios)
+ (synopsis "Coq library for verified serialization"))
+
+(include_subdirs qualified)
